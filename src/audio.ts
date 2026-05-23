@@ -735,4 +735,170 @@ export class AudioManager {
     this.musicVolume = v;
     if (this.musicGain) this.musicGain.gain.value = v;
   }
+
+  // === Round 4 SFX ===
+
+  playSkillShot(tier: 'GOOD' | 'GREAT' | 'PERFECT'): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    const base = tier === 'PERFECT' ? 523 : tier === 'GREAT' ? 440 : 392;
+    const count = tier === 'PERFECT' ? 8 : tier === 'GREAT' ? 5 : 3;
+
+    for (let i = 0; i < count; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = tier === 'PERFECT' ? 'sine' : 'triangle';
+      osc.frequency.value = base * (1 + i * 0.2);
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, t + i * 0.06);
+      gain.gain.linearRampToValueAtTime(0.25, t + i * 0.06 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.06 + 0.3);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t + i * 0.06);
+      osc.stop(t + i * 0.06 + 0.3);
+    }
+
+    // Perfect gets shimmer overlay
+    if (tier === 'PERFECT') {
+      const shimmer = this.ctx.createOscillator();
+      shimmer.type = 'sine';
+      shimmer.frequency.value = 2093;
+      const sGain = this.ctx.createGain();
+      sGain.gain.setValueAtTime(0, t + 0.3);
+      sGain.gain.linearRampToValueAtTime(0.12, t + 0.35);
+      sGain.gain.exponentialRampToValueAtTime(0.01, t + 0.8);
+      shimmer.connect(sGain);
+      sGain.connect(this.sfxGain);
+      shimmer.start(t + 0.3);
+      shimmer.stop(t + 0.8);
+    }
+  }
+
+  playBonusTick(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.12, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.05);
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.05);
+  }
+
+  playBonusTotal(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    const notes = [523, 659, 784, 1047];
+    for (let i = 0; i < notes.length; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = notes[i];
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, t + i * 0.08);
+      gain.gain.linearRampToValueAtTime(0.2, t + i * 0.08 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.08 + 0.35);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t + i * 0.08);
+      osc.stop(t + i * 0.08 + 0.35);
+    }
+  }
+
+  playMatchTick(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(300 + Math.random() * 400, t);
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.1, t);
+    gain.gain.exponentialRampToValueAtTime(0.01, t + 0.08);
+    osc.connect(gain);
+    gain.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.08);
+  }
+
+  playMatchWin(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    const notes = [523, 659, 784, 1047, 1319];
+    for (let i = 0; i < notes.length; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = notes[i];
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, t + i * 0.1);
+      gain.gain.linearRampToValueAtTime(0.25, t + i * 0.1 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.1 + 0.5);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t + i * 0.1);
+      osc.stop(t + i * 0.1 + 0.5);
+    }
+  }
+
+  playSuperJackpot(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Massive power chord crescendo
+    const notes = [196, 247, 294, 392, 494, 587, 784, 988, 1175, 1568, 2093];
+    for (let i = 0; i < notes.length; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = i < 6 ? 'sawtooth' : 'sine';
+      osc.frequency.value = notes[i];
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, t + i * 0.05);
+      gain.gain.linearRampToValueAtTime(0.3, t + i * 0.05 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.05 + 0.8);
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 4000;
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t + i * 0.05);
+      osc.stop(t + i * 0.05 + 0.8);
+    }
+  }
+
+  playCaptiveBall(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Deep thud + ring
+    const thud = this.ctx.createOscillator();
+    thud.type = 'sine';
+    thud.frequency.setValueAtTime(120, t);
+    thud.frequency.exponentialRampToValueAtTime(60, t + 0.15);
+    const thudGain = this.ctx.createGain();
+    thudGain.gain.setValueAtTime(0.35, t);
+    thudGain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
+    thud.connect(thudGain);
+    thudGain.connect(this.sfxGain);
+    thud.start(t);
+    thud.stop(t + 0.15);
+
+    const ring = this.ctx.createOscillator();
+    ring.type = 'sine';
+    ring.frequency.value = 660;
+    const ringGain = this.ctx.createGain();
+    ringGain.gain.setValueAtTime(0, t + 0.05);
+    ringGain.gain.linearRampToValueAtTime(0.15, t + 0.08);
+    ringGain.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+    ring.connect(ringGain);
+    ringGain.connect(this.sfxGain);
+    ring.start(t + 0.05);
+    ring.stop(t + 0.4);
+  }
 }

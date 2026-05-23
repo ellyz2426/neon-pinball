@@ -6,7 +6,7 @@ import {
   PanelDocument, UIKitDocument,
 } from '@iwsdk/core';
 
-import { GameManager, GameState, Mission, IntensityLevel } from './game';
+import { GameManager, GameState, Mission, IntensityLevel, BonusCountdown } from './game';
 import { AudioManager } from './audio';
 import { AchievementManager, Achievement } from './achievements';
 
@@ -34,10 +34,14 @@ export class UIManager {
   private statsPanel: UIPanel | null = null;
   private wizardPanel: UIPanel | null = null;
   private achToastPanel: UIPanel | null = null;
+  private controlsPanel: UIPanel | null = null;
+  private bonusPanel: UIPanel | null = null;
 
   private messageTimer = 0;
   private achToastTimer = 0;
   private achToastQueue: Achievement[] = [];
+  private comboTierDisplay = '';
+  private bonusCountdownTimer = 0;
   private initDone = false;
 
   constructor(world: any, game: GameManager, audio: AudioManager, achievements: AchievementManager) {
@@ -87,6 +91,12 @@ export class UIManager {
     // Achievement toast (head-following, bottom-right)
     this.achToastPanel = await this.createFollowerPanel('/ui/achtoast.json', 0.35, 0.07, [0.15, -0.25, -0.5]);
 
+    // Controls/Help panel
+    this.controlsPanel = await this.createWorldPanel('/ui/controls.json', 0.8, 1.3, [0, 1.3, -0.8], 0.8);
+
+    // Bonus countdown panel (head-following)
+    this.bonusPanel = await this.createFollowerPanel('/ui/bonus.json', 0.3, 0.15, [0, -0.1, -0.5]);
+
     // Initial state
     this.showState('title');
 
@@ -117,6 +127,16 @@ export class UIManager {
     this.achievements.onUnlock((ach) => {
       this.queueAchievementToast(ach);
       this.audio.playAchievementUnlock();
+    });
+
+    // Wire combo tier display
+    this.game.onComboTier((tier: string) => {
+      this.comboTierDisplay = tier;
+    });
+
+    // Wire bonus countdown
+    this.game.onBonus((data: BonusCountdown) => {
+      this.showBonusCountdown(data);
     });
 
     this.initDone = true;
@@ -186,6 +206,9 @@ export class UIManager {
       titleDoc.getElementById('stats-btn')?.addEventListener('click', () => {
         this.game.setState('stats');
       });
+      titleDoc.getElementById('controls-btn')?.addEventListener('click', () => {
+        this.game.setState('controls');
+      });
       const hsEl = titleDoc.getElementById('highscore-value');
       if (hsEl) hsEl.text.value = this.game.highScore.toLocaleString();
       this.updateTitleAchCount(titleDoc);
@@ -249,6 +272,14 @@ export class UIManager {
       this.wireVolumeControl(setDoc, 'sfx', () => this.audio.sfxVolume, (v) => this.audio.setSFXVolume(v));
       this.wireVolumeControl(setDoc, 'music', () => this.audio.musicVolume, (v) => this.audio.setMusicVolume(v));
     }
+
+    // Controls/Help back
+    const ctrlDoc = this.getDoc(this.controlsPanel!);
+    if (ctrlDoc) {
+      ctrlDoc.getElementById('controls-back-btn')?.addEventListener('click', () => {
+        this.game.setState('title');
+      });
+    }
   }
 
   private wireVolumeControl(doc: UIKitDocument, prefix: string, getter: () => number, setter: (v: number) => void): void {
@@ -279,6 +310,7 @@ export class UIManager {
       this.titlePanel, this.hudPanel, this.gameoverPanel,
       this.pausePanel, this.leaderboardPanel, this.settingsPanel,
       this.plungerPanel, this.achievementsPanel, this.statsPanel,
+      this.controlsPanel, this.bonusPanel,
     ];
 
     for (const p of panels) {
@@ -381,6 +413,12 @@ export class UIManager {
         if (this.statsPanel) {
           this.statsPanel.entity.object3D.visible = true;
           this.updateStatsPanel();
+        }
+        break;
+
+      case 'controls':
+        if (this.controlsPanel) {
+          this.controlsPanel.entity.object3D.visible = true;
         }
         break;
     }
@@ -502,6 +540,32 @@ export class UIManager {
     }
   }
 
+  // Bonus countdown
+  private showBonusCountdown(data: BonusCountdown): void {
+    if (!this.bonusPanel) return;
+    this.bonusPanel.entity.object3D.visible = true;
+    this.bonusCountdownTimer = 3.0;
+
+    const doc = this.getDoc(this.bonusPanel);
+    if (!doc) return;
+
+    const setEl = (id: string, val: string) => {
+      const el = doc.getElementById(id);
+      if (el) el.text.value = val;
+    };
+
+    setEl('bonus-bumpers', `${data.bumperHits} × 50 = ${(data.bumperHits * 50).toLocaleString()}`);
+    setEl('bonus-ramps', `${data.rampShots} × 300 = ${(data.rampShots * 300).toLocaleString()}`);
+    setEl('bonus-spinners', `${data.spinnerHits} × 25 = ${(data.spinnerHits * 25).toLocaleString()}`);
+    setEl('bonus-missions', `${data.missions} × 5,000 = ${(data.missions * 5000).toLocaleString()}`);
+    setEl('bonus-combo', `x${data.maxCombo} = ${(data.maxCombo * 500).toLocaleString()}`);
+    setEl('bonus-jackpots', `${data.jackpots} × 2,000 = ${(data.jackpots * 2000).toLocaleString()}`);
+    setEl('bonus-total', data.totalBonus.toLocaleString());
+    setEl('bonus-tick', 'BONUS AWARDED');
+
+    this.audio.playBonusTotal();
+  }
+
   showMessage(msg: string): void {
     if (!this.messagePanel) return;
     this.messagePanel.entity.object3D.visible = true;
@@ -562,6 +626,18 @@ export class UIManager {
         : '';
     }
 
+    // Combo tier display
+    const tierEl = doc.getElementById('hud-combo-tier');
+    if (tierEl) {
+      tierEl.text.value = this.comboTierDisplay;
+    }
+
+    // Super jackpot indicator
+    const sjEl = doc.getElementById('hud-superjp');
+    if (sjEl) {
+      sjEl.text.value = this.game.superJackpotCharged ? 'SUPER JP!' : '';
+    }
+
     // Update wizard panel timer
     if (this.game.wizardModeActive && this.wizardPanel) {
       const wDoc = this.getDoc(this.wizardPanel);
@@ -600,6 +676,14 @@ export class UIManager {
       this.achToastTimer -= dt;
       if (this.achToastTimer <= 0) {
         this.showNextAchToast();
+      }
+    }
+
+    // Bonus countdown timer
+    if (this.bonusCountdownTimer > 0) {
+      this.bonusCountdownTimer -= dt;
+      if (this.bonusCountdownTimer <= 0 && this.bonusPanel) {
+        this.bonusPanel.entity.object3D.visible = false;
       }
     }
 

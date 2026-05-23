@@ -95,6 +95,16 @@
               "class": "hud-multiplier"
             },
             "dataUid": "uid-10"
+          },
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [],
+            "properties": {
+              "id": "hud-combo-tier",
+              "class": "hud-combo-tier"
+            },
+            "dataUid": "uid-11"
           }
         ],
         "properties": {
@@ -114,7 +124,7 @@
               "id": "hud-saver",
               "class": "hud-ball-saver"
             },
-            "dataUid": "uid-12"
+            "dataUid": "uid-13"
           },
           {
             "sourceTag": "span",
@@ -124,7 +134,7 @@
               "id": "hud-multiball",
               "class": "hud-multiball"
             },
-            "dataUid": "uid-13"
+            "dataUid": "uid-14"
           },
           {
             "sourceTag": "span",
@@ -134,7 +144,7 @@
               "id": "hud-extra",
               "class": "hud-extra"
             },
-            "dataUid": "uid-14"
+            "dataUid": "uid-15"
           },
           {
             "sourceTag": "span",
@@ -144,13 +154,23 @@
               "id": "hud-wizard",
               "class": "hud-wizard"
             },
-            "dataUid": "uid-15"
+            "dataUid": "uid-16"
+          },
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [],
+            "properties": {
+              "id": "hud-superjp",
+              "class": "hud-superjp"
+            },
+            "dataUid": "uid-17"
           }
         ],
         "properties": {
           "class": "hud-section"
         },
-        "dataUid": "uid-11"
+        "dataUid": "uid-12"
       }
     ],
     "properties": {
@@ -237,10 +257,18 @@
         "fontWeight": "bold"
       }
     },
-    "hud-intensity": {
+    "hud-combo-tier": {
       "content": {
-        "fontSize": "0.9",
-        "color": "#444444"
+        "fontSize": "1.2",
+        "color": "#ff8800",
+        "fontWeight": "bold"
+      }
+    },
+    "hud-superjp": {
+      "content": {
+        "fontSize": "1.2",
+        "color": "#ff00ff",
+        "fontWeight": "bold"
       }
     }
   },
@@ -345,164 +373,194 @@
         "column": 13
       }
     },
-    "hud-intensity": {
+    "hud-combo-tier": {
       "start": {
         "line": 59,
         "column": 2
       },
       "end": {
         "line": 59,
-        "column": 16
+        "column": 17
+      }
+    },
+    "hud-superjp": {
+      "start": {
+        "line": 64,
+        "column": 2
+      },
+      "end": {
+        "line": 64,
+        "column": 14
       }
     },
     "uid-1": {
       "start": {
-        "line": 64,
+        "line": 70,
         "column": 0
       },
       "end": {
-        "line": 83,
+        "line": 91,
         "column": 6
       }
     },
     "uid-2": {
       "start": {
-        "line": 65,
+        "line": 71,
         "column": 2
       },
       "end": {
-        "line": 68,
+        "line": 74,
         "column": 8
       }
     },
     "uid-3": {
       "start": {
-        "line": 66,
+        "line": 72,
         "column": 4
       },
       "end": {
-        "line": 66,
+        "line": 72,
         "column": 40
       }
     },
     "uid-4": {
       "start": {
-        "line": 67,
+        "line": 73,
         "column": 4
       },
       "end": {
-        "line": 67,
+        "line": 73,
         "column": 51
       }
     },
     "uid-5": {
       "start": {
-        "line": 69,
+        "line": 75,
         "column": 2
       },
       "end": {
-        "line": 72,
+        "line": 78,
         "column": 8
       }
     },
     "uid-6": {
       "start": {
-        "line": 70,
+        "line": 76,
         "column": 4
       },
       "end": {
-        "line": 70,
+        "line": 76,
         "column": 39
       }
     },
     "uid-7": {
       "start": {
-        "line": 71,
+        "line": 77,
         "column": 4
       },
       "end": {
-        "line": 71,
+        "line": 77,
         "column": 52
       }
     },
     "uid-8": {
       "start": {
-        "line": 73,
+        "line": 79,
         "column": 2
       },
       "end": {
-        "line": 76,
+        "line": 83,
         "column": 8
       }
     },
     "uid-9": {
       "start": {
-        "line": 74,
+        "line": 80,
         "column": 4
       },
       "end": {
-        "line": 74,
+        "line": 80,
         "column": 40
       }
     },
     "uid-10": {
       "start": {
-        "line": 75,
+        "line": 81,
         "column": 4
       },
       "end": {
-        "line": 75,
+        "line": 81,
         "column": 64
       }
     },
     "uid-11": {
       "start": {
-        "line": 77,
-        "column": 2
+        "line": 82,
+        "column": 4
       },
       "end": {
         "line": 82,
-        "column": 8
+        "column": 60
       }
     },
     "uid-12": {
       "start": {
-        "line": 78,
-        "column": 4
+        "line": 84,
+        "column": 2
       },
       "end": {
-        "line": 78,
-        "column": 55
+        "line": 90,
+        "column": 8
       }
     },
     "uid-13": {
       "start": {
-        "line": 79,
+        "line": 85,
         "column": 4
       },
       "end": {
-        "line": 79,
-        "column": 58
+        "line": 85,
+        "column": 55
       }
     },
     "uid-14": {
       "start": {
-        "line": 80,
+        "line": 86,
         "column": 4
       },
       "end": {
-        "line": 80,
-        "column": 50
+        "line": 86,
+        "column": 58
       }
     },
     "uid-15": {
       "start": {
-        "line": 81,
+        "line": 87,
         "column": 4
       },
       "end": {
-        "line": 81,
+        "line": 87,
+        "column": 50
+      }
+    },
+    "uid-16": {
+      "start": {
+        "line": 88,
+        "column": 4
+      },
+      "end": {
+        "line": 88,
         "column": 52
+      }
+    },
+    "uid-17": {
+      "start": {
+        "line": 89,
+        "column": 4
+      },
+      "end": {
+        "line": 89,
+        "column": 54
       }
     }
   }

@@ -40,6 +40,7 @@ import { PinballPhysics, BALL_RADIUS, HALF_W, HALF_L, TILT_ANGLE, CollisionEvent
 import {
   createTable, createBumperMeshes, createFlipperMeshes, createPlunger,
   createTargetBank, createSpinnerMeshes, createRampMeshes, createOutlaneMeshes,
+  createCaptiveBallMesh, createSkillShotIndicator,
   TABLE_Y, TABLE_TILT,
 } from './table';
 import { GameManager, GameState, IntensityLevel } from './game';
@@ -92,6 +93,8 @@ async function main() {
   const spinnerMeshes = createSpinnerMeshes(tableGroup);
   const rampMeshes = createRampMeshes(tableGroup);
   const outlaneMeshes = createOutlaneMeshes(tableGroup);
+  const captiveBallMeshes = createCaptiveBallMesh(tableGroup);
+  const skillShotIndicator = createSkillShotIndicator(tableGroup);
 
   // Ball pool (multiball support)
   const ballVisuals: BallVisual[] = [];
@@ -178,9 +181,12 @@ async function main() {
     if (e.code === 'Space' && plungerCharging) {
       plungerCharging = false;
       if (plungerPower > 0.05) {
+        const launchPower = plungerPower;
         physics.launchBall(plungerPower);
         audio.playLaunch();
         game.setState('playing');
+        // Check skill shot
+        game.handleSkillShot(launchPower, physics.ball.x, physics.ball.z);
       }
       plungerPower = 0;
     }
@@ -214,6 +220,10 @@ async function main() {
       audio.playCombo();
     } else if (label.includes('LOCKED')) {
       audio.playBallLock();
+    }
+    if (label.includes('SUPER JACKPOT')) {
+      audio.playSuperJackpot();
+      achievements.checkSuperJackpot();
     }
   });
 
@@ -262,6 +272,36 @@ async function main() {
 
   game.onExtraBall(() => {
     // Visual feedback handled by UI
+  });
+
+  // Wire skill shot audio
+  game.onSkillShot((zone) => {
+    if (zone) {
+      audio.playSkillShot(zone.name as 'GOOD' | 'GREAT' | 'PERFECT');
+      achievements.checkSkillShot(zone.name);
+    }
+  });
+
+  // Wire match sequence
+  game.onMatch((_number, matched) => {
+    if (matched) {
+      audio.playMatchWin();
+    }
+  });
+
+  // Wire combo tier for achievements
+  game.onComboTier((tier) => {
+    if (tier) achievements.checkComboTier(tier);
+  });
+
+  // Wire captive ball for achievements
+  game.onCaptiveBall((hits) => {
+    achievements.checkCaptiveBall(hits);
+  });
+
+  // Wire bonus for achievements
+  game.onBonus((data) => {
+    achievements.checkBonusTotal(data.totalBonus);
   });
 
   // Target collision handling
@@ -386,9 +426,11 @@ async function main() {
           if (xrInput.launchHeld) {
             plungerPower = Math.min(1, plungerPower + dt * 1.2);
           } else if (xrInput.launchPressed && plungerPower > 0.05) {
+            const launchPower = plungerPower;
             physics.launchBall(plungerPower);
             audio.playLaunch();
             game.setState('playing');
+            game.handleSkillShot(launchPower, physics.ball.x, physics.ball.z);
             plungerPower = 0;
           }
 
@@ -538,6 +580,14 @@ async function main() {
           }
         }
 
+        // Update captive ball visual positions
+        for (const cap of physics.captiveBalls) {
+          const cm = captiveBallMeshes.get(cap.id);
+          if (cm) {
+            cm.ball.position.set(cap.currentX, 0.013 + 0.003, cap.currentZ);
+          }
+        }
+
         // Update HUD
         ui.updateHUD();
       }
@@ -623,6 +673,12 @@ async function main() {
           game.handleKickback(event.id || '', event.x, event.z);
           audio.playKickback();
           effects.spawnBumperHit(event.x, event.z, 0x00ff88);
+          break;
+
+        case 'captive_ball':
+          game.handleCaptiveBallHit(event.x, event.z);
+          audio.playCaptiveBall();
+          effects.spawnBumperHit(event.x, event.z, 0x4400ff);
           break;
 
         case 'outlane':

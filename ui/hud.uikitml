@@ -57,9 +57,15 @@
     color: #ff00ff;
     font-weight: bold;
   }
-  .hud-intensity {
-    font-size: 0.9;
-    color: #444444;
+  .hud-combo-tier {
+    font-size: 1.2;
+    color: #ff8800;
+    font-weight: bold;
+  }
+  .hud-superjp {
+    font-size: 1.2;
+    color: #ff00ff;
+    font-weight: bold;
   }
 </style>
 <div class="hud-panel">
@@ -74,11 +80,13 @@
   <div class="hud-section">
     <span class="hud-label">COMBO</span>
     <span id="hud-multiplier" class="hud-multiplier">x1.0</span>
+    <span id="hud-combo-tier" class="hud-combo-tier"></span>
   </div>
   <div class="hud-section">
     <span id="hud-saver" class="hud-ball-saver"></span>
     <span id="hud-multiball" class="hud-multiball"></span>
     <span id="hud-extra" class="hud-extra"></span>
     <span id="hud-wizard" class="hud-wizard"></span>
+    <span id="hud-superjp" class="hud-superjp"></span>
   </div>
 </div>

@@ -559,3 +559,94 @@ export function createTargetBank(table: Group): Map<string, Mesh> {
 
   return targets;
 }
+
+export function createCaptiveBallMesh(table: Group): Map<string, { ball: Mesh; cradle: Mesh }> {
+  const meshes = new Map<string, { ball: Mesh; cradle: Mesh }>();
+
+  // Captive ball at upper-right
+  const BALL_RAD = 0.013;
+
+  // Cradle/channel for the captive ball
+  const cradleGeo = new BoxGeometry(0.04, 0.008, 0.06);
+  const cradleMat = new MeshStandardMaterial({
+    color: new Color(0x222244),
+    emissive: new Color(0x4400ff),
+    emissiveIntensity: 0.2,
+    metalness: 0.7,
+    roughness: 0.3,
+  });
+  const cradle = new Mesh(cradleGeo, cradleMat);
+  cradle.position.set(0.14, 0.002, -0.38);
+  table.add(cradle);
+
+  // The captive ball itself (looks like a silver ball)
+  const ballGeo = new SphereGeometry(BALL_RAD, 12, 8);
+  const ballMat = new MeshStandardMaterial({
+    color: new Color(0xaaaacc),
+    emissive: new Color(0x4400ff),
+    emissiveIntensity: 0.5,
+    metalness: 0.95,
+    roughness: 0.05,
+  });
+  const ball = new Mesh(ballGeo, ballMat);
+  ball.position.set(0.14, BALL_RAD + 0.003, -0.38);
+  table.add(ball);
+
+  // Side walls for the cradle
+  const wallGeo = new BoxGeometry(0.004, 0.015, 0.06);
+  const wallMat = new MeshStandardMaterial({
+    color: new Color(0x6600ff),
+    emissive: new Color(0x4400ff),
+    emissiveIntensity: 0.3,
+  });
+  const leftWall = new Mesh(wallGeo, wallMat);
+  leftWall.position.set(0.14 - 0.022, 0.008, -0.38);
+  table.add(leftWall);
+
+  const rightWall = new Mesh(wallGeo.clone(), wallMat.clone());
+  rightWall.position.set(0.14 + 0.022, 0.008, -0.38);
+  table.add(rightWall);
+
+  // Label
+  const labelGeo = new PlaneGeometry(0.035, 0.008);
+  const labelMat = new MeshBasicMaterial({
+    color: new Color(0x4400ff),
+    transparent: true,
+    opacity: 0.6,
+    side: DoubleSide,
+  });
+  const label = new Mesh(labelGeo, labelMat);
+  label.rotation.x = -Math.PI / 2;
+  label.position.set(0.14, 0.003, -0.42);
+  table.add(label);
+
+  meshes.set('captive-1', { ball, cradle });
+  return meshes;
+}
+
+// Skill shot zone visual indicator on plunger lane
+export function createSkillShotIndicator(table: Group): { zones: Mesh[] } {
+  const zones: Mesh[] = [];
+  const zoneColors = [0x00ff88, 0xffff00, 0xff00ff, 0xffff00, 0x00ff88];
+  const zoneWidths = [0.03, 0.03, 0.02, 0.03, 0.03];
+  const zoneStartZ = -0.35;  // Where zones start on the plunger lane wall
+  const zoneSpacing = 0.04;
+
+  for (let i = 0; i < 5; i++) {
+    const geo = new PlaneGeometry(0.006, zoneWidths[i]);
+    const mat = new MeshBasicMaterial({
+      color: new Color(zoneColors[i]),
+      transparent: true,
+      opacity: 0.5,
+      side: DoubleSide,
+      blending: AdditiveBlending,
+    });
+    const mesh = new Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(0.20, 0.003, zoneStartZ + i * zoneSpacing);
+    table.add(mesh);
+    zones.push(mesh);
+  }
+
+  return { zones };
+}

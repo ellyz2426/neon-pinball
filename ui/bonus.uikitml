@@ -1,0 +1,28 @@
+<uikitml>
+  <style>
+    .root { background-color: rgba(0, 5, 20, 0.90); padding: 16; border-radius: 10; border-color: #ffff00; border-width: 2; }
+    .title { color: #ffff00; font-size: 22; font-weight: bold; text-align: center; margin-bottom: 10; }
+    .bonus-row { flex-direction: row; justify-content: space-between; padding-vertical: 4; }
+    .label { color: #cccccc; font-size: 15; }
+    .value { color: #00ffff; font-size: 15; font-weight: bold; }
+    .total-row { flex-direction: row; justify-content: space-between; padding-vertical: 6; margin-top: 6; border-top-width: 1; border-color: #555577; }
+    .total-label { color: #ff00ff; font-size: 18; font-weight: bold; }
+    .total-value { color: #ff00ff; font-size: 18; font-weight: bold; }
+    .tick { color: #ffff00; font-size: 14; text-align: center; margin-top: 8; }
+  </style>
+
+  <view class="root">
+    <text class="title">BONUS</text>
+    <view class="bonus-row"><text class="label">Bumper Hits</text><text id="bonus-bumpers" class="value">0</text></view>
+    <view class="bonus-row"><text class="label">Ramp Shots</text><text id="bonus-ramps" class="value">0</text></view>
+    <view class="bonus-row"><text class="label">Spinner Hits</text><text id="bonus-spinners" class="value">0</text></view>
+    <view class="bonus-row"><text class="label">Missions</text><text id="bonus-missions" class="value">0</text></view>
+    <view class="bonus-row"><text class="label">Max Combo</text><text id="bonus-combo" class="value">x1.0</text></view>
+    <view class="bonus-row"><text class="label">Jackpots</text><text id="bonus-jackpots" class="value">0</text></view>
+    <view class="total-row">
+      <text class="total-label">TOTAL BONUS</text>
+      <text id="bonus-total" class="total-value">0</text>
+    </view>
+    <text id="bonus-tick" class="tick"></text>
+  </view>
+</uikitml>

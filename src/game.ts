@@ -1,7 +1,7 @@
 // Neon Pinball VR - Game State Manager
 // Round 3: Wizard Mode, extra ball awards, achievement integration, dynamic intensity
 
-export type GameState = 'title' | 'playing' | 'plunger' | 'gameover' | 'paused' | 'leaderboard' | 'settings' | 'tables' | 'achievements' | 'stats';
+export type GameState = 'title' | 'playing' | 'plunger' | 'gameover' | 'paused' | 'leaderboard' | 'settings' | 'tables' | 'achievements' | 'stats' | 'controls' | 'bonus_countdown' | 'match_sequence';
 
 export interface ScoreEntry {
   score: number;
@@ -31,6 +31,53 @@ export interface Mission {
 
 // Intensity level for dynamic effects (music, lighting)
 export type IntensityLevel = 'calm' | 'normal' | 'heated' | 'frenzy';
+
+// Combo tier names
+export type ComboTier = 'none' | 'warm_up' | 'getting_hot' | 'on_fire' | 'blazing' | 'unstoppable' | 'godlike';
+
+export interface ComboTierDef {
+  name: string;
+  minCombo: number;
+  color: string;
+}
+
+export const COMBO_TIERS: ComboTierDef[] = [
+  { name: '', minCombo: 0, color: '#ffffff' },
+  { name: 'WARM UP', minCombo: 3, color: '#00ffff' },
+  { name: 'GETTING HOT', minCombo: 6, color: '#00ff88' },
+  { name: 'ON FIRE', minCombo: 10, color: '#ffff00' },
+  { name: 'BLAZING', minCombo: 15, color: '#ff8800' },
+  { name: 'UNSTOPPABLE', minCombo: 20, color: '#ff0044' },
+  { name: 'GODLIKE', minCombo: 30, color: '#ff00ff' },
+];
+
+// Skill shot zones
+export interface SkillShotZone {
+  name: string;
+  minPower: number;
+  maxPower: number;
+  points: number;
+  color: string;
+}
+
+export const SKILL_SHOT_ZONES: SkillShotZone[] = [
+  { name: 'GOOD', minPower: 0.35, maxPower: 0.50, points: 5000, color: '#00ff88' },
+  { name: 'GREAT', minPower: 0.50, maxPower: 0.65, points: 10000, color: '#ffff00' },
+  { name: 'PERFECT', minPower: 0.65, maxPower: 0.75, points: 25000, color: '#ff00ff' },
+  { name: 'GREAT', minPower: 0.75, maxPower: 0.85, points: 10000, color: '#ffff00' },
+  { name: 'GOOD', minPower: 0.85, maxPower: 0.95, points: 5000, color: '#00ff88' },
+];
+
+// Bonus countdown data
+export interface BonusCountdown {
+  bumperHits: number;
+  rampShots: number;
+  spinnerHits: number;
+  missions: number;
+  maxCombo: number;
+  jackpots: number;
+  totalBonus: number;
+}
 
 export class GameManager {
   state: GameState = 'title';
@@ -105,6 +152,34 @@ export class GameManager {
   laneStates = [false, false, false]; // left, center, right
   laneCompletionBonus = 15000;
 
+  // Skill shot
+  skillShotAvailable = true;  // Only on first ball launch of each ball
+  lastSkillShotZone: SkillShotZone | null = null;
+
+  // Combo tiers
+  currentComboTier = '';
+  peakCombo = 0;  // Highest combo achieved this ball
+
+  // Progressive super jackpot
+  superJackpotValue = 100000;
+  superJackpotCharged = false;  // Charged by hitting 3 jackpots in a game
+  superJackpotHitCount = 0;
+
+  // Ball save extension
+  ballSaveExtended = false;
+
+  // Bonus countdown
+  bonusCountdownActive = false;
+  bonusCountdownData: BonusCountdown | null = null;
+
+  // Match sequence
+  matchNumber = -1;  // -1 = not shown
+  matchResult = false;
+
+  // Captive ball
+  captiveBallHits = 0;
+  captiveBallBonus = 2000;
+
   // Score values
   readonly BUMPER_SCORE = 100;
   readonly SLINGSHOT_SCORE = 50;
@@ -120,6 +195,7 @@ export class GameManager {
   readonly COMBO_MULTIPLIER_INCREMENT = 0.5;
   readonly MAX_MULTIPLIER = 10;
   readonly WIZARD_MODE_BONUS = 100000;
+  readonly CAPTIVE_BALL_SCORE = 2000;
 
   private stateChangeCallbacks: ((state: GameState) => void)[] = [];
   private scoreCallbacks: ((score: number, label: string, x: number, z: number) => void)[] = [];
@@ -131,6 +207,11 @@ export class GameManager {
   private tiltCallbacks: ((tilted: boolean) => void)[] = [];
   private laneCallbacks: ((lanes: boolean[]) => void)[] = [];
   private intensityCallbacks: ((level: IntensityLevel) => void)[] = [];
+  private skillShotCallbacks: ((zone: SkillShotZone | null) => void)[] = [];
+  private comboTierCallbacks: ((tier: string) => void)[] = [];
+  private bonusCallbacks: ((data: BonusCountdown) => void)[] = [];
+  private matchCallbacks: ((number: number, matched: boolean) => void)[] = [];
+  private captiveBallCallbacks: ((hits: number) => void)[] = [];
 
   constructor() {
     this.loadHighScore();
@@ -154,6 +235,11 @@ export class GameManager {
   onIntensity(cb: (level: IntensityLevel) => void): void { this.intensityCallbacks.push(cb); }
   onTilt(cb: (tilted: boolean) => void): void { this.tiltCallbacks.push(cb); }
   onLaneComplete(cb: (lanes: boolean[]) => void): void { this.laneCallbacks.push(cb); }
+  onSkillShot(cb: (zone: SkillShotZone | null) => void): void { this.skillShotCallbacks.push(cb); }
+  onComboTier(cb: (tier: string) => void): void { this.comboTierCallbacks.push(cb); }
+  onBonus(cb: (data: BonusCountdown) => void): void { this.bonusCallbacks.push(cb); }
+  onMatch(cb: (number: number, matched: boolean) => void): void { this.matchCallbacks.push(cb); }
+  onCaptiveBall(cb: (hits: number) => void): void { this.captiveBallCallbacks.push(cb); }
 
   setState(state: GameState): void {
     this.state = state;
@@ -199,6 +285,18 @@ export class GameManager {
     this.tilted = false;
     this.tiltCooldown = 0;
     this.laneStates = [false, false, false];
+    this.skillShotAvailable = true;
+    this.lastSkillShotZone = null;
+    this.currentComboTier = '';
+    this.peakCombo = 0;
+    this.superJackpotCharged = false;
+    this.superJackpotHitCount = 0;
+    this.ballSaveExtended = false;
+    this.bonusCountdownActive = false;
+    this.bonusCountdownData = null;
+    this.matchNumber = -1;
+    this.matchResult = false;
+    this.captiveBallHits = 0;
     this.initTargets();
     this.setState('plunger');
     this.emitMessage('BALL 1 - PULL TO LAUNCH!');
@@ -381,6 +479,12 @@ export class GameManager {
       this.emitMessage(`JACKPOT! +${jp.toLocaleString()}`);
       this.jackpotValue += 10000;
       this.bumpIntensity(20);
+
+      // Charge super jackpot after 3 jackpots
+      if (this.jackpotsHit >= 3 && !this.superJackpotCharged) {
+        this.superJackpotCharged = true;
+        this.emitMessage('💥 SUPER JACKPOT CHARGED! Hit the ramp! 💥');
+      }
     }
   }
 
@@ -429,6 +533,16 @@ export class GameManager {
 
     this.addScore(points, `${points}`, x, z);
 
+    // Ball save extension from ramp shots (first ramp only)
+    if (this.ballSaverActive && !this.ballSaveExtended && this.totalRampShots === 1) {
+      this.extendBallSave(5);
+    }
+
+    // Super jackpot trigger (ramp when charged)
+    if (this.superJackpotCharged) {
+      this.handleSuperJackpot(x, z);
+    }
+
     let triggeredMultiball = false;
     if (this.ballsLocked >= this.maxLockBalls && !this.multiballActive) {
       triggeredMultiball = true;
@@ -473,15 +587,36 @@ export class GameManager {
       return { saved: true, isMultiballDrain: false };
     }
 
+    // Trigger bonus countdown before ball loss
+    this.bonusCountdownData = this.calculateBonus();
+    if (this.bonusCountdownData.totalBonus > 0) {
+      this.bonusCountdownActive = true;
+      for (const cb of this.bonusCallbacks) cb(this.bonusCountdownData);
+    }
+
     this.balls--;
     if (this.balls <= 0) {
+      // Apply bonus then end game
+      if (this.bonusCountdownData) {
+        this.applyBonus(this.bonusCountdownData);
+      }
       this.endGame();
       return { saved: false, isMultiballDrain: false };
+    }
+
+    // Apply bonus
+    if (this.bonusCountdownData) {
+      this.applyBonus(this.bonusCountdownData);
+      this.emitMessage(`BONUS +${this.bonusCountdownData.totalBonus.toLocaleString()}`);
     }
 
     this.currentBall++;
     this.multiplier = 1;
     this.comboCount = 0;
+    this.currentComboTier = '';
+    this.peakCombo = 0;
+    this.skillShotAvailable = true;
+    this.ballSaveExtended = false;
     this.ballSaverActive = true;
     this.ballSaverTimer = this.ballSaverDuration;
     this.setState('plunger');
@@ -687,6 +822,145 @@ export class GameManager {
     }
   }
 
+  // === Skill Shot ===
+
+  handleSkillShot(plungerPower: number, x: number, z: number): void {
+    if (!this.skillShotAvailable) return;
+    this.skillShotAvailable = false;
+
+    let hitZone: SkillShotZone | null = null;
+    for (const zone of SKILL_SHOT_ZONES) {
+      if (plungerPower >= zone.minPower && plungerPower < zone.maxPower) {
+        hitZone = zone;
+        break;
+      }
+    }
+
+    this.lastSkillShotZone = hitZone;
+    if (hitZone) {
+      const eff = this.getEffectiveMultiplier();
+      const points = Math.floor(hitZone.points * eff);
+      this.addScore(points, `SKILL SHOT!`, x, z);
+      this.emitMessage(`${hitZone.name} SKILL SHOT! +${points.toLocaleString()}`);
+      this.bumpIntensity(15);
+    }
+
+    for (const cb of this.skillShotCallbacks) cb(hitZone);
+  }
+
+  // === Combo Tiers ===
+
+  private updateComboTier(): void {
+    let tierName = '';
+    for (let i = COMBO_TIERS.length - 1; i >= 0; i--) {
+      if (this.comboCount >= COMBO_TIERS[i].minCombo) {
+        tierName = COMBO_TIERS[i].name;
+        break;
+      }
+    }
+
+    if (tierName !== this.currentComboTier) {
+      this.currentComboTier = tierName;
+      if (tierName) {
+        this.emitMessage(`🔥 ${tierName}!`);
+      }
+      for (const cb of this.comboTierCallbacks) cb(tierName);
+    }
+
+    // Track peak combo for bonus
+    if (this.comboCount > this.peakCombo) {
+      this.peakCombo = this.comboCount;
+    }
+  }
+
+  // === Captive Ball ===
+
+  handleCaptiveBallHit(x: number, z: number): void {
+    this.captiveBallHits++;
+    this.bumpIntensity(8);
+    const eff = this.getEffectiveMultiplier();
+    const points = Math.floor(this.CAPTIVE_BALL_SCORE * this.captiveBallHits * eff);
+    this.addScore(points, `CAPTIVE ${this.captiveBallHits}x`, x, z);
+
+    if (this.captiveBallHits % 5 === 0) {
+      const megaBonus = Math.floor(10000 * eff);
+      this.addScore(megaBonus, 'CAPTIVE FRENZY!', x, z);
+      this.emitMessage(`CAPTIVE FRENZY x${this.captiveBallHits}! +${megaBonus.toLocaleString()}`);
+    }
+
+    for (const cb of this.captiveBallCallbacks) cb(this.captiveBallHits);
+  }
+
+  // === Bonus Countdown ===
+
+  calculateBonus(): BonusCountdown {
+    const bumperBonus = this.totalBumperHits * 50;
+    const rampBonus = this.totalRampShots * 300;
+    const spinnerBonus = this.totalSpinnerHits * 25;
+    const missionBonus = this.missionsCompleted * 5000;
+    const comboBonus = Math.floor(this.peakCombo * 500);
+    const jackpotBonus = this.jackpotsHit * 2000;
+    const totalBonus = bumperBonus + rampBonus + spinnerBonus + missionBonus + comboBonus + jackpotBonus;
+
+    return {
+      bumperHits: this.totalBumperHits,
+      rampShots: this.totalRampShots,
+      spinnerHits: this.totalSpinnerHits,
+      missions: this.missionsCompleted,
+      maxCombo: this.peakCombo,
+      jackpots: this.jackpotsHit,
+      totalBonus,
+    };
+  }
+
+  applyBonus(data: BonusCountdown): void {
+    this.score += data.totalBonus;
+    this.bonusCountdownActive = false;
+  }
+
+  // === Match Sequence ===
+
+  runMatchSequence(): void {
+    // Random 2-digit match number (multiples of 10)
+    const matchTarget = Math.floor(Math.random() * 10) * 10;
+    const scoreLastTwo = this.score % 100;
+    const rounded = Math.floor(scoreLastTwo / 10) * 10;
+    const matched = rounded === matchTarget;
+
+    this.matchNumber = matchTarget;
+    this.matchResult = matched;
+
+    for (const cb of this.matchCallbacks) cb(matchTarget, matched);
+
+    if (matched) {
+      this.emitMessage('MATCH! FREE CREDIT!');
+    }
+  }
+
+  // === Super Jackpot ===
+
+  handleSuperJackpot(x: number, z: number): boolean {
+    if (!this.superJackpotCharged) return false;
+    this.superJackpotCharged = false;
+    const eff = this.getEffectiveMultiplier();
+    const points = Math.floor(this.superJackpotValue * eff);
+    this.addScore(points, 'SUPER JACKPOT!', x, z);
+    this.emitMessage(`💥 SUPER JACKPOT! +${points.toLocaleString()} 💥`);
+    this.superJackpotValue += 25000; // Progressive
+    this.bumpIntensity(40);
+    return true;
+  }
+
+  // === Ball Save Extension ===
+
+  extendBallSave(seconds: number): void {
+    if (!this.ballSaveExtended && this.ballSaverActive) {
+      this.ballSaveExtended = true;
+      this.ballSaverTimer += seconds;
+      this.emitMessage(`BALL SAVER +${seconds}s!`);
+    }
+  }
+
   // === Core scoring ===
 
   private endGame(): void {
@@ -697,6 +971,13 @@ export class GameManager {
     }
     this.saveToLeaderboard();
     this.setState('gameover');
+
+    // Run match sequence after a delay
+    setTimeout(() => {
+      if (this.state === 'gameover') {
+        this.runMatchSequence();
+      }
+    }, 2000);
   }
 
   private addCombo(): void {
@@ -707,6 +988,8 @@ export class GameManager {
     if (this.comboCount === 5) this.emitMessage('5x COMBO!');
     else if (this.comboCount === 10) this.emitMessage('10x COMBO! MULTIPLIER x' + this.multiplier.toFixed(1));
     else if (this.comboCount === 20) this.emitMessage('INSANE COMBO!');
+
+    this.updateComboTier();
   }
 
   private addScore(points: number, label: string, x: number, z: number): void {

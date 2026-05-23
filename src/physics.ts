@@ -90,12 +90,26 @@ export interface FlipperState {
 }
 
 export interface CollisionEvent {
-  type: 'wall' | 'bumper' | 'flipper' | 'drain' | 'slingshot' | 'target' | 'spinner' | 'ramp_enter' | 'ramp_exit' | 'outlane' | 'kickback';
+  type: 'wall' | 'bumper' | 'flipper' | 'drain' | 'slingshot' | 'target' | 'spinner' | 'ramp_enter' | 'ramp_exit' | 'outlane' | 'kickback' | 'captive_ball';
   id?: string;
   x: number;
   z: number;
   force: number;
   ballId?: number;
+}
+
+// Captive ball: a ball trapped in a lane that the player's ball hits
+export interface CaptiveBallDef {
+  x: number;
+  z: number;
+  homeX: number;
+  homeZ: number;
+  radius: number;
+  currentX: number;
+  currentZ: number;
+  vx: number;
+  vz: number;
+  id: string;
 }
 
 let nextBallId = 0;
@@ -108,6 +122,7 @@ export class PinballPhysics {
   spinners: SpinnerDef[] = [];
   ramps: RampDef[] = [];
   outlanes: OutlaneDef[] = [];
+  captiveBalls: CaptiveBallDef[] = [];
   leftFlipper: FlipperState;
   rightFlipper: FlipperState;
   collisionEvents: CollisionEvent[] = [];
@@ -158,6 +173,7 @@ export class PinballPhysics {
     this.initSpinners();
     this.initRamps();
     this.initOutlanes();
+    this.initCaptiveBalls();
   }
 
   private createBall(x: number, z: number, inPlunger: boolean): BallState {
@@ -283,6 +299,18 @@ export class PinballPhysics {
     });
   }
 
+  private initCaptiveBalls(): void {
+    // One captive ball in the upper-right area
+    this.captiveBalls.push({
+      x: 0.14, z: -0.38,
+      homeX: 0.14, homeZ: -0.38,
+      radius: BALL_RADIUS,
+      currentX: 0.14, currentZ: -0.38,
+      vx: 0, vz: 0,
+      id: 'captive-1',
+    });
+  }
+
   resetBall(): void {
     // Reset primary ball
     this.ball.x = 0.23;
@@ -338,6 +366,7 @@ export class PinballPhysics {
     for (let s = 0; s < SUBSTEPS; s++) {
       this.updateFlippers(subDt);
       this.updateSpinners(subDt);
+      this.updateCaptiveBalls(subDt);
 
       // Update all active balls
       for (const b of this.balls) {
@@ -447,6 +476,11 @@ export class PinballPhysics {
     // Outlane checks
     for (const outlane of this.outlanes) {
       this.checkOutlane(b, outlane);
+    }
+
+    // Captive ball collisions
+    for (const cap of this.captiveBalls) {
+      this.collideCaptiveBall(b, cap);
     }
 
     // Flipper collisions
@@ -707,6 +741,69 @@ export class PinballPhysics {
           this.collisionEvents.push({
             type: 'flipper', id: flipper.side,
             x: closestX, z: closestZ, force, ballId: b.id,
+          });
+        }
+      }
+    }
+  }
+
+  private updateCaptiveBalls(dt: number): void {
+    for (const cap of this.captiveBalls) {
+      // Apply spring force back to home position
+      const dx = cap.homeX - cap.currentX;
+      const dz = cap.homeZ - cap.currentZ;
+      const springK = 50;
+      cap.vx += dx * springK * dt;
+      cap.vz += dz * springK * dt;
+
+      // Damping
+      cap.vx *= (1 - 5 * dt);
+      cap.vz *= (1 - 5 * dt);
+
+      cap.currentX += cap.vx * dt;
+      cap.currentZ += cap.vz * dt;
+
+      // Clamp movement range
+      const maxDist = 0.04;
+      const dist = Math.sqrt((cap.currentX - cap.homeX) ** 2 + (cap.currentZ - cap.homeZ) ** 2);
+      if (dist > maxDist) {
+        const scale = maxDist / dist;
+        cap.currentX = cap.homeX + (cap.currentX - cap.homeX) * scale;
+        cap.currentZ = cap.homeZ + (cap.currentZ - cap.homeZ) * scale;
+      }
+    }
+  }
+
+  private collideCaptiveBall(b: BallState, cap: CaptiveBallDef): void {
+    const dx = b.x - cap.currentX;
+    const dz = b.z - cap.currentZ;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    const minDist = BALL_RADIUS + cap.radius;
+
+    if (dist < minDist && dist > 0.001) {
+      const nx = dx / dist;
+      const nz = dz / dist;
+
+      // Separate
+      b.x = cap.currentX + nx * (minDist + 0.001);
+      b.z = cap.currentZ + nz * (minDist + 0.001);
+
+      // Transfer momentum
+      const dot = b.vx * nx + b.vz * nz;
+      if (dot < 0) {
+        b.vx -= (1 + 0.6) * dot * nx;
+        b.vz -= (1 + 0.6) * dot * nz;
+
+        // Push captive ball
+        cap.vx -= dot * nx * 0.8;
+        cap.vz -= dot * nz * 0.8;
+
+        const force = Math.abs(dot);
+        if (force > 0.2) {
+          this.collisionEvents.push({
+            type: 'captive_ball', id: cap.id,
+            x: cap.currentX, z: cap.currentZ,
+            force, ballId: b.id,
           });
         }
       }

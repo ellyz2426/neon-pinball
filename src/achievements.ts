@@ -42,6 +42,15 @@ const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
   { id: 'no_drain', name: 'STEEL NERVES', description: 'Score 50,000 on ball 1', icon: '🛡️', color: '#00ff88' },
   { id: 'extra_ball', name: 'EXTRA! EXTRA!', description: 'Earn your first extra ball', icon: '🌟', color: '#ff8800' },
   { id: 'bumper_100', name: 'BUMPER BASH', description: 'Hit bumpers 100 times in one game', icon: '💥', color: '#ff4400' },
+  // Round 4 achievements
+  { id: 'skill_shot_perfect', name: 'SHARP SHOOTER', description: 'Land a Perfect skill shot', icon: '🎯', color: '#ff00ff' },
+  { id: 'skill_shot_3', name: 'SKILL MASTER', description: 'Land 3 skill shots in one game', icon: '🎪', color: '#ffff00' },
+  { id: 'super_jackpot', name: 'SUPER JACKPOT!', description: 'Hit the Super Jackpot', icon: '💎', color: '#ff00ff' },
+  { id: 'captive_frenzy', name: 'CAPTIVE MANIAC', description: 'Hit the captive ball 10 times', icon: '🔮', color: '#4400ff' },
+  { id: 'godlike_combo', name: 'GODLIKE', description: 'Reach GODLIKE combo tier', icon: '⚡', color: '#ff00ff' },
+  { id: 'bonus_50k', name: 'BONUS BONANZA', description: 'Earn 50,000+ end-of-ball bonus', icon: '🎰', color: '#ffff00' },
+  { id: 'games_10', name: 'REGULAR', description: 'Play 10 games', icon: '🏠', color: '#00ffff' },
+  { id: 'games_50', name: 'ADDICT', description: 'Play 50 games', icon: '🔥', color: '#ff4400' },
 ];
 
 export class AchievementManager {
@@ -66,9 +75,12 @@ export class AchievementManager {
   startGame(): void {
     this.jackpotsThisGame = 0;
     this.missionsCompletedTypes.clear();
+    this.skillShotsThisGame = 0;
+    this.captiveBallHitsThisGame = 0;
     this.gameStartTime = Date.now();
     this.stats.totalGames++;
     this.unlock('first_game');
+    this.checkGamesPlayed();
   }
 
   endGame(score: number, bumperHits: number, maxMultiplier: number): void {
@@ -138,6 +150,38 @@ export class AchievementManager {
   checkExtraBall(): void {
     this.stats.totalExtraBalls++;
     this.unlock('extra_ball');
+  }
+
+  // Round 4 achievement checks
+  skillShotsThisGame = 0;
+  captiveBallHitsThisGame = 0;
+
+  checkSkillShot(tier: string): void {
+    this.skillShotsThisGame++;
+    if (tier === 'PERFECT') this.unlock('skill_shot_perfect');
+    if (this.skillShotsThisGame >= 3) this.unlock('skill_shot_3');
+  }
+
+  checkSuperJackpot(): void {
+    this.unlock('super_jackpot');
+  }
+
+  checkCaptiveBall(totalHits: number): void {
+    this.captiveBallHitsThisGame = totalHits;
+    if (totalHits >= 10) this.unlock('captive_frenzy');
+  }
+
+  checkComboTier(tier: string): void {
+    if (tier === 'GODLIKE') this.unlock('godlike_combo');
+  }
+
+  checkBonusTotal(bonus: number): void {
+    if (bonus >= 50000) this.unlock('bonus_50k');
+  }
+
+  checkGamesPlayed(): void {
+    if (this.stats.totalGames >= 10) this.unlock('games_10');
+    if (this.stats.totalGames >= 50) this.unlock('games_50');
   }
 
   private unlock(id: string): void {
