@@ -42,6 +42,11 @@
     color: #00ff88;
     font-weight: bold;
   }
+  .hud-multiball {
+    font-size: 1.5;
+    color: #ff4400;
+    font-weight: bold;
+  }
 </style>
 <div class="hud-panel">
   <div class="hud-section">
@@ -58,5 +63,6 @@
   </div>
   <div class="hud-section">
     <span id="hud-saver" class="hud-ball-saver"></span>
+    <span id="hud-multiball" class="hud-multiball"></span>
   </div>
 </div>

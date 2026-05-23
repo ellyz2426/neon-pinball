@@ -1,5 +1,5 @@
 // Neon Pinball VR - Visual Effects
-// Particle effects, bumper flashes, score popups, ball trail
+// Round 2: Ramp trail, enhanced particles, multiball effects
 
 import {
   Mesh, SphereGeometry, PlaneGeometry, MeshBasicMaterial,
@@ -32,9 +32,8 @@ export class EffectsManager {
   private particles: Particle[] = [];
   private scorePopups: ScorePopup[] = [];
   private trail: TrailPoint[] = [];
-  private particlePool: Mesh[] = [];
-  private maxParticles = 80;
-  private maxTrail = 30;
+  private maxParticles = 120;
+  private maxTrail = 40;
 
   private particleGeo = new SphereGeometry(0.004, 4, 4);
   private trailGeo = new SphereGeometry(0.006, 4, 4);
@@ -47,6 +46,7 @@ export class EffectsManager {
   spawnBumperHit(x: number, z: number, color: number): void {
     const count = 12;
     for (let i = 0; i < count; i++) {
+      if (this.particles.length >= this.maxParticles) break;
       const mat = new MeshBasicMaterial({
         color: new Color(color),
         transparent: true,
@@ -73,6 +73,7 @@ export class EffectsManager {
   spawnTargetHit(x: number, z: number, color: number): void {
     const count = 8;
     for (let i = 0; i < count; i++) {
+      if (this.particles.length >= this.maxParticles) break;
       const mat = new MeshBasicMaterial({
         color: new Color(color),
         transparent: true,
@@ -98,6 +99,7 @@ export class EffectsManager {
 
   spawnDrain(x: number, z: number): void {
     for (let i = 0; i < 15; i++) {
+      if (this.particles.length >= this.maxParticles) break;
       const mat = new MeshBasicMaterial({
         color: new Color(0xff0044),
         transparent: true,
@@ -119,6 +121,32 @@ export class EffectsManager {
     }
   }
 
+  spawnRampTrail(x: number, z: number): void {
+    // Burst of particles along ramp entry
+    for (let i = 0; i < 8; i++) {
+      if (this.particles.length >= this.maxParticles) break;
+      const color = i % 2 === 0 ? 0xff00ff : 0x00ffff;
+      const mat = new MeshBasicMaterial({
+        color: new Color(color),
+        transparent: true,
+        opacity: 1,
+        blending: AdditiveBlending,
+      });
+      const mesh = new Mesh(this.particleGeo, mat);
+      mesh.position.set(x, 0.04, z);
+      this.tableGroup.add(mesh);
+
+      this.particles.push({
+        mesh,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: 0.8 + Math.random() * 0.5,
+        vz: -0.5 - Math.random() * 0.3,
+        life: 0.6 + Math.random() * 0.3,
+        maxLife: 0.9,
+      });
+    }
+  }
+
   addTrailPoint(x: number, y: number, z: number): void {
     if (this.trail.length >= this.maxTrail) {
       const old = this.trail.shift()!;
@@ -132,7 +160,6 @@ export class EffectsManager {
       blending: AdditiveBlending,
     });
     const mesh = new Mesh(this.trailGeo, mat);
-    // Convert world coords to table local
     mesh.position.set(x, y, z);
     this.tableGroup.add(mesh);
     this.trail.push({ mesh, life: 0.5 });
@@ -151,7 +178,7 @@ export class EffectsManager {
       p.mesh.position.x += p.vx * dt;
       p.mesh.position.y += p.vy * dt;
       p.mesh.position.z += p.vz * dt;
-      p.vy -= 1.5 * dt; // gravity
+      p.vy -= 1.5 * dt;
 
       const alpha = p.life / p.maxLife;
       (p.mesh.material as MeshBasicMaterial).opacity = alpha;

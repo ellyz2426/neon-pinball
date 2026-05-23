@@ -1,11 +1,12 @@
 // Neon Pinball VR - Table Geometry
-// Creates the 3D pinball table with neon holodeck aesthetic
+// Round 2: Spinners, ramps, outlanes, lane arrows, backbox
 
 import {
   Group, Mesh, BoxGeometry, CylinderGeometry, PlaneGeometry, SphereGeometry,
   RingGeometry, TorusGeometry, MeshStandardMaterial, MeshBasicMaterial,
   LineBasicMaterial, Color, Vector3, EdgesGeometry, LineSegments,
   AdditiveBlending, Float32BufferAttribute, BufferGeometry, DoubleSide,
+  ConeGeometry,
 } from '@iwsdk/core';
 import { HALF_W, HALF_L, PLAYFIELD_WIDTH, PLAYFIELD_LENGTH, TILT_ANGLE } from './physics';
 
@@ -16,7 +17,6 @@ export const RAIL_HEIGHT = 0.03;
 export function createTable(scene: any): Group {
   const table = new Group();
   table.position.set(0, TABLE_Y, 0);
-  // Tilt so far end (-Z) is raised
   table.rotation.x = -TABLE_TILT;
 
   // === Playfield surface ===
@@ -31,14 +31,13 @@ export function createTable(scene: any): Group {
   playfield.position.y = 0;
   table.add(playfield);
 
-  // === Grid pattern on playfield ===
+  // === Grid pattern ===
   const gridGroup = new Group();
   const gridMat = new MeshBasicMaterial({
     color: new Color(0x0a1a2a),
     transparent: true,
     opacity: 0.3,
   });
-  // Horizontal grid lines
   for (let i = -10; i <= 10; i++) {
     const z = (i / 10) * HALF_L;
     const lineGeo = new PlaneGeometry(PLAYFIELD_WIDTH, 0.001);
@@ -47,7 +46,6 @@ export function createTable(scene: any): Group {
     line.position.set(0, 0.001, z);
     gridGroup.add(line);
   }
-  // Vertical grid lines
   for (let i = -5; i <= 5; i++) {
     const x = (i / 5) * HALF_W;
     const lineGeo = new PlaneGeometry(0.001, PLAYFIELD_LENGTH);
@@ -58,7 +56,7 @@ export function createTable(scene: any): Group {
   }
   table.add(gridGroup);
 
-  // === Rails (walls) ===
+  // === Rails ===
   const railMat = new MeshStandardMaterial({
     color: new Color(0x00ffff),
     emissive: new Color(0x00aaaa),
@@ -67,11 +65,8 @@ export function createTable(scene: any): Group {
     roughness: 0.2,
   });
 
-  // Left rail
   createRail(table, railMat, -HALF_W, 0, PLAYFIELD_LENGTH, true);
-  // Right rail
   createRail(table, railMat, HALF_W, 0, PLAYFIELD_LENGTH, true);
-  // Top rail
   createRail(table, railMat, -0.03, -HALF_L, PLAYFIELD_WIDTH * 0.87, false);
 
   // Plunger lane inner wall
@@ -80,9 +75,9 @@ export function createTable(scene: any): Group {
   plungerWall.position.set(0.20, RAIL_HEIGHT / 2, -0.23);
   table.add(plungerWall);
 
-  // Bottom guide walls (angled toward drain)
-  createAngledRail(table, railMat, -HALF_W + 0.02, HALF_L - 0.01, -0.12, 0.45);
-  createAngledRail(table, railMat, 0.12, 0.45, HALF_W - 0.06, HALF_L - 0.02);
+  // Bottom guide walls
+  createAngledRail(table, railMat, -HALF_W + 0.02, HALF_L - 0.01, -0.14, 0.45);
+  createAngledRail(table, railMat, 0.14, 0.45, HALF_W - 0.05, HALF_L - 0.02);
 
   // === Drain indicators ===
   const drainGlowMat = new MeshBasicMaterial({
@@ -96,7 +91,7 @@ export function createTable(scene: any): Group {
   drainIndicator.position.set(0, 0.002, 0.48);
   table.add(drainIndicator);
 
-  // === Table understructure ===
+  // === Table base ===
   const baseMat = new MeshStandardMaterial({
     color: new Color(0x0a0a1a),
     metalness: 0.6,
@@ -107,14 +102,13 @@ export function createTable(scene: any): Group {
   base.position.y = -0.025;
   table.add(base);
 
-  // Edge glow (wireframe)
   const edgeGeo = new EdgesGeometry(baseGeo);
   const edgeMat = new LineBasicMaterial({ color: new Color(0x00ffff), transparent: true, opacity: 0.4 });
   const edgeLines = new LineSegments(edgeGeo, edgeMat);
   edgeLines.position.copy(base.position);
   table.add(edgeLines);
 
-  // === Table legs (4 corner pillars) ===
+  // === Table legs ===
   const legMat = new MeshStandardMaterial({
     color: new Color(0x1a1a3a),
     metalness: 0.5,
@@ -131,7 +125,6 @@ export function createTable(scene: any): Group {
     const leg = new Mesh(legGeo, legMat);
     leg.position.set(lx, -(TABLE_Y - 0.05) / 2 - 0.025, lz);
     table.add(leg);
-    // Leg glow ring
     const ringGeo = new TorusGeometry(0.018, 0.003, 8, 16);
     const ringMat = new MeshBasicMaterial({ color: new Color(0x00ffff), transparent: true, opacity: 0.5 });
     const ring = new Mesh(ringGeo, ringMat);
@@ -140,8 +133,101 @@ export function createTable(scene: any): Group {
     table.add(ring);
   }
 
+  // === Lane arrows ===
+  createLaneArrows(table);
+
+  // === Backbox (sign above table) ===
+  createBackbox(table);
+
   scene.add(table);
   return table;
+}
+
+function createLaneArrows(table: Group): void {
+  // Arrow-shaped lane indicators pointing upward
+  const arrowMat = new MeshBasicMaterial({
+    color: new Color(0x00ffff),
+    transparent: true,
+    opacity: 0.4,
+  });
+
+  // Left lane arrows
+  const arrowPositions = [
+    { x: -0.125, z: 0.18, color: 0xff00ff },
+    { x: -0.125, z: 0.12, color: 0xff00ff },
+    { x: -0.125, z: 0.06, color: 0xff00ff },
+    // Right lane arrows
+    { x: 0.125, z: 0.18, color: 0x00ff88 },
+    { x: 0.125, z: 0.12, color: 0x00ff88 },
+    { x: 0.125, z: 0.06, color: 0x00ff88 },
+    // Center lane arrows
+    { x: 0, z: 0.15, color: 0xffff00 },
+    { x: 0, z: 0.08, color: 0xffff00 },
+  ];
+
+  for (const ap of arrowPositions) {
+    const coneGeo = new ConeGeometry(0.008, 0.018, 3);
+    const coneMat = new MeshBasicMaterial({
+      color: new Color(ap.color),
+      transparent: true,
+      opacity: 0.5,
+      blending: AdditiveBlending,
+    });
+    const cone = new Mesh(coneGeo, coneMat);
+    cone.rotation.x = -Math.PI / 2;
+    cone.rotation.z = Math.PI;
+    cone.position.set(ap.x, 0.002, ap.z);
+    table.add(cone);
+  }
+}
+
+function createBackbox(table: Group): void {
+  // Backbox frame behind the top of the table
+  const backboxGeo = new BoxGeometry(PLAYFIELD_WIDTH + 0.02, 0.25, 0.02);
+  const backboxMat = new MeshStandardMaterial({
+    color: new Color(0x0a0a1a),
+    metalness: 0.6,
+    roughness: 0.4,
+  });
+  const backbox = new Mesh(backboxGeo, backboxMat);
+  backbox.position.set(0, 0.155, -HALF_L - 0.015);
+  table.add(backbox);
+
+  // Backbox edge glow
+  const bbEdgeGeo = new EdgesGeometry(backboxGeo);
+  const bbEdgeMat = new LineBasicMaterial({
+    color: new Color(0xff00ff),
+    transparent: true,
+    opacity: 0.6,
+  });
+  const bbEdgeLines = new LineSegments(bbEdgeGeo, bbEdgeMat);
+  bbEdgeLines.position.copy(backbox.position);
+  table.add(bbEdgeLines);
+
+  // Center decorative emblem on backbox
+  const emblemGeo = new TorusGeometry(0.04, 0.006, 8, 16);
+  const emblemMat = new MeshBasicMaterial({
+    color: new Color(0xff00ff),
+    transparent: true,
+    opacity: 0.8,
+    blending: AdditiveBlending,
+  });
+  const emblem = new Mesh(emblemGeo, emblemMat);
+  emblem.position.set(0, 0.16, -HALF_L - 0.006);
+  table.add(emblem);
+
+  // Inner emblem diamond
+  const diamondGeo = new BoxGeometry(0.025, 0.025, 0.003);
+  const diamondMat = new MeshBasicMaterial({
+    color: new Color(0x00ffff),
+    transparent: true,
+    opacity: 0.7,
+    blending: AdditiveBlending,
+  });
+  const diamond = new Mesh(diamondGeo, diamondMat);
+  diamond.rotation.z = Math.PI / 4;
+  diamond.position.set(0, 0.16, -HALF_L - 0.005);
+  table.add(diamond);
 }
 
 function createRail(parent: Group, mat: MeshStandardMaterial, x: number, z: number, length: number, vertical: boolean): void {
@@ -149,14 +235,9 @@ function createRail(parent: Group, mat: MeshStandardMaterial, x: number, z: numb
     ? new BoxGeometry(0.004, RAIL_HEIGHT, length)
     : new BoxGeometry(length, RAIL_HEIGHT, 0.004);
   const rail = new Mesh(geo, mat);
-  if (vertical) {
-    rail.position.set(x, RAIL_HEIGHT / 2, z);
-  } else {
-    rail.position.set(x, RAIL_HEIGHT / 2, z);
-  }
+  rail.position.set(x, RAIL_HEIGHT / 2, z);
   parent.add(rail);
 
-  // Glow line
   const glowMat = new MeshBasicMaterial({
     color: new Color(0x00ffff),
     transparent: true,
@@ -199,7 +280,6 @@ export function createBumperMeshes(table: Group): Map<string, { mesh: Mesh; glow
   for (const bd of bumperData) {
     const isPop = bd.id.startsWith('pop');
 
-    // Main bumper body
     const geo = new CylinderGeometry(bd.r, bd.r, 0.025, isPop ? 16 : 3, 1);
     const mat = new MeshStandardMaterial({
       color: new Color(bd.color),
@@ -213,15 +293,13 @@ export function createBumperMeshes(table: Group): Map<string, { mesh: Mesh; glow
     if (!isPop) mesh.rotation.y = Math.PI / 6;
     table.add(mesh);
 
-    // Wireframe edge
-    const edgeGeo = new EdgesGeometry(geo);
-    const edgeMat = new LineBasicMaterial({ color: new Color(bd.color), transparent: true, opacity: 0.8 });
-    const edge = new LineSegments(edgeGeo, edgeMat);
+    const edgeGeo2 = new EdgesGeometry(geo);
+    const edgeMat2 = new LineBasicMaterial({ color: new Color(bd.color), transparent: true, opacity: 0.8 });
+    const edge = new LineSegments(edgeGeo2, edgeMat2);
     edge.position.copy(mesh.position);
     if (!isPop) edge.rotation.y = Math.PI / 6;
     table.add(edge);
 
-    // Glow ring
     const glowGeo = new RingGeometry(bd.r + 0.005, bd.r + 0.012, isPop ? 16 : 3);
     const glowMat = new MeshBasicMaterial({
       color: new Color(bd.color),
@@ -242,6 +320,168 @@ export function createBumperMeshes(table: Group): Map<string, { mesh: Mesh; glow
   return meshes;
 }
 
+export function createSpinnerMeshes(table: Group): Map<string, { gate: Mesh; post: Mesh }> {
+  const meshes = new Map<string, { gate: Mesh; post: Mesh }>();
+
+  const spinnerData = [
+    { id: 'spinner-center', x: 0, z: -0.06, color: 0xffff00 },
+    { id: 'spinner-left', x: -0.21, z: -0.12, color: 0xff8800 },
+  ];
+
+  for (const sd of spinnerData) {
+    // Post (axis of rotation)
+    const postGeo = new CylinderGeometry(0.003, 0.003, 0.025, 6);
+    const postMat = new MeshStandardMaterial({
+      color: new Color(sd.color),
+      emissive: new Color(sd.color),
+      emissiveIntensity: 0.3,
+    });
+    const post = new Mesh(postGeo, postMat);
+    post.position.set(sd.x, 0.0125, sd.z);
+    table.add(post);
+
+    // Spinning gate (flat plane that rotates)
+    const gateGeo = new BoxGeometry(0.04, 0.02, 0.003);
+    const gateMat = new MeshStandardMaterial({
+      color: new Color(sd.color),
+      emissive: new Color(sd.color),
+      emissiveIntensity: 0.6,
+      metalness: 0.8,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.9,
+    });
+    const gate = new Mesh(gateGeo, gateMat);
+    gate.position.set(sd.x, 0.015, sd.z);
+    table.add(gate);
+
+    meshes.set(sd.id, { gate, post });
+  }
+
+  return meshes;
+}
+
+export function createRampMeshes(table: Group): Map<string, Group> {
+  const meshes = new Map<string, Group>();
+
+  const rampData = [
+    { id: 'ramp-left', entryX: -0.125, entryZ: 0.05, exitX: -0.20, exitZ: -0.38, color: 0xff00ff },
+    { id: 'ramp-right', entryX: 0.125, entryZ: 0.05, exitX: 0.20, exitZ: -0.38, color: 0x00ff88 },
+  ];
+
+  for (const rd of rampData) {
+    const rampGroup = new Group();
+
+    // Ramp entry (glowing arch)
+    const archGeo = new TorusGeometry(0.02, 0.003, 6, 8, Math.PI);
+    const archMat = new MeshBasicMaterial({
+      color: new Color(rd.color),
+      transparent: true,
+      opacity: 0.8,
+      blending: AdditiveBlending,
+    });
+    const arch = new Mesh(archGeo, archMat);
+    arch.position.set(rd.entryX, 0.03, rd.entryZ);
+    arch.rotation.x = Math.PI / 2;
+    rampGroup.add(arch);
+
+    // Ramp rails (elevated guide lines from entry to exit)
+    const dx = rd.exitX - rd.entryX;
+    const dz = rd.exitZ - rd.entryZ;
+    const len = Math.sqrt(dx * dx + dz * dz);
+    const angle = Math.atan2(dx, dz);
+
+    const railGeo = new BoxGeometry(0.003, 0.008, len);
+    const railMat = new MeshBasicMaterial({
+      color: new Color(rd.color),
+      transparent: true,
+      opacity: 0.5,
+      blending: AdditiveBlending,
+    });
+
+    // Left rail
+    const leftRail = new Mesh(railGeo, railMat);
+    leftRail.position.set(
+      (rd.entryX + rd.exitX) / 2 - 0.015,
+      0.035,
+      (rd.entryZ + rd.exitZ) / 2,
+    );
+    leftRail.rotation.y = -angle;
+    rampGroup.add(leftRail);
+
+    // Right rail
+    const rightRail = new Mesh(railGeo, railMat.clone());
+    rightRail.position.set(
+      (rd.entryX + rd.exitX) / 2 + 0.015,
+      0.035,
+      (rd.entryZ + rd.exitZ) / 2,
+    );
+    rightRail.rotation.y = -angle;
+    rampGroup.add(rightRail);
+
+    // Exit point glow
+    const exitGlowGeo = new RingGeometry(0.01, 0.018, 8);
+    const exitGlowMat = new MeshBasicMaterial({
+      color: new Color(rd.color),
+      transparent: true,
+      opacity: 0.4,
+      side: DoubleSide,
+      blending: AdditiveBlending,
+    });
+    const exitGlow = new Mesh(exitGlowGeo, exitGlowMat);
+    exitGlow.rotation.x = -Math.PI / 2;
+    exitGlow.position.set(rd.exitX, 0.002, rd.exitZ);
+    rampGroup.add(exitGlow);
+
+    table.add(rampGroup);
+    meshes.set(rd.id, rampGroup);
+  }
+
+  return meshes;
+}
+
+export function createOutlaneMeshes(table: Group): Map<string, { indicator: Mesh; glow: Mesh }> {
+  const meshes = new Map<string, { indicator: Mesh; glow: Mesh }>();
+
+  const outlaneData = [
+    { id: 'outlane-left', x: -0.235, z: 0.46, color: 0xff4400 },
+    { id: 'outlane-right', x: 0.235, z: 0.46, color: 0xff4400 },
+  ];
+
+  for (const od of outlaneData) {
+    // Kickback indicator
+    const indGeo = new PlaneGeometry(0.02, 0.04);
+    const indMat = new MeshBasicMaterial({
+      color: new Color(0x00ff88),
+      transparent: true,
+      opacity: 0.7,
+      side: DoubleSide,
+    });
+    const indicator = new Mesh(indGeo, indMat);
+    indicator.rotation.x = -Math.PI / 2;
+    indicator.position.set(od.x, 0.002, od.z);
+    table.add(indicator);
+
+    // Danger glow
+    const glowGeo = new PlaneGeometry(0.035, 0.05);
+    const glowMat = new MeshBasicMaterial({
+      color: new Color(od.color),
+      transparent: true,
+      opacity: 0.3,
+      side: DoubleSide,
+      blending: AdditiveBlending,
+    });
+    const glow = new Mesh(glowGeo, glowMat);
+    glow.rotation.x = -Math.PI / 2;
+    glow.position.set(od.x, 0.001, od.z);
+    table.add(glow);
+
+    meshes.set(od.id, { indicator, glow });
+  }
+
+  return meshes;
+}
+
 export function createFlipperMeshes(table: Group): { left: Mesh; right: Mesh } {
   const flipperGeo = new BoxGeometry(0.075, 0.012, 0.016);
   const flipperMat = new MeshStandardMaterial({
@@ -252,20 +492,16 @@ export function createFlipperMeshes(table: Group): { left: Mesh; right: Mesh } {
     roughness: 0.2,
   });
 
-  // Left flipper
   const leftMesh = new Mesh(flipperGeo, flipperMat.clone());
   leftMesh.position.set(-0.08, 0.006, 0.42);
-  // Pivot is at the left end — shift geometry so pivot is at local origin
   leftMesh.geometry.translate(0.0375, 0, 0);
   table.add(leftMesh);
 
-  // Right flipper
   const rightMesh = new Mesh(flipperGeo.clone(), flipperMat.clone());
   rightMesh.position.set(0.08, 0.006, 0.42);
   rightMesh.geometry.translate(-0.0375, 0, 0);
   table.add(rightMesh);
 
-  // Pivot caps
   const capGeo = new CylinderGeometry(0.008, 0.008, 0.014, 8);
   const capMat = new MeshBasicMaterial({ color: new Color(0x00ffff) });
   const leftCap = new Mesh(capGeo, capMat);
@@ -279,7 +515,6 @@ export function createFlipperMeshes(table: Group): { left: Mesh; right: Mesh } {
 }
 
 export function createPlunger(table: Group): { plungerMesh: Mesh; springMesh: Mesh } {
-  // Plunger rod
   const rodGeo = new CylinderGeometry(0.006, 0.006, 0.06, 8);
   const rodMat = new MeshStandardMaterial({
     color: new Color(0xff4400),
@@ -289,7 +524,6 @@ export function createPlunger(table: Group): { plungerMesh: Mesh; springMesh: Me
   const plungerMesh = new Mesh(rodGeo, rodMat);
   plungerMesh.position.set(0.23, 0.015, 0.47);
 
-  // Spring visual
   const springGeo = new CylinderGeometry(0.008, 0.008, 0.03, 8);
   const springMat = new MeshBasicMaterial({
     color: new Color(0xff6600),
@@ -320,9 +554,7 @@ export function createTargetBank(table: Group): Map<string, Mesh> {
     const mesh = new Mesh(geo, mat);
     mesh.position.set(targetPositions[i], 0.01, -0.45);
     table.add(mesh);
-
-    const id = `target-${i}`;
-    targets.set(id, mesh);
+    targets.set(`target-${i}`, mesh);
   }
 
   return targets;

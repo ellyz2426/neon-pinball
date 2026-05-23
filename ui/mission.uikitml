@@ -1,0 +1,40 @@
+<style>
+  .mission-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 1;
+    padding-bottom: 1;
+    padding-left: 2;
+    padding-right: 2;
+    background-color: rgba(0, 0, 20, 0.8);
+    border-color: #ff00ff;
+    border-width: 0.08;
+    border-radius: 0.6;
+  }
+  .mission-label {
+    font-size: 1;
+    color: #888888;
+  }
+  .mission-name {
+    font-size: 1.8;
+    color: #ff00ff;
+    font-weight: bold;
+  }
+  .mission-progress {
+    font-size: 1.5;
+    color: #00ffff;
+    font-weight: bold;
+  }
+  .mission-desc {
+    font-size: 1;
+    color: #666666;
+    margin-top: 0.3;
+  }
+</style>
+<div class="mission-panel">
+  <span class="mission-label">MISSION</span>
+  <span id="mission-name" class="mission-name">---</span>
+  <span id="mission-progress" class="mission-progress">0/0</span>
+  <span id="mission-desc" class="mission-desc"></span>
+</div>

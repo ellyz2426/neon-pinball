@@ -1,12 +1,12 @@
 // Neon Pinball VR - UI Manager
-// Manages all PanelUI entities and state transitions
+// Round 2: Mission panel, multiball HUD, ramp combo display
 
 import {
   PanelUI, ScreenSpace, Follower, FollowBehavior,
   PanelDocument, UIKitDocument,
 } from '@iwsdk/core';
 
-import { GameManager, GameState } from './game';
+import { GameManager, GameState, Mission } from './game';
 import { AudioManager } from './audio';
 
 interface UIPanel {
@@ -27,6 +27,7 @@ export class UIManager {
   private settingsPanel: UIPanel | null = null;
   private messagePanel: UIPanel | null = null;
   private plungerPanel: UIPanel | null = null;
+  private missionPanel: UIPanel | null = null;
 
   private messageTimer = 0;
   private initDone = false;
@@ -38,35 +39,41 @@ export class UIManager {
   }
 
   async init(): Promise<void> {
-    // Title screen (world-space, in front of table)
+    // Title screen
     this.titlePanel = await this.createWorldPanel('/ui/title.json', 0.9, 1.1, [0, 1.3, -0.8], 0.8);
 
-    // HUD (head-following in XR)
-    this.hudPanel = await this.createFollowerPanel('/ui/hud.json', 0.45, 0.08);
+    // HUD (head-following)
+    this.hudPanel = await this.createFollowerPanel('/ui/hud.json', 0.5, 0.08);
 
-    // Game Over (world-space)
+    // Game Over
     this.gameoverPanel = await this.createWorldPanel('/ui/gameover.json', 0.8, 0.9, [0, 1.3, -0.8]);
 
-    // Pause (world-space)
+    // Pause
     this.pausePanel = await this.createWorldPanel('/ui/pause.json', 0.6, 0.6, [0, 1.3, -0.8]);
 
-    // Leaderboard (world-space)
+    // Leaderboard
     this.leaderboardPanel = await this.createWorldPanel('/ui/leaderboard.json', 0.7, 1.0, [0, 1.3, -0.8]);
 
-    // Settings (world-space)
+    // Settings
     this.settingsPanel = await this.createWorldPanel('/ui/settings.json', 0.7, 0.9, [0, 1.3, -0.8]);
 
-    // Message toast (head-following, below HUD)
+    // Message toast
     this.messagePanel = await this.createFollowerPanel('/ui/message.json', 0.35, 0.06, [0, -0.22, -0.5]);
 
-    // Plunger power (head-following, right side)
+    // Plunger power
     this.plungerPanel = await this.createFollowerPanel('/ui/plunger.json', 0.25, 0.08, [0.2, -0.1, -0.5]);
 
-    // Set initial state
+    // Mission panel (head-following, left side)
+    this.missionPanel = await this.createFollowerPanel('/ui/mission.json', 0.25, 0.1, [-0.22, -0.1, -0.5]);
+
+    // Initial state
     this.showState('title');
 
-    // Wait for docs to be ready, then wire events
+    // Wire events after docs ready
     setTimeout(() => this.wireEvents(), 500);
+
+    // Wire mission updates
+    this.game.onMission((mission) => this.updateMissionPanel(mission));
 
     this.initDone = true;
   }
@@ -128,7 +135,6 @@ export class UIManager {
       titleDoc.getElementById('settings-btn')?.addEventListener('click', () => {
         this.game.setState('settings');
       });
-      // Update high score
       const hsEl = titleDoc.getElementById('highscore-value');
       if (hsEl) hsEl.text.value = this.game.highScore.toLocaleString();
     }
@@ -197,11 +203,14 @@ export class UIManager {
       this.plungerPanel,
     ];
 
-    // Hide all
     for (const p of panels) {
       if (p) p.entity.object3D.visible = false;
     }
-    // Always hide message independently (managed by timer)
+
+    // Hide mission panel when not playing
+    if (state !== 'playing' && state !== 'plunger') {
+      if (this.missionPanel) this.missionPanel.entity.object3D.visible = false;
+    }
 
     switch (state) {
       case 'title':
@@ -217,6 +226,10 @@ export class UIManager {
 
       case 'playing':
         if (this.hudPanel) this.hudPanel.entity.object3D.visible = true;
+        // Show mission panel if mission active
+        if (this.missionPanel && this.game.currentMission?.active) {
+          this.missionPanel.entity.object3D.visible = true;
+        }
         break;
 
       case 'plunger':
@@ -282,6 +295,28 @@ export class UIManager {
     }
   }
 
+  private updateMissionPanel(mission: Mission | null): void {
+    if (!this.missionPanel) return;
+
+    if (!mission) {
+      this.missionPanel.entity.object3D.visible = false;
+      return;
+    }
+
+    this.missionPanel.entity.object3D.visible = true;
+    const doc = this.getDoc(this.missionPanel);
+    if (!doc) return;
+
+    const nameEl = doc.getElementById('mission-name');
+    if (nameEl) nameEl.text.value = mission.name;
+
+    const progEl = doc.getElementById('mission-progress');
+    if (progEl) progEl.text.value = `${mission.progress}/${mission.target}`;
+
+    const descEl = doc.getElementById('mission-desc');
+    if (descEl) descEl.text.value = mission.description;
+  }
+
   showMessage(msg: string): void {
     if (!this.messagePanel) return;
     this.messagePanel.entity.object3D.visible = true;
@@ -312,6 +347,15 @@ export class UIManager {
         ? `SAVER ${Math.ceil(this.game.ballSaverTimer)}s`
         : '';
     }
+
+    const mbEl = doc.getElementById('hud-multiball');
+    if (mbEl) {
+      mbEl.text.value = this.game.multiballActive
+        ? `MULTIBALL ${this.game.multiballBallCount}x`
+        : this.game.ballsLocked > 0
+          ? `LOCK ${this.game.ballsLocked}/${this.game.maxLockBalls}`
+          : '';
+    }
   }
 
   updatePlungerPower(power: number): void {
@@ -333,7 +377,6 @@ export class UIManager {
       }
     }
 
-    // Retry event wiring if docs weren't ready
     if (this.initDone && !this.titlePanel?.doc) {
       this.wireEvents();
     }

@@ -1,5 +1,6 @@
 // Neon Pinball VR - 2D Pinball Physics Engine
 // Ball moves on tilted playfield with gravity, friction, and collisions
+// Round 2: Multi-ball, spinners, ramps, outlanes
 
 export const BALL_RADIUS = 0.013;
 export const PLAYFIELD_WIDTH = 0.52;
@@ -11,6 +12,7 @@ export const GRAVITY = 9.81 * Math.sin(TILT_ANGLE);
 export const FRICTION = 0.4;
 export const RESTITUTION = 0.5;
 export const SUBSTEPS = 6;
+export const MAX_BALLS = 4;
 
 export interface Vec2 {
   x: number;
@@ -24,6 +26,7 @@ export interface BallState {
   vz: number;
   active: boolean;
   inPlunger: boolean;
+  id: number;
 }
 
 export interface WallSegment {
@@ -43,6 +46,37 @@ export interface CircleBumper {
   type: 'pop' | 'slingshot';
 }
 
+export interface SpinnerDef {
+  x: number;
+  z: number;
+  id: string;
+  width: number;     // passage width
+  spinAngle: number; // current rotation for visual
+  spinVel: number;   // angular velocity (decays)
+}
+
+export interface RampDef {
+  entryX: number;
+  entryZ: number;
+  exitX: number;
+  exitZ: number;
+  entryWidth: number;
+  exitVx: number;
+  exitVz: number;
+  id: string;
+  active: boolean; // ball is currently on ramp
+}
+
+export interface OutlaneDef {
+  x: number;
+  z: number;
+  width: number;
+  side: 'left' | 'right';
+  kickbackActive: boolean;
+  kickbackForce: number;
+  id: string;
+}
+
 export interface FlipperState {
   pivotX: number;
   pivotZ: number;
@@ -56,17 +90,24 @@ export interface FlipperState {
 }
 
 export interface CollisionEvent {
-  type: 'wall' | 'bumper' | 'flipper' | 'drain' | 'slingshot' | 'target';
+  type: 'wall' | 'bumper' | 'flipper' | 'drain' | 'slingshot' | 'target' | 'spinner' | 'ramp_enter' | 'ramp_exit' | 'outlane' | 'kickback';
   id?: string;
   x: number;
   z: number;
   force: number;
+  ballId?: number;
 }
 
+let nextBallId = 0;
+
 export class PinballPhysics {
-  ball: BallState;
+  balls: BallState[] = [];
+  ball: BallState; // primary ball reference (first active ball)
   walls: WallSegment[] = [];
   bumpers: CircleBumper[] = [];
+  spinners: SpinnerDef[] = [];
+  ramps: RampDef[] = [];
+  outlanes: OutlaneDef[] = [];
   leftFlipper: FlipperState;
   rightFlipper: FlipperState;
   collisionEvents: CollisionEvent[] = [];
@@ -83,7 +124,8 @@ export class PinballPhysics {
   readonly drainZ = 0.47;
 
   constructor() {
-    this.ball = { x: 0.23, z: 0.45, vx: 0, vz: 0, active: false, inPlunger: true };
+    this.ball = this.createBall(0.23, 0.45, true);
+    this.balls.push(this.ball);
 
     // Left flipper: pivot left of center, swings right/up
     this.leftFlipper = {
@@ -113,44 +155,56 @@ export class PinballPhysics {
 
     this.initWalls();
     this.initBumpers();
+    this.initSpinners();
+    this.initRamps();
+    this.initOutlanes();
+  }
+
+  private createBall(x: number, z: number, inPlunger: boolean): BallState {
+    return {
+      x, z, vx: 0, vz: 0,
+      active: false, inPlunger,
+      id: nextBallId++,
+    };
   }
 
   private initWalls(): void {
     const W = HALF_W;
     const L = HALF_L;
-    const r = BALL_RADIUS;
 
     // Left wall (full height)
     this.walls.push({ x1: -W, z1: -L, x2: -W, z2: L, id: 'wall-left' });
-
     // Top wall (from left to plunger lane inner wall)
     this.walls.push({ x1: -W, z1: -L, x2: 0.20, z2: -L, id: 'wall-top' });
-
-    // Top-right curve (plunger lane entrance) - angled segment
+    // Plunger lane inner wall
     this.walls.push({ x1: 0.20, z1: -L, x2: 0.20, z2: -0.42, id: 'wall-plunger-inner' });
-
     // Right wall (plunger lane outer, full height)
     this.walls.push({ x1: W, z1: -L, x2: W, z2: L, id: 'wall-right' });
 
-    // Bottom-left wall (angled toward drain)
-    this.walls.push({ x1: -W, z1: L, x2: -W + 0.04, z2: 0.48, id: 'wall-bl-outer' });
-    this.walls.push({ x1: -W + 0.04, z1: 0.48, x2: -0.12, z2: 0.45, id: 'wall-bl-inner' });
-
+    // Bottom-left wall (angled toward drain) — with outlane gap
+    this.walls.push({ x1: -W, z1: L, x2: -W + 0.02, z2: 0.50, id: 'wall-bl-outer' });
+    // Left outlane wall (gap between outer wall and guide)
+    this.walls.push({ x1: -W + 0.05, z1: 0.48, x2: -0.14, z2: 0.45, id: 'wall-bl-inner' });
     // Left flipper guide wall
-    this.walls.push({ x1: -0.12, z1: 0.45, x2: -0.10, z2: 0.44, id: 'wall-flipper-l-guide' });
+    this.walls.push({ x1: -0.14, z1: 0.45, x2: -0.10, z2: 0.44, id: 'wall-flipper-l-guide' });
 
     // Right flipper guide wall
-    this.walls.push({ x1: 0.10, z1: 0.44, x2: 0.12, z2: 0.45, id: 'wall-flipper-r-guide' });
+    this.walls.push({ x1: 0.10, z1: 0.44, x2: 0.14, z2: 0.45, id: 'wall-flipper-r-guide' });
+    // Right outlane wall
+    this.walls.push({ x1: 0.14, z1: 0.45, x2: W - 0.05, z2: 0.48, id: 'wall-br-inner' });
+    this.walls.push({ x1: W - 0.02, z1: 0.50, x2: 0.20, z2: L, id: 'wall-br-outer' });
 
-    // Bottom-right wall (angled toward drain, up to plunger lane)
-    this.walls.push({ x1: 0.12, z1: 0.45, x2: W - 0.06, z2: 0.48, id: 'wall-br-inner' });
-    this.walls.push({ x1: W - 0.06, z1: 0.48, x2: 0.20, z2: L, id: 'wall-br-outer' });
-
-    // Upper playfield guide rails (create interesting ball paths)
-    // Left orbit entry rail
+    // Upper playfield guide rails
     this.walls.push({ x1: -0.22, z1: -0.20, x2: -0.20, z2: -0.35, id: 'wall-left-orbit' });
-    // Right orbit entry rail
     this.walls.push({ x1: 0.16, z1: -0.20, x2: 0.18, z2: -0.35, id: 'wall-right-orbit' });
+
+    // Ramp entry guide walls (left ramp)
+    this.walls.push({ x1: -0.16, z1: 0.10, x2: -0.14, z2: -0.05, id: 'wall-ramp-l-left' });
+    this.walls.push({ x1: -0.09, z1: 0.10, x2: -0.11, z2: -0.05, id: 'wall-ramp-l-right' });
+
+    // Ramp entry guide walls (right ramp)
+    this.walls.push({ x1: 0.09, z1: 0.10, x2: 0.11, z2: -0.05, id: 'wall-ramp-r-left' });
+    this.walls.push({ x1: 0.16, z1: 0.10, x2: 0.14, z2: -0.05, id: 'wall-ramp-r-right' });
   }
 
   private initBumpers(): void {
@@ -179,7 +233,58 @@ export class PinballPhysics {
     });
   }
 
+  private initSpinners(): void {
+    // Center spinner — ball passes through and spins the gate
+    this.spinners.push({
+      x: 0, z: -0.06, id: 'spinner-center',
+      width: 0.04, spinAngle: 0, spinVel: 0,
+    });
+    // Left orbit spinner
+    this.spinners.push({
+      x: -0.21, z: -0.12, id: 'spinner-left',
+      width: 0.035, spinAngle: 0, spinVel: 0,
+    });
+  }
+
+  private initRamps(): void {
+    // Left ramp: enters from lower-left, exits upper-left (ball drops back)
+    this.ramps.push({
+      entryX: -0.125, entryZ: 0.05,
+      exitX: -0.20, exitZ: -0.38,
+      entryWidth: 0.05,
+      exitVx: 0.1, exitVz: 0.4,
+      id: 'ramp-left', active: false,
+    });
+
+    // Right ramp: enters from lower-right, exits upper-right
+    this.ramps.push({
+      entryX: 0.125, entryZ: 0.05,
+      exitX: 0.20, exitZ: -0.38,
+      entryWidth: 0.05,
+      exitVx: -0.1, exitVz: 0.4,
+      id: 'ramp-right', active: false,
+    });
+  }
+
+  private initOutlanes(): void {
+    this.outlanes.push({
+      x: -0.235, z: 0.46,
+      width: 0.04, side: 'left',
+      kickbackActive: true,
+      kickbackForce: 3.0,
+      id: 'outlane-left',
+    });
+    this.outlanes.push({
+      x: 0.235, z: 0.46,
+      width: 0.04, side: 'right',
+      kickbackActive: true,
+      kickbackForce: 3.0,
+      id: 'outlane-right',
+    });
+  }
+
   resetBall(): void {
+    // Reset primary ball
     this.ball.x = 0.23;
     this.ball.z = 0.45;
     this.ball.vx = 0;
@@ -188,13 +293,36 @@ export class PinballPhysics {
     this.ball.inPlunger = true;
   }
 
+  resetAllBalls(): void {
+    // Remove all extra balls, keep only primary
+    this.balls = [this.ball];
+    this.resetBall();
+  }
+
   launchBall(power: number): void {
     if (!this.ball.inPlunger) return;
-    // Launch upward (-z direction) with given power
     const launchSpeed = 1.0 + power * 3.5;
     this.ball.vz = -launchSpeed;
-    this.ball.vx = -0.15; // slight leftward curve into playfield
+    this.ball.vx = -0.15;
     this.ball.inPlunger = false;
+  }
+
+  // Multiball: spawn additional balls at the given position
+  spawnExtraBall(x: number, z: number, vx: number, vz: number): BallState {
+    const b = this.createBall(x, z, false);
+    b.active = true;
+    b.vx = vx;
+    b.vz = vz;
+    this.balls.push(b);
+    return b;
+  }
+
+  getActiveBalls(): BallState[] {
+    return this.balls.filter(b => b.active);
+  }
+
+  getActiveBallCount(): number {
+    return this.balls.filter(b => b.active).length;
   }
 
   setFlipperActive(side: 'left' | 'right', active: boolean): void {
@@ -204,14 +332,28 @@ export class PinballPhysics {
 
   update(dt: number): CollisionEvent[] {
     this.collisionEvents = [];
-    if (!this.ball.active) return this.collisionEvents;
 
     const subDt = dt / SUBSTEPS;
 
     for (let s = 0; s < SUBSTEPS; s++) {
       this.updateFlippers(subDt);
-      this.updateBallPhysics(subDt);
-      this.checkCollisions();
+      this.updateSpinners(subDt);
+
+      // Update all active balls
+      for (const b of this.balls) {
+        if (!b.active) continue;
+        this.updateBallPhysics(b, subDt);
+        this.checkCollisions(b);
+      }
+
+      // Ball-ball collisions (multiball)
+      this.checkBallBallCollisions();
+    }
+
+    // Update primary ball reference to first active ball
+    const activeBalls = this.getActiveBalls();
+    if (activeBalls.length > 0 && !this.ball.active) {
+      this.ball = activeBalls[0];
     }
 
     return this.collisionEvents;
@@ -220,7 +362,7 @@ export class PinballPhysics {
   private updateFlippers(dt: number): void {
     for (const flipper of [this.leftFlipper, this.rightFlipper]) {
       const diff = flipper.targetAngle - flipper.angle;
-      const speed = 25; // radians per second
+      const speed = 25;
       if (Math.abs(diff) > 0.001) {
         const step = Math.sign(diff) * speed * dt;
         if (Math.abs(step) > Math.abs(diff)) {
@@ -236,20 +378,24 @@ export class PinballPhysics {
     }
   }
 
-  private updateBallPhysics(dt: number): void {
-    const b = this.ball;
+  private updateSpinners(dt: number): void {
+    for (const spinner of this.spinners) {
+      spinner.spinAngle += spinner.spinVel * dt;
+      // Friction decay
+      spinner.spinVel *= (1 - 3.0 * dt);
+      if (Math.abs(spinner.spinVel) < 0.1) spinner.spinVel = 0;
+    }
+  }
 
-    // Gravity pulls ball toward +z (downward on table)
+  private updateBallPhysics(b: BallState, dt: number): void {
     if (!b.inPlunger) {
       b.vz += GRAVITY * dt;
     }
 
-    // Friction
     const frictionFactor = 1 - FRICTION * dt;
     b.vx *= frictionFactor;
     b.vz *= frictionFactor;
 
-    // Speed cap
     const speed = Math.sqrt(b.vx * b.vx + b.vz * b.vz);
     const maxSpeed = 5.0;
     if (speed > maxSpeed) {
@@ -257,21 +403,18 @@ export class PinballPhysics {
       b.vz = (b.vz / speed) * maxSpeed;
     }
 
-    // Move
     b.x += b.vx * dt;
     b.z += b.vz * dt;
   }
 
-  private checkCollisions(): void {
-    const b = this.ball;
+  private checkCollisions(b: BallState): void {
     const r = BALL_RADIUS;
 
-    // Plunger lane constraints
+    // Plunger lane constraints (only for primary ball in plunger)
     if (b.inPlunger) {
       if (b.x < this.plungerLaneLeft + r) b.x = this.plungerLaneLeft + r;
       if (b.x > this.plungerLaneRight - r) b.x = this.plungerLaneRight - r;
       if (b.z < this.plungerLaneTop) {
-        // Ball exits plunger lane into main playfield
         b.inPlunger = false;
       }
       if (b.z > this.plungerLaneBottom - r) {
@@ -283,65 +426,195 @@ export class PinballPhysics {
 
     // Wall collisions
     for (const wall of this.walls) {
-      this.collideWall(wall);
+      this.collideWall(b, wall);
     }
 
     // Bumper collisions
     for (const bumper of this.bumpers) {
-      this.collideBumper(bumper);
+      this.collideBumper(b, bumper);
+    }
+
+    // Spinner collisions
+    for (const spinner of this.spinners) {
+      this.collideSpinner(b, spinner);
+    }
+
+    // Ramp entry/exit
+    for (const ramp of this.ramps) {
+      this.checkRamp(b, ramp);
+    }
+
+    // Outlane checks
+    for (const outlane of this.outlanes) {
+      this.checkOutlane(b, outlane);
     }
 
     // Flipper collisions
-    this.collideFlipper(this.leftFlipper);
-    this.collideFlipper(this.rightFlipper);
+    this.collideFlipper(b, this.leftFlipper);
+    this.collideFlipper(b, this.rightFlipper);
 
     // Drain check
     if (b.z > this.drainZ && b.x > this.drainLeft && b.x < this.drainRight) {
       if (b.z > HALF_L + 0.05) {
         this.collisionEvents.push({
-          type: 'drain', x: b.x, z: b.z, force: 0,
+          type: 'drain', x: b.x, z: b.z, force: 0, ballId: b.id,
         });
         b.active = false;
       }
     }
 
-    // Final bounds check (prevent ball escaping)
+    // Final bounds
     if (b.x < -HALF_W + r) { b.x = -HALF_W + r; b.vx = Math.abs(b.vx) * RESTITUTION; }
     if (b.x > HALF_W - r) { b.x = HALF_W - r; b.vx = -Math.abs(b.vx) * RESTITUTION; }
     if (b.z < -HALF_L + r) { b.z = -HALF_L + r; b.vz = Math.abs(b.vz) * RESTITUTION; }
   }
 
-  private collideWall(wall: WallSegment): void {
-    const b = this.ball;
-    const r = BALL_RADIUS;
+  private checkBallBallCollisions(): void {
+    const activeBalls = this.getActiveBalls();
+    for (let i = 0; i < activeBalls.length; i++) {
+      for (let j = i + 1; j < activeBalls.length; j++) {
+        const a = activeBalls[i];
+        const b = activeBalls[j];
+        const dx = b.x - a.x;
+        const dz = b.z - a.z;
+        const dist = Math.sqrt(dx * dx + dz * dz);
+        const minDist = BALL_RADIUS * 2;
 
-    // Line segment: (x1,z1) to (x2,z2)
+        if (dist < minDist && dist > 0.001) {
+          const nx = dx / dist;
+          const nz = dz / dist;
+
+          // Separate
+          const overlap = (minDist - dist) / 2;
+          a.x -= nx * overlap;
+          a.z -= nz * overlap;
+          b.x += nx * overlap;
+          b.z += nz * overlap;
+
+          // Elastic collision
+          const relVx = a.vx - b.vx;
+          const relVz = a.vz - b.vz;
+          const relDot = relVx * nx + relVz * nz;
+
+          if (relDot > 0) {
+            a.vx -= relDot * nx;
+            a.vz -= relDot * nz;
+            b.vx += relDot * nx;
+            b.vz += relDot * nz;
+          }
+        }
+      }
+    }
+  }
+
+  private collideSpinner(b: BallState, spinner: SpinnerDef): void {
+    const dx = b.x - spinner.x;
+    const dz = b.z - spinner.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+
+    // Ball passes through spinner zone
+    if (dist < spinner.width && Math.abs(b.vz) > 0.3) {
+      // Impart spin proportional to ball speed
+      const speed = Math.sqrt(b.vx * b.vx + b.vz * b.vz);
+      spinner.spinVel = speed * 30; // visual spin
+
+      // Slight speed reduction as ball passes through
+      b.vz *= 0.92;
+      b.vx *= 0.95;
+
+      // Score event per pass (throttle with distance check)
+      this.collisionEvents.push({
+        type: 'spinner', id: spinner.id,
+        x: spinner.x, z: spinner.z,
+        force: speed, ballId: b.id,
+      });
+    }
+  }
+
+  private checkRamp(b: BallState, ramp: RampDef): void {
+    // Check if ball enters ramp entry zone (going upward = negative vz)
+    const dx = b.x - ramp.entryX;
+    const dz = b.z - ramp.entryZ;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+
+    if (dist < ramp.entryWidth && b.vz < -0.8 && !ramp.active) {
+      // Ball enters ramp
+      ramp.active = true;
+      const speed = Math.sqrt(b.vx * b.vx + b.vz * b.vz);
+
+      this.collisionEvents.push({
+        type: 'ramp_enter', id: ramp.id,
+        x: ramp.entryX, z: ramp.entryZ,
+        force: speed, ballId: b.id,
+      });
+
+      // Teleport ball to ramp exit after short delay (simulated)
+      b.x = ramp.exitX;
+      b.z = ramp.exitZ;
+      b.vx = ramp.exitVx * (speed * 0.6);
+      b.vz = ramp.exitVz * (speed * 0.4);
+
+      this.collisionEvents.push({
+        type: 'ramp_exit', id: ramp.id,
+        x: ramp.exitX, z: ramp.exitZ,
+        force: speed, ballId: b.id,
+      });
+
+      // Reset ramp after brief cooldown
+      setTimeout(() => { ramp.active = false; }, 500);
+    }
+  }
+
+  private checkOutlane(b: BallState, outlane: OutlaneDef): void {
+    const dx = Math.abs(b.x - outlane.x);
+    const dz = Math.abs(b.z - outlane.z);
+
+    if (dx < outlane.width / 2 && dz < 0.04 && b.vz > 0.1) {
+      if (outlane.kickbackActive) {
+        // Kickback! Save the ball
+        outlane.kickbackActive = false;
+        b.vz = -outlane.kickbackForce;
+        b.vx = outlane.side === 'left' ? 0.5 : -0.5;
+
+        this.collisionEvents.push({
+          type: 'kickback', id: outlane.id,
+          x: outlane.x, z: outlane.z,
+          force: outlane.kickbackForce, ballId: b.id,
+        });
+      } else {
+        // Outlane drain
+        this.collisionEvents.push({
+          type: 'outlane', id: outlane.id,
+          x: outlane.x, z: outlane.z,
+          force: 0, ballId: b.id,
+        });
+      }
+    }
+  }
+
+  private collideWall(b: BallState, wall: WallSegment): void {
+    const r = BALL_RADIUS;
     const dx = wall.x2 - wall.x1;
     const dz = wall.z2 - wall.z1;
     const lenSq = dx * dx + dz * dz;
     if (lenSq < 0.0001) return;
 
-    // Project ball center onto line
     let t = ((b.x - wall.x1) * dx + (b.z - wall.z1) * dz) / lenSq;
     t = Math.max(0, Math.min(1, t));
 
     const closestX = wall.x1 + t * dx;
     const closestZ = wall.z1 + t * dz;
-
     const distX = b.x - closestX;
     const distZ = b.z - closestZ;
     const dist = Math.sqrt(distX * distX + distZ * distZ);
 
     if (dist < r && dist > 0.0001) {
-      // Normal from wall to ball
       const nx = distX / dist;
       const nz = distZ / dist;
 
-      // Separate
       b.x = closestX + nx * (r + 0.001);
       b.z = closestZ + nz * (r + 0.001);
 
-      // Reflect velocity
       const dot = b.vx * nx + b.vz * nz;
       if (dot < 0) {
         b.vx -= (1 + RESTITUTION) * dot * nx;
@@ -350,17 +623,15 @@ export class PinballPhysics {
         const force = Math.abs(dot);
         if (force > 0.1) {
           this.collisionEvents.push({
-            type: 'wall', id: wall.id, x: closestX, z: closestZ, force,
+            type: 'wall', id: wall.id, x: closestX, z: closestZ, force, ballId: b.id,
           });
         }
       }
     }
   }
 
-  private collideBumper(bumper: CircleBumper): void {
-    const b = this.ball;
+  private collideBumper(b: BallState, bumper: CircleBumper): void {
     const r = BALL_RADIUS;
-
     const dx = b.x - bumper.x;
     const dz = b.z - bumper.z;
     const dist = Math.sqrt(dx * dx + dz * dz);
@@ -370,11 +641,9 @@ export class PinballPhysics {
       const nx = dx / dist;
       const nz = dz / dist;
 
-      // Separate
       b.x = bumper.x + nx * (minDist + 0.001);
       b.z = bumper.z + nz * (minDist + 0.001);
 
-      // Kick ball away
       const currentSpeed = Math.sqrt(b.vx * b.vx + b.vz * b.vz);
       const kickSpeed = Math.max(bumper.kickForce, currentSpeed * 0.8);
       b.vx = nx * kickSpeed;
@@ -382,22 +651,18 @@ export class PinballPhysics {
 
       this.collisionEvents.push({
         type: bumper.type === 'slingshot' ? 'slingshot' : 'bumper',
-        id: bumper.id,
-        x: bumper.x, z: bumper.z,
-        force: kickSpeed,
+        id: bumper.id, x: bumper.x, z: bumper.z,
+        force: kickSpeed, ballId: b.id,
       });
     }
   }
 
-  private collideFlipper(flipper: FlipperState): void {
-    const b = this.ball;
+  private collideFlipper(b: BallState, flipper: FlipperState): void {
     const r = BALL_RADIUS;
 
-    // Flipper tip position
     const tipX = flipper.pivotX + Math.cos(flipper.angle) * flipper.length;
     const tipZ = flipper.pivotZ + Math.sin(flipper.angle) * flipper.length;
 
-    // Ball to flipper line segment distance
     const dx = tipX - flipper.pivotX;
     const dz = tipZ - flipper.pivotZ;
     const lenSq = dx * dx + dz * dz;
@@ -413,26 +678,20 @@ export class PinballPhysics {
     const distZ = b.z - closestZ;
     const dist = Math.sqrt(distX * distX + distZ * distZ);
 
-    const flipperRadius = 0.008; // flipper body radius
+    const flipperRadius = 0.008;
     const minDist = r + flipperRadius;
 
     if (dist < minDist && dist > 0.001) {
       const nx = distX / dist;
       const nz = distZ / dist;
 
-      // Separate
       b.x = closestX + nx * (minDist + 0.001);
       b.z = closestZ + nz * (minDist + 0.001);
 
-      // Reflect velocity
-      const dot = b.vx * nx + b.vz * nz;
-
-      // Flipper angular velocity contribution at contact point
       const contactDist = t * flipper.length;
       const flipperVelX = -Math.sin(flipper.angle) * flipper.angularVel * contactDist;
       const flipperVelZ = Math.cos(flipper.angle) * flipper.angularVel * contactDist;
 
-      // Velocity relative to flipper surface
       const relVx = b.vx - flipperVelX;
       const relVz = b.vz - flipperVelZ;
       const relDot = relVx * nx + relVz * nz;
@@ -440,8 +699,6 @@ export class PinballPhysics {
       if (relDot < 0) {
         b.vx -= (1 + 0.7) * relDot * nx;
         b.vz -= (1 + 0.7) * relDot * nz;
-
-        // Add flipper velocity
         b.vx += flipperVelX * 1.2;
         b.vz += flipperVelZ * 1.2;
 
@@ -449,7 +706,7 @@ export class PinballPhysics {
         if (force > 0.05) {
           this.collisionEvents.push({
             type: 'flipper', id: flipper.side,
-            x: closestX, z: closestZ, force,
+            x: closestX, z: closestZ, force, ballId: b.id,
           });
         }
       }
@@ -464,7 +721,17 @@ export class PinballPhysics {
   }
 
   getBall3DY(tableY: number): number {
-    // Ball Y position based on table tilt
     return tableY + (HALF_L - this.ball.z) * Math.sin(TILT_ANGLE) + BALL_RADIUS + 0.001;
+  }
+
+  getBallY(b: BallState, tableY: number): number {
+    return tableY + (HALF_L - b.z) * Math.sin(TILT_ANGLE) + BALL_RADIUS + 0.001;
+  }
+
+  // Reset outlane kickbacks (called when ball saver activates or new game)
+  resetKickbacks(): void {
+    for (const ol of this.outlanes) {
+      ol.kickbackActive = true;
+    }
   }
 }
