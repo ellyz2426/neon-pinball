@@ -1,0 +1,83 @@
+<style>
+  .stats-panel {
+    display: flex;
+    flex-direction: column;
+    padding: 2;
+    background-color: rgba(5, 5, 20, 0.95);
+    border-color: #00ff88;
+    border-width: 0.15;
+    border-radius: 1.5;
+    gap: 1;
+  }
+  .stats-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 1;
+    border-bottom-width: 0.05;
+    border-color: rgba(0, 255, 136, 0.3);
+  }
+  .stats-title {
+    font-size: 3;
+    color: #00ff88;
+    font-weight: bold;
+  }
+  .stat-row {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding-x: 1;
+    padding-y: 0.4;
+    border-bottom-width: 0.03;
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+  .stat-label {
+    font-size: 1.5;
+    color: #888888;
+  }
+  .stat-value {
+    font-size: 1.5;
+    color: #00ffff;
+    font-weight: bold;
+  }
+  .stat-highlight {
+    font-size: 1.5;
+    color: #ffff00;
+    font-weight: bold;
+  }
+  .stats-back-btn {
+    align-self: center;
+    padding-x: 4;
+    padding-y: 1;
+    background-color: rgba(0, 255, 136, 0.15);
+    border-color: #00ff88;
+    border-width: 0.1;
+    border-radius: 0.8;
+    cursor: pointer;
+    margin-top: 1;
+  }
+  .stats-back-text {
+    font-size: 1.8;
+    color: #00ff88;
+    font-weight: bold;
+  }
+</style>
+<div class="stats-panel">
+  <div class="stats-header">
+    <span class="stats-title">STATISTICS</span>
+  </div>
+  <div class="stat-row"><span class="stat-label">TOTAL GAMES</span><span id="stat-games" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">BEST SCORE</span><span id="stat-best" class="stat-highlight">0</span></div>
+  <div class="stat-row"><span class="stat-label">TOTAL SCORE</span><span id="stat-total" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">BEST COMBO</span><span id="stat-combo" class="stat-highlight">x1.0</span></div>
+  <div class="stat-row"><span class="stat-label">BUMPER HITS</span><span id="stat-bumpers" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">RAMP SHOTS</span><span id="stat-ramps" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">MULTIBALLS</span><span id="stat-multi" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">MISSIONS DONE</span><span id="stat-missions" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">WIZARD MODES</span><span id="stat-wizard" class="stat-highlight">0</span></div>
+  <div class="stat-row"><span class="stat-label">EXTRA BALLS</span><span id="stat-extraballs" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">PLAY TIME</span><span id="stat-time" class="stat-value">0h 0m</span></div>
+  <div id="stats-back-btn" class="stats-back-btn" cursor="pointer">
+    <span class="stats-back-text">BACK</span>
+  </div>
+</div>

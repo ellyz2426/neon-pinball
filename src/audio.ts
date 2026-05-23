@@ -1,5 +1,7 @@
 // Neon Pinball VR - Procedural Audio
-// Round 2: Spinner, ramp, multiball, mission, kickback sounds
+// Round 3: Wizard mode, extra ball, achievement sounds, dynamic intensity music
+
+import { IntensityLevel } from './game';
 
 export class AudioManager {
   private ctx: AudioContext | null = null;
@@ -9,9 +11,11 @@ export class AudioManager {
   private ambientOsc: OscillatorNode | null = null;
   private ambientGain: GainNode | null = null;
   private multiballOsc: OscillatorNode | null = null;
+  private intensityNodes: { osc: OscillatorNode; gain: GainNode }[] = [];
   sfxVolume = 0.7;
   musicVolume = 0.3;
   masterVolume = 0.8;
+  private currentIntensity: IntensityLevel = 'calm';
 
   init(): void {
     if (this.ctx) return;
@@ -79,6 +83,90 @@ export class AudioManager {
     this.ambientOsc = null;
     this.ambientGain = null;
     this.stopMultiballMusic();
+    this.stopIntensityLayers();
+  }
+
+  // === Dynamic intensity music layers ===
+
+  setIntensity(level: IntensityLevel): void {
+    if (level === this.currentIntensity) return;
+    this.currentIntensity = level;
+    this.updateIntensityLayers();
+  }
+
+  private updateIntensityLayers(): void {
+    if (!this.ctx || !this.musicGain) return;
+
+    this.stopIntensityLayers();
+
+    if (this.currentIntensity === 'calm') return;
+
+    // Add layers based on intensity
+    if (this.currentIntensity === 'normal' || this.currentIntensity === 'heated' || this.currentIntensity === 'frenzy') {
+      // Rhythmic pulse layer
+      const pulseOsc = this.ctx.createOscillator();
+      pulseOsc.type = 'sine';
+      pulseOsc.frequency.value = 110;
+      const pulseGain = this.ctx.createGain();
+      pulseGain.gain.value = this.currentIntensity === 'normal' ? 0.04 : 0.06;
+      const pulseLfo = this.ctx.createOscillator();
+      pulseLfo.type = 'square';
+      pulseLfo.frequency.value = this.currentIntensity === 'frenzy' ? 6 : 3;
+      const pulseLfoGain = this.ctx.createGain();
+      pulseLfoGain.gain.value = pulseGain.gain.value;
+      pulseLfo.connect(pulseLfoGain);
+      pulseLfoGain.connect(pulseGain.gain);
+      pulseOsc.connect(pulseGain);
+      pulseGain.connect(this.musicGain);
+      pulseOsc.start();
+      pulseLfo.start();
+      this.intensityNodes.push({ osc: pulseOsc, gain: pulseGain });
+    }
+
+    if (this.currentIntensity === 'heated' || this.currentIntensity === 'frenzy') {
+      // Higher harmonic layer
+      const harmOsc = this.ctx.createOscillator();
+      harmOsc.type = 'triangle';
+      harmOsc.frequency.value = 165;
+      const harmGain = this.ctx.createGain();
+      harmGain.gain.value = 0.03;
+      const harmFilter = this.ctx.createBiquadFilter();
+      harmFilter.type = 'bandpass';
+      harmFilter.frequency.value = 200;
+      harmOsc.connect(harmFilter);
+      harmFilter.connect(harmGain);
+      harmGain.connect(this.musicGain);
+      harmOsc.start();
+      this.intensityNodes.push({ osc: harmOsc, gain: harmGain });
+    }
+
+    if (this.currentIntensity === 'frenzy') {
+      // Aggressive bass pulse
+      const bassOsc = this.ctx.createOscillator();
+      bassOsc.type = 'sawtooth';
+      bassOsc.frequency.value = 55;
+      const bassGain = this.ctx.createGain();
+      bassGain.gain.value = 0.05;
+      const bassFilter = this.ctx.createBiquadFilter();
+      bassFilter.type = 'lowpass';
+      bassFilter.frequency.value = 120;
+      bassOsc.connect(bassFilter);
+      bassFilter.connect(bassGain);
+      bassGain.connect(this.musicGain);
+      bassOsc.start();
+      this.intensityNodes.push({ osc: bassOsc, gain: bassGain });
+    }
+  }
+
+  private stopIntensityLayers(): void {
+    for (const node of this.intensityNodes) {
+      try {
+        node.osc.stop();
+        node.osc.disconnect();
+        node.gain.disconnect();
+      } catch {}
+    }
+    this.intensityNodes = [];
   }
 
   // === Standard SFX ===
@@ -302,13 +390,12 @@ export class AudioManager {
     }
   }
 
-  // === New Round 2 SFX ===
+  // === Round 2 SFX ===
 
   playSpinnerHit(): void {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
 
-    // Metallic spinning whirr
     const osc = this.ctx.createOscillator();
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(600, t);
@@ -335,7 +422,6 @@ export class AudioManager {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
 
-    // Swooping ascending whoosh
     const osc = this.ctx.createOscillator();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(300, t);
@@ -350,7 +436,6 @@ export class AudioManager {
     osc.start(t);
     osc.stop(t + 0.35);
 
-    // Secondary harmonic
     const osc2 = this.ctx.createOscillator();
     osc2.type = 'triangle';
     osc2.frequency.setValueAtTime(450, t);
@@ -370,7 +455,6 @@ export class AudioManager {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
 
-    // Descending landing thud
     const osc = this.ctx.createOscillator();
     osc.type = 'sine';
     osc.frequency.setValueAtTime(800, t);
@@ -390,7 +474,6 @@ export class AudioManager {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
 
-    // Sharp metallic spring sound
     const osc = this.ctx.createOscillator();
     osc.type = 'square';
     osc.frequency.setValueAtTime(100, t);
@@ -411,7 +494,6 @@ export class AudioManager {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
 
-    // Dramatic ascending power-up
     const notes = [262, 330, 392, 523, 659, 784, 1047];
     for (let i = 0; i < notes.length; i++) {
       const osc = this.ctx.createOscillator();
@@ -427,7 +509,6 @@ export class AudioManager {
       osc.stop(t + i * 0.07 + 0.3);
     }
 
-    // Start multiball music
     this.startMultiballMusic();
   }
 
@@ -435,14 +516,13 @@ export class AudioManager {
     if (!this.ctx || !this.musicGain) return;
     this.stopMultiballMusic();
 
-    // Fast pulsing bass for multiball excitement
     this.multiballOsc = this.ctx.createOscillator();
     this.multiballOsc.type = 'square';
     this.multiballOsc.frequency.value = 110;
 
     const lfo = this.ctx.createOscillator();
     lfo.type = 'square';
-    lfo.frequency.value = 4; // 4 Hz pulse
+    lfo.frequency.value = 4;
     const lfoGain = this.ctx.createGain();
     lfoGain.gain.value = 0.12;
     lfo.connect(lfoGain);
@@ -473,7 +553,6 @@ export class AudioManager {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
 
-    // Triumphant brass-like fanfare
     const notes = [392, 494, 587, 784];
     for (let i = 0; i < notes.length; i++) {
       const osc = this.ctx.createOscillator();
@@ -500,7 +579,6 @@ export class AudioManager {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
 
-    // Mechanical lock clunk + chime
     const clunk = this.ctx.createOscillator();
     clunk.type = 'square';
     clunk.frequency.value = 80;
@@ -512,7 +590,6 @@ export class AudioManager {
     clunk.start(t);
     clunk.stop(t + 0.1);
 
-    // Chime
     const chime = this.ctx.createOscillator();
     chime.type = 'sine';
     chime.frequency.value = 1047;
@@ -524,6 +601,124 @@ export class AudioManager {
     chimeGain.connect(this.sfxGain);
     chime.start(t + 0.1);
     chime.stop(t + 0.4);
+  }
+
+  // === Round 3 SFX ===
+
+  playWizardModeStart(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Epic ascending power chord
+    const notes = [196, 247, 294, 392, 494, 587, 784, 988, 1175, 1568];
+    for (let i = 0; i < notes.length; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = i < 5 ? 'sawtooth' : 'sine';
+      osc.frequency.value = notes[i];
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, t + i * 0.06);
+      gain.gain.linearRampToValueAtTime(0.22, t + i * 0.06 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.06 + 0.6);
+
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 3000;
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t + i * 0.06);
+      osc.stop(t + i * 0.06 + 0.6);
+    }
+  }
+
+  playWizardModeEnd(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Descending resolution
+    const notes = [784, 587, 494, 392, 294];
+    for (let i = 0; i < notes.length; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = notes[i];
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, t + i * 0.15);
+      gain.gain.linearRampToValueAtTime(0.18, t + i * 0.15 + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.15 + 0.5);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t + i * 0.15);
+      osc.stop(t + i * 0.15 + 0.5);
+    }
+  }
+
+  playExtraBall(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Sparkly ascending chime
+    const notes = [523, 784, 1047, 1319, 1568];
+    for (let i = 0; i < notes.length; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = notes[i];
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, t + i * 0.09);
+      gain.gain.linearRampToValueAtTime(0.2, t + i * 0.09 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.09 + 0.35);
+
+      // Add shimmer with slight detune
+      const osc2 = this.ctx.createOscillator();
+      osc2.type = 'sine';
+      osc2.frequency.value = notes[i] * 1.005;
+      const gain2 = this.ctx.createGain();
+      gain2.gain.setValueAtTime(0, t + i * 0.09);
+      gain2.gain.linearRampToValueAtTime(0.1, t + i * 0.09 + 0.02);
+      gain2.gain.exponentialRampToValueAtTime(0.01, t + i * 0.09 + 0.35);
+
+      osc.connect(gain);
+      osc2.connect(gain2);
+      gain.connect(this.sfxGain);
+      gain2.connect(this.sfxGain);
+      osc.start(t + i * 0.09);
+      osc.stop(t + i * 0.09 + 0.35);
+      osc2.start(t + i * 0.09);
+      osc2.stop(t + i * 0.09 + 0.35);
+    }
+  }
+
+  playAchievementUnlock(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Short triumphant sting
+    const notes = [659, 784, 1047];
+    for (let i = 0; i < notes.length; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = notes[i];
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0, t + i * 0.1);
+      gain.gain.linearRampToValueAtTime(0.2, t + i * 0.1 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.01, t + i * 0.1 + 0.4);
+      osc.connect(gain);
+      gain.connect(this.sfxGain);
+      osc.start(t + i * 0.1);
+      osc.stop(t + i * 0.1 + 0.4);
+    }
+
+    // Golden shimmer overlay
+    const shimmer = this.ctx.createOscillator();
+    shimmer.type = 'sine';
+    shimmer.frequency.value = 2093;
+    const shimGain = this.ctx.createGain();
+    shimGain.gain.setValueAtTime(0, t + 0.2);
+    shimGain.gain.linearRampToValueAtTime(0.08, t + 0.25);
+    shimGain.gain.exponentialRampToValueAtTime(0.01, t + 0.6);
+    shimmer.connect(shimGain);
+    shimGain.connect(this.sfxGain);
+    shimmer.start(t + 0.2);
+    shimmer.stop(t + 0.6);
   }
 
   setMasterVolume(v: number): void {

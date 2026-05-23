@@ -1,0 +1,32 @@
+<style>
+  .wizard-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5;
+    background-color: rgba(40, 0, 60, 0.85);
+    border-color: #ff00ff;
+    border-width: 0.15;
+    border-radius: 1;
+    gap: 0.3;
+  }
+  .wizard-title {
+    font-size: 2;
+    color: #ff00ff;
+    font-weight: bold;
+  }
+  .wizard-timer {
+    font-size: 2.8;
+    color: #ffff00;
+    font-weight: bold;
+  }
+  .wizard-mult {
+    font-size: 1.4;
+    color: #ff88ff;
+  }
+</style>
+<div class="wizard-panel">
+  <span class="wizard-title">⚡ WIZARD MODE ⚡</span>
+  <span id="wizard-timer" class="wizard-timer">30s</span>
+  <span class="wizard-mult">ALL SCORES x3!</span>
+</div>

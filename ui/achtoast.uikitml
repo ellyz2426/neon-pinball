@@ -1,0 +1,38 @@
+<style>
+  .ach-toast {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 1.2;
+    background-color: rgba(40, 40, 0, 0.9);
+    border-color: #ffff00;
+    border-width: 0.12;
+    border-radius: 0.8;
+    gap: 1;
+  }
+  .ach-toast-icon {
+    font-size: 2.5;
+    color: #ffffff;
+  }
+  .ach-toast-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2;
+  }
+  .ach-toast-label {
+    font-size: 1.2;
+    color: #ffff00;
+  }
+  .ach-toast-name {
+    font-size: 1.8;
+    color: #ffffff;
+    font-weight: bold;
+  }
+</style>
+<div class="ach-toast">
+  <span id="ach-toast-icon" class="ach-toast-icon">🏆</span>
+  <div class="ach-toast-info">
+    <span class="ach-toast-label">ACHIEVEMENT UNLOCKED!</span>
+    <span id="ach-toast-name" class="ach-toast-name">---</span>
+  </div>
+</div>

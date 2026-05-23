@@ -47,6 +47,20 @@
     color: #ff4400;
     font-weight: bold;
   }
+  .hud-extra {
+    font-size: 1.3;
+    color: #ff8800;
+    font-weight: bold;
+  }
+  .hud-wizard {
+    font-size: 1.3;
+    color: #ff00ff;
+    font-weight: bold;
+  }
+  .hud-intensity {
+    font-size: 0.9;
+    color: #444444;
+  }
 </style>
 <div class="hud-panel">
   <div class="hud-section">
@@ -64,5 +78,7 @@
   <div class="hud-section">
     <span id="hud-saver" class="hud-ball-saver"></span>
     <span id="hud-multiball" class="hud-multiball"></span>
+    <span id="hud-extra" class="hud-extra"></span>
+    <span id="hud-wizard" class="hud-wizard"></span>
   </div>
 </div>

@@ -1,5 +1,5 @@
 // Neon Pinball VR - Main Entry Point
-// Round 2: Multiball, spinners, ramps, outlanes, missions
+// Round 3: Wizard Mode, achievements, extra ball, dynamic intensity, enhanced visuals
 
 import {
   World,
@@ -42,12 +42,13 @@ import {
   createTargetBank, createSpinnerMeshes, createRampMeshes, createOutlaneMeshes,
   TABLE_Y, TABLE_TILT,
 } from './table';
-import { GameManager, GameState } from './game';
+import { GameManager, GameState, IntensityLevel } from './game';
 import { AudioManager } from './audio';
 import { createEnvironment, updateEnvironment, EnvState } from './environment';
 import { EffectsManager } from './effects';
 import { UIManager } from './ui';
 import { XRInputHandler } from './xrinput';
+import { AchievementManager } from './achievements';
 
 interface BallVisual {
   mesh: Mesh;
@@ -129,11 +130,22 @@ async function main() {
   const physics = new PinballPhysics();
   const game = new GameManager();
   const audio = new AudioManager();
+  const achievements = new AchievementManager();
   const effects = new EffectsManager(world.scene, tableGroup);
-  const ui = new UIManager(world, game, audio);
+  const ui = new UIManager(world, game, audio, achievements);
   const xrInput = new XRInputHandler(world);
 
   await ui.init();
+
+  // Dynamic lighting references for intensity-reactive effects
+  const tableLights = {
+    main: world.scene.children.find((c: any) => c instanceof PointLight && Math.abs(c.position.x) < 0.01) as PointLight | undefined,
+    left: world.scene.children.find((c: any) => c instanceof PointLight && c.position.x < -0.1) as PointLight | undefined,
+    right: world.scene.children.find((c: any) => c instanceof PointLight && c.position.x > 0.1) as PointLight | undefined,
+  };
+
+  // Wizard mode visual state
+  let wizardPulseTime = 0;
 
   // Keyboard state
   const keys: Record<string, boolean> = {};
@@ -157,6 +169,7 @@ async function main() {
       audio.resume();
       audio.startAmbient();
       game.startGame();
+      achievements.startGame();
     }
   });
 
@@ -196,6 +209,7 @@ async function main() {
   game.onScore((_points: number, label: string, _x: number, _z: number) => {
     if (label.includes('JACKPOT')) {
       audio.playJackpot();
+      achievements.checkJackpot();
     } else if (label.includes('BONUS')) {
       audio.playCombo();
     } else if (label.includes('LOCKED')) {
@@ -206,12 +220,22 @@ async function main() {
   game.onMessage((msg: string) => {
     ui.showMessage(msg);
     if (msg.includes('SAVED')) audio.playBallSaved();
-    if (msg.includes('MISSION COMPLETE')) audio.playMissionComplete();
+    if (msg.includes('MISSION COMPLETE')) {
+      audio.playMissionComplete();
+      // Find the completed mission type from the game
+      if (game.completedMissionTypes.size > 0) {
+        const lastType = Array.from(game.completedMissionTypes).pop();
+        if (lastType) achievements.checkMissionComplete(lastType);
+      }
+    }
+    if (msg.includes('SUPER RAMP')) achievements.checkSuperRamp();
+    if (msg.includes('EXTRA BALL')) achievements.checkExtraBall();
   });
 
   game.onMultiball((active: boolean, count: number) => {
     if (active) {
       audio.playMultiballStart();
+      achievements.checkMultiball();
       // Spawn extra balls
       const positions = [
         { x: -0.15, z: -0.2, vx: 0.3, vz: 0.5 },
@@ -227,6 +251,16 @@ async function main() {
       audio.stopMultiballMusic();
       cleanupInactiveBalls();
     }
+  });
+
+  game.onWizardMode((active: boolean) => {
+    if (active) {
+      achievements.checkWizardMode();
+    }
+  });
+
+  game.onExtraBall(() => {
+    // Visual feedback handled by UI
   });
 
   // Target collision handling
@@ -266,6 +300,56 @@ async function main() {
     }
   }
 
+  // Dynamic intensity visual effects
+  function updateIntensityVisuals(dt: number): void {
+    const intensity = game.intensity;
+
+    // Adjust table light intensities based on game intensity
+    if (tableLights.main) {
+      const targetIntensity = intensity === 'frenzy' ? 2.5 : intensity === 'heated' ? 1.8 : intensity === 'normal' ? 1.4 : 1.2;
+      tableLights.main.intensity += (targetIntensity - tableLights.main.intensity) * dt * 3;
+    }
+
+    // Wizard mode visual pulse
+    if (game.wizardModeActive) {
+      wizardPulseTime += dt * 4;
+      const pulse = 0.5 + Math.sin(wizardPulseTime) * 0.5;
+
+      // Cycle rail colors during wizard mode
+      // This creates a visual "rainbow" effect on the playfield
+      if (tableLights.left) {
+        tableLights.left.color.setHSL((time * 0.3) % 1, 1, 0.5);
+        tableLights.left.intensity = 1.0 + pulse * 0.5;
+      }
+      if (tableLights.right) {
+        tableLights.right.color.setHSL(((time * 0.3) + 0.33) % 1, 1, 0.5);
+        tableLights.right.intensity = 0.8 + pulse * 0.4;
+      }
+    } else {
+      wizardPulseTime = 0;
+      // Reset to default colors
+      if (tableLights.left) {
+        tableLights.left.color.lerp(new Color(0xff00ff), dt * 2);
+        tableLights.left.intensity += (0.6 - tableLights.left.intensity) * dt * 2;
+      }
+      if (tableLights.right) {
+        tableLights.right.color.lerp(new Color(0x00ff88), dt * 2);
+        tableLights.right.intensity += (0.4 - tableLights.right.intensity) * dt * 2;
+      }
+    }
+
+    // Ball color changes during wizard mode
+    if (game.wizardModeActive) {
+      for (const bv of ballVisuals) {
+        if (bv.mesh.visible) {
+          const hue = (time * 0.5 + bv.ballId * 0.25) % 1;
+          (bv.mesh.material as MeshStandardMaterial).emissive.setHSL(hue, 1, 0.5);
+          (bv.glow.material as MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
+        }
+      }
+    }
+  }
+
   // Game loop
   const gameLoop = world.createSystem({
     name: 'PinballGameLoop',
@@ -277,6 +361,7 @@ async function main() {
       updateEnvironment(envState, time, dt);
       game.update(dt);
       ui.update(dt);
+      updateIntensityVisuals(dt);
 
       // Update spinner cooldowns
       for (const key of Object.keys(spinnerCooldowns)) {
@@ -355,6 +440,11 @@ async function main() {
                 }
               }
             }
+
+            // Ramp combo achievement tracking
+            if (game.rampCombo >= 5) {
+              achievements.checkRampCombo(game.rampCombo);
+            }
           }
         }
 
@@ -389,9 +479,11 @@ async function main() {
             const speed = Math.sqrt(b.vx ** 2 + b.vz ** 2);
             (bv.glow.material as MeshBasicMaterial).opacity = 0.2 + Math.min(0.5, speed * 0.15);
 
-            // Multiball: tint extra balls differently
-            if (b !== physics.ball && game.multiballActive) {
+            // Multiball: tint extra balls differently (unless wizard mode overrides)
+            if (!game.wizardModeActive && b !== physics.ball && game.multiballActive) {
               (bv.mesh.material as MeshStandardMaterial).emissive.setHex(0xff00ff);
+            } else if (!game.wizardModeActive) {
+              (bv.mesh.material as MeshStandardMaterial).emissive.setHex(0x00ffff);
             }
           } else {
             bv.mesh.visible = false;
@@ -408,7 +500,6 @@ async function main() {
           const sm = spinnerMeshes.get(spinner.id);
           if (sm) {
             sm.gate.rotation.y = spinner.spinAngle;
-            // Glow when spinning fast
             const intensity = Math.min(1, Math.abs(spinner.spinVel) / 20);
             (sm.gate.material as MeshStandardMaterial).emissiveIntensity = 0.3 + intensity * 0.7;
           }
@@ -418,7 +509,6 @@ async function main() {
         for (const outlane of physics.outlanes) {
           const om = outlaneMeshes.get(outlane.id);
           if (om) {
-            // Green = active, red = used
             const color = outlane.kickbackActive ? 0x00ff88 : 0x440000;
             (om.indicator.material as MeshBasicMaterial).color.setHex(color);
             (om.indicator.material as MeshBasicMaterial).opacity = outlane.kickbackActive ? 0.7 : 0.2;
@@ -478,7 +568,6 @@ async function main() {
           if (result.saved) {
             physics.resetBall();
           } else if (result.isMultiballDrain) {
-            // Just remove that ball visual
             cleanupInactiveBalls();
           }
           break;
@@ -490,7 +579,7 @@ async function main() {
             game.handleSpinnerHit(sid, event.x, event.z);
             audio.playSpinnerHit();
             effects.spawnBumperHit(event.x, event.z, 0xffff00);
-            spinnerCooldowns[sid] = 0.15; // cooldown
+            spinnerCooldowns[sid] = 0.15;
           }
           break;
         }
@@ -504,10 +593,6 @@ async function main() {
           audio.playRampExit();
           const triggeredMultiball = game.handleRampShot(event.id || '', event.x, event.z);
           effects.spawnBumperHit(event.x, event.z, event.id === 'ramp-left' ? 0xff00ff : 0x00ff88);
-
-          if (triggeredMultiball) {
-            // Multiball is handled by game.onMultiball callback
-          }
           break;
         }
 
@@ -518,7 +603,6 @@ async function main() {
           break;
 
         case 'outlane':
-          // Ball going through used outlane — let drain handle it
           break;
       }
     }

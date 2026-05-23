@@ -1,7 +1,7 @@
 // Neon Pinball VR - Game State Manager
-// Round 2: Multiball, mission system, ramp combos, spinner scoring, outlane kickbacks
+// Round 3: Wizard Mode, extra ball awards, achievement integration, dynamic intensity
 
-export type GameState = 'title' | 'playing' | 'plunger' | 'gameover' | 'paused' | 'leaderboard' | 'settings' | 'tables';
+export type GameState = 'title' | 'playing' | 'plunger' | 'gameover' | 'paused' | 'leaderboard' | 'settings' | 'tables' | 'achievements' | 'stats';
 
 export interface ScoreEntry {
   score: number;
@@ -21,13 +21,16 @@ export interface Mission {
   type: MissionType;
   name: string;
   description: string;
-  target: number;      // goal amount
-  progress: number;    // current progress
-  reward: number;      // base score reward
+  target: number;
+  progress: number;
+  reward: number;
   active: boolean;
   completed: boolean;
-  color: string;       // neon color for UI
+  color: string;
 }
+
+// Intensity level for dynamic effects (music, lighting)
+export type IntensityLevel = 'calm' | 'normal' | 'heated' | 'frenzy';
 
 export class GameManager {
   state: GameState = 'title';
@@ -45,6 +48,7 @@ export class GameManager {
   totalRampShots = 0;
   jackpotReady = false;
   jackpotValue = 50000;
+  jackpotsHit = 0;
   ballSaverActive = false;
   ballSaverTimer = 0;
   ballSaverDuration = 10;
@@ -72,6 +76,24 @@ export class GameManager {
   currentMission: Mission | null = null;
   missionsCompleted = 0;
   missionCooldown = 0;
+  completedMissionTypes = new Set<MissionType>();
+
+  // Wizard Mode
+  wizardModeActive = false;
+  wizardModeTimer = 0;
+  wizardModeDuration = 30;       // 30 seconds of boosted scoring
+  wizardModeMultiplier = 3;
+  wizardModeTriggered = false;   // per-game flag
+
+  // Extra ball
+  extraBallAwarded = false;
+  extraBallPending = false;
+
+  // Dynamic intensity tracking
+  intensity: IntensityLevel = 'calm';
+  intensityScore = 0;  // 0-100, decays over time
+  hitStreak = 0;       // consecutive hits without pause
+  hitStreakTimer = 0;
 
   // Score values
   readonly BUMPER_SCORE = 100;
@@ -87,12 +109,16 @@ export class GameManager {
   readonly BALL_LOCK_SCORE = 5000;
   readonly COMBO_MULTIPLIER_INCREMENT = 0.5;
   readonly MAX_MULTIPLIER = 10;
+  readonly WIZARD_MODE_BONUS = 100000;
 
   private stateChangeCallbacks: ((state: GameState) => void)[] = [];
   private scoreCallbacks: ((score: number, label: string, x: number, z: number) => void)[] = [];
   private messageCallbacks: ((msg: string) => void)[] = [];
   private multiballCallbacks: ((active: boolean, count: number) => void)[] = [];
   private missionCallbacks: ((mission: Mission | null) => void)[] = [];
+  private wizardModeCallbacks: ((active: boolean) => void)[] = [];
+  private extraBallCallbacks: (() => void)[] = [];
+  private intensityCallbacks: ((level: IntensityLevel) => void)[] = [];
 
   constructor() {
     this.loadHighScore();
@@ -111,6 +137,9 @@ export class GameManager {
   onMessage(cb: (msg: string) => void): void { this.messageCallbacks.push(cb); }
   onMultiball(cb: (active: boolean, count: number) => void): void { this.multiballCallbacks.push(cb); }
   onMission(cb: (mission: Mission | null) => void): void { this.missionCallbacks.push(cb); }
+  onWizardMode(cb: (active: boolean) => void): void { this.wizardModeCallbacks.push(cb); }
+  onExtraBall(cb: () => void): void { this.extraBallCallbacks.push(cb); }
+  onIntensity(cb: (level: IntensityLevel) => void): void { this.intensityCallbacks.push(cb); }
 
   setState(state: GameState): void {
     this.state = state;
@@ -129,6 +158,7 @@ export class GameManager {
     this.totalSpinnerHits = 0;
     this.totalRampShots = 0;
     this.jackpotReady = false;
+    this.jackpotsHit = 0;
     this.ballSaverActive = true;
     this.ballSaverTimer = this.ballSaverDuration;
     this.allTargetsHit = false;
@@ -140,10 +170,24 @@ export class GameManager {
     this.consecutiveRightRamps = 0;
     this.currentMission = null;
     this.missionsCompleted = 0;
-    this.missionCooldown = 5; // first mission after 5s
+    this.completedMissionTypes.clear();
+    this.missionCooldown = 5;
+    this.wizardModeActive = false;
+    this.wizardModeTimer = 0;
+    this.wizardModeTriggered = false;
+    this.extraBallAwarded = false;
+    this.extraBallPending = false;
+    this.intensity = 'calm';
+    this.intensityScore = 0;
+    this.hitStreak = 0;
+    this.hitStreakTimer = 0;
     this.initTargets();
     this.setState('plunger');
     this.emitMessage('BALL 1 - PULL TO LAUNCH!');
+  }
+
+  private getEffectiveMultiplier(): number {
+    return this.wizardModeActive ? this.multiplier * this.wizardModeMultiplier : this.multiplier;
   }
 
   update(dt: number): void {
@@ -175,11 +219,58 @@ export class GameManager {
     }
 
     // Mission cooldown
-    if (!this.currentMission && this.missionCooldown > 0) {
+    if (!this.currentMission && this.missionCooldown > 0 && !this.wizardModeActive) {
       this.missionCooldown -= dt;
       if (this.missionCooldown <= 0 && this.state === 'playing') {
         this.startRandomMission();
       }
+    }
+
+    // Wizard mode timer
+    if (this.wizardModeActive) {
+      this.wizardModeTimer -= dt;
+      if (this.wizardModeTimer <= 0) {
+        this.endWizardMode();
+      }
+    }
+
+    // Hit streak decay
+    if (this.hitStreakTimer > 0) {
+      this.hitStreakTimer -= dt;
+      if (this.hitStreakTimer <= 0) {
+        this.hitStreak = 0;
+      }
+    }
+
+    // Intensity decay
+    this.intensityScore = Math.max(0, this.intensityScore - dt * 8);
+    this.updateIntensity();
+  }
+
+  // === Dynamic intensity ===
+
+  private bumpIntensity(amount: number): void {
+    this.intensityScore = Math.min(100, this.intensityScore + amount);
+    this.hitStreak++;
+    this.hitStreakTimer = 1.5; // resets streak if no hit for 1.5s
+    this.updateIntensity();
+  }
+
+  private updateIntensity(): void {
+    let newLevel: IntensityLevel;
+    if (this.wizardModeActive || this.intensityScore > 75) {
+      newLevel = 'frenzy';
+    } else if (this.multiballActive || this.intensityScore > 45) {
+      newLevel = 'heated';
+    } else if (this.intensityScore > 20) {
+      newLevel = 'normal';
+    } else {
+      newLevel = 'calm';
+    }
+
+    if (newLevel !== this.intensity) {
+      this.intensity = newLevel;
+      for (const cb of this.intensityCallbacks) cb(newLevel);
     }
   }
 
@@ -188,7 +279,9 @@ export class GameManager {
   handleBumperHit(bumperId: string, x: number, z: number): void {
     this.totalBumperHits++;
     this.addCombo();
-    const points = Math.floor(this.BUMPER_SCORE * this.multiplier);
+    this.bumpIntensity(5);
+    const eff = this.getEffectiveMultiplier();
+    const points = Math.floor(this.BUMPER_SCORE * eff);
     this.addScore(points, `${points}`, x, z);
 
     if (this.totalBumperHits % 10 === 0) {
@@ -203,7 +296,9 @@ export class GameManager {
   }
 
   handleSlingshotHit(id: string, x: number, z: number): void {
-    const points = Math.floor(this.SLINGSHOT_SCORE * this.multiplier);
+    this.bumpIntensity(3);
+    const eff = this.getEffectiveMultiplier();
+    const points = Math.floor(this.SLINGSHOT_SCORE * eff);
     this.addScore(points, `${points}`, x, z);
   }
 
@@ -214,20 +309,21 @@ export class GameManager {
     target.hitCount++;
     target.active = false;
     this.addCombo();
+    this.bumpIntensity(6);
 
-    let points = Math.floor(this.TARGET_SCORE * this.multiplier);
+    const eff = this.getEffectiveMultiplier();
+    let points = Math.floor(this.TARGET_SCORE * eff);
 
-    // Check all targets down
     const allDown = this.targets.every(t => !t.active);
     if (allDown && !this.allTargetsHit) {
       this.allTargetsHit = true;
-      points += this.ALL_TARGETS_BONUS;
+      points += Math.floor(this.ALL_TARGETS_BONUS * eff);
       this.emitMessage('ALL TARGETS! +5000 BONUS!');
+      this.bumpIntensity(15);
 
-      // All targets = lock a ball (towards multiball)
       if (this.ballsLocked < this.maxLockBalls && !this.multiballActive) {
         this.ballsLocked++;
-        this.addScore(this.BALL_LOCK_SCORE, 'BALL LOCKED!', x, z);
+        this.addScore(Math.floor(this.BALL_LOCK_SCORE * eff), 'BALL LOCKED!', x, z);
         this.emitMessage(`BALL ${this.ballsLocked}/${this.maxLockBalls} LOCKED!`);
 
         if (this.ballsLocked >= this.maxLockBalls) {
@@ -243,7 +339,6 @@ export class GameManager {
 
     this.addScore(points, allDown ? 'BONUS!' : `${points}`, x, z);
 
-    // Mission progress
     if (this.currentMission?.type === 'target_blitz' && this.currentMission.active) {
       this.advanceMission(1);
     }
@@ -253,20 +348,24 @@ export class GameManager {
     this.totalFlipperHits++;
     if (this.jackpotReady) {
       this.jackpotReady = false;
-      const jp = Math.floor(this.jackpotValue * this.multiplier);
+      this.jackpotsHit++;
+      const eff = this.getEffectiveMultiplier();
+      const jp = Math.floor(this.jackpotValue * eff);
       this.addScore(jp, 'JACKPOT!', x, z);
       this.emitMessage(`JACKPOT! +${jp.toLocaleString()}`);
       this.jackpotValue += 10000;
+      this.bumpIntensity(20);
     }
   }
 
   handleSpinnerHit(spinnerId: string, x: number, z: number): void {
     this.totalSpinnerHits++;
     this.addCombo();
-    const points = Math.floor(this.SPINNER_SCORE * this.multiplier);
+    this.bumpIntensity(3);
+    const eff = this.getEffectiveMultiplier();
+    const points = Math.floor(this.SPINNER_SCORE * eff);
     this.addScore(points, `${points}`, x, z);
 
-    // Mission progress
     if (this.currentMission?.type === 'spinner_master' && this.currentMission.active) {
       this.advanceMission(1);
     }
@@ -277,8 +376,8 @@ export class GameManager {
     this.rampCombo++;
     this.rampComboTimer = this.rampComboTimeout;
     this.addCombo();
+    this.bumpIntensity(10);
 
-    // Track consecutive same-ramp shots
     if (rampId === 'ramp-left') {
       this.consecutiveLeftRamps++;
       this.consecutiveRightRamps = 0;
@@ -287,32 +386,29 @@ export class GameManager {
       this.consecutiveLeftRamps = 0;
     }
 
-    let points = Math.floor(this.RAMP_SCORE * this.multiplier);
+    const eff = this.getEffectiveMultiplier();
+    let points = Math.floor(this.RAMP_SCORE * eff);
 
-    // Ramp combo bonus
     if (this.rampCombo >= 3) {
-      const comboBonus = Math.floor(this.RAMP_COMBO_BONUS * (this.rampCombo - 2) * this.multiplier);
+      const comboBonus = Math.floor(this.RAMP_COMBO_BONUS * (this.rampCombo - 2) * eff);
       points += comboBonus;
       this.emitMessage(`RAMP COMBO x${this.rampCombo}! +${comboBonus.toLocaleString()}`);
     }
 
-    // Super ramp (3 consecutive same ramp)
     const consec = Math.max(this.consecutiveLeftRamps, this.consecutiveRightRamps);
     if (consec >= 3) {
-      points += 10000;
+      points += Math.floor(10000 * eff);
       this.emitMessage('SUPER RAMP! +10,000!');
     }
 
     this.addScore(points, `${points}`, x, z);
 
-    // Check multiball trigger
     let triggeredMultiball = false;
     if (this.ballsLocked >= this.maxLockBalls && !this.multiballActive) {
       triggeredMultiball = true;
       this.startMultiball();
     }
 
-    // Mission progress
     if (this.currentMission?.type === 'ramp_combo' && this.currentMission.active) {
       this.advanceMission(1);
     }
@@ -321,13 +417,13 @@ export class GameManager {
   }
 
   handleKickback(outlaneId: string, x: number, z: number): void {
-    const points = Math.floor(this.KICKBACK_BONUS * this.multiplier);
+    const eff = this.getEffectiveMultiplier();
+    const points = Math.floor(this.KICKBACK_BONUS * eff);
     this.addScore(points, 'KICKBACK!', x, z);
     this.emitMessage('KICKBACK SAVE!');
   }
 
   handleDrain(): { saved: boolean; isMultiballDrain: boolean } {
-    // During multiball, losing a ball just removes it
     if (this.multiballActive) {
       this.multiballBallCount--;
       if (this.multiballBallCount <= 1) {
@@ -336,9 +432,18 @@ export class GameManager {
       return { saved: false, isMultiballDrain: true };
     }
 
-    // Ball saver
     if (this.ballSaverActive) {
       this.emitMessage('BALL SAVED!');
+      return { saved: true, isMultiballDrain: false };
+    }
+
+    // Check extra ball
+    if (this.extraBallPending) {
+      this.extraBallPending = false;
+      this.emitMessage('EXTRA BALL!');
+      for (const cb of this.extraBallCallbacks) cb();
+      this.ballSaverActive = true;
+      this.ballSaverTimer = 5;
       return { saved: true, isMultiballDrain: false };
     }
 
@@ -351,6 +456,8 @@ export class GameManager {
     this.currentBall++;
     this.multiplier = 1;
     this.comboCount = 0;
+    this.ballSaverActive = true;
+    this.ballSaverTimer = this.ballSaverDuration;
     this.setState('plunger');
     this.emitMessage(`BALL ${this.currentBall} - PULL TO LAUNCH!`);
     return { saved: false, isMultiballDrain: false };
@@ -360,15 +467,15 @@ export class GameManager {
 
   startMultiball(): void {
     this.multiballActive = true;
-    this.multiballBallCount = this.maxLockBalls + 1; // locked balls + current
+    this.multiballBallCount = this.maxLockBalls + 1;
     this.ballsLocked = 0;
     this.multiballJackpotActive = true;
     this.multiballJackpotValue = 25000 + (this.missionsCompleted * 5000);
+    this.bumpIntensity(30);
 
     for (const cb of this.multiballCallbacks) cb(true, this.multiballBallCount);
     this.emitMessage(`MULTIBALL! ${this.multiballBallCount} BALLS!`);
 
-    // Mission progress
     if (this.currentMission?.type === 'multiball_madness' && this.currentMission.active) {
       this.advanceMission(1);
     }
@@ -383,10 +490,51 @@ export class GameManager {
 
   handleMultiballJackpot(x: number, z: number): void {
     if (!this.multiballJackpotActive) return;
-    const jp = Math.floor(this.multiballJackpotValue * this.multiplier);
+    const eff = this.getEffectiveMultiplier();
+    const jp = Math.floor(this.multiballJackpotValue * eff);
     this.addScore(jp, 'MB JACKPOT!', x, z);
     this.emitMessage(`MULTIBALL JACKPOT! +${jp.toLocaleString()}`);
     this.multiballJackpotValue += 5000;
+    this.bumpIntensity(25);
+  }
+
+  // === Wizard Mode ===
+
+  private checkWizardModeEligible(): boolean {
+    return this.completedMissionTypes.size >= 5 && !this.wizardModeTriggered;
+  }
+
+  startWizardMode(): void {
+    this.wizardModeActive = true;
+    this.wizardModeTimer = this.wizardModeDuration;
+    this.wizardModeTriggered = true;
+    this.bumpIntensity(50);
+
+    // Grant wizard mode bonus
+    this.score += this.WIZARD_MODE_BONUS;
+    this.emitMessage(`⚡ WIZARD MODE! ⚡ ALL SCORES x${this.wizardModeMultiplier}!`);
+    this.emitMessage(`+${this.WIZARD_MODE_BONUS.toLocaleString()} WIZARD BONUS!`);
+
+    for (const cb of this.wizardModeCallbacks) cb(true);
+  }
+
+  private endWizardMode(): void {
+    this.wizardModeActive = false;
+    this.emitMessage('WIZARD MODE ENDED');
+    for (const cb of this.wizardModeCallbacks) cb(false);
+
+    // Award extra ball after wizard mode ends
+    this.awardExtraBall();
+  }
+
+  // === Extra Ball ===
+
+  awardExtraBall(): void {
+    if (this.extraBallAwarded) return; // Only one extra ball per game
+    this.extraBallAwarded = true;
+    this.extraBallPending = true;
+    this.emitMessage('🌟 EXTRA BALL EARNED! 🌟');
+    for (const cb of this.extraBallCallbacks) cb();
   }
 
   // === Mission System ===
@@ -400,11 +548,16 @@ export class GameManager {
       { type: 'multiball_madness', name: 'MULTIBALL MADNESS', description: 'Trigger multiball', target: 1, reward: 50000, color: '#4488ff' },
     ];
 
-    // Pick a random mission (avoid repeating)
-    const available = missionDefs.filter(m =>
+    // Prefer mission types not yet completed (for wizard mode progression)
+    const uncompletedTypes = missionDefs.filter(m => !this.completedMissionTypes.has(m.type));
+    const pool = uncompletedTypes.length > 0 ? uncompletedTypes : missionDefs;
+
+    // Avoid repeating the just-completed mission
+    const available = pool.filter(m =>
       !this.currentMission || m.type !== this.currentMission.type
     );
-    const def = available[Math.floor(Math.random() * available.length)];
+    const finalPool = available.length > 0 ? available : pool;
+    const def = finalPool[Math.floor(Math.random() * finalPool.length)];
 
     this.currentMission = {
       ...def,
@@ -438,16 +591,30 @@ export class GameManager {
     this.currentMission.completed = true;
     this.currentMission.active = false;
     this.missionsCompleted++;
+    this.completedMissionTypes.add(this.currentMission.type);
+    this.bumpIntensity(20);
 
-    const reward = Math.floor(this.currentMission.reward * this.multiplier);
+    const eff = this.getEffectiveMultiplier();
+    const reward = Math.floor(this.currentMission.reward * eff);
     this.score += reward;
     this.emitMessage(`MISSION COMPLETE! +${reward.toLocaleString()}`);
 
+    // Check extra ball award (3rd mission complete)
+    if (this.missionsCompleted === 3 && !this.extraBallAwarded) {
+      this.awardExtraBall();
+    }
+
     for (const cb of this.missionCallbacks) cb(null);
 
-    // Next mission after cooldown
+    // Check wizard mode
+    if (this.checkWizardModeEligible()) {
+      this.currentMission = null;
+      setTimeout(() => this.startWizardMode(), 1500);
+      return;
+    }
+
     this.currentMission = null;
-    this.missionCooldown = 8 + Math.random() * 7; // 8-15 seconds
+    this.missionCooldown = 8 + Math.random() * 7;
   }
 
   // === Core scoring ===
