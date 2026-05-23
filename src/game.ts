@@ -95,6 +95,16 @@ export class GameManager {
   hitStreak = 0;       // consecutive hits without pause
   hitStreakTimer = 0;
 
+  // Tilt system
+  tiltWarnings = 0;
+  tiltMaxWarnings = 3;
+  tilted = false;
+  tiltCooldown = 0;
+
+  // Lane completion
+  laneStates = [false, false, false]; // left, center, right
+  laneCompletionBonus = 15000;
+
   // Score values
   readonly BUMPER_SCORE = 100;
   readonly SLINGSHOT_SCORE = 50;
@@ -118,6 +128,8 @@ export class GameManager {
   private missionCallbacks: ((mission: Mission | null) => void)[] = [];
   private wizardModeCallbacks: ((active: boolean) => void)[] = [];
   private extraBallCallbacks: (() => void)[] = [];
+  private tiltCallbacks: ((tilted: boolean) => void)[] = [];
+  private laneCallbacks: ((lanes: boolean[]) => void)[] = [];
   private intensityCallbacks: ((level: IntensityLevel) => void)[] = [];
 
   constructor() {
@@ -140,6 +152,8 @@ export class GameManager {
   onWizardMode(cb: (active: boolean) => void): void { this.wizardModeCallbacks.push(cb); }
   onExtraBall(cb: () => void): void { this.extraBallCallbacks.push(cb); }
   onIntensity(cb: (level: IntensityLevel) => void): void { this.intensityCallbacks.push(cb); }
+  onTilt(cb: (tilted: boolean) => void): void { this.tiltCallbacks.push(cb); }
+  onLaneComplete(cb: (lanes: boolean[]) => void): void { this.laneCallbacks.push(cb); }
 
   setState(state: GameState): void {
     this.state = state;
@@ -181,6 +195,10 @@ export class GameManager {
     this.intensityScore = 0;
     this.hitStreak = 0;
     this.hitStreakTimer = 0;
+    this.tiltWarnings = 0;
+    this.tilted = false;
+    this.tiltCooldown = 0;
+    this.laneStates = [false, false, false];
     this.initTargets();
     this.setState('plunger');
     this.emitMessage('BALL 1 - PULL TO LAUNCH!');
@@ -239,6 +257,14 @@ export class GameManager {
       this.hitStreakTimer -= dt;
       if (this.hitStreakTimer <= 0) {
         this.hitStreak = 0;
+      }
+    }
+
+    // Tilt cooldown
+    if (this.tiltCooldown > 0) {
+      this.tiltCooldown -= dt;
+      if (this.tiltCooldown <= 0 && this.tiltWarnings > 0) {
+        this.tiltWarnings = Math.max(0, this.tiltWarnings - 1);
       }
     }
 
@@ -615,6 +641,50 @@ export class GameManager {
 
     this.currentMission = null;
     this.missionCooldown = 8 + Math.random() * 7;
+  }
+
+  // === Tilt ===
+
+  handleNudge(): boolean {
+    if (this.tilted) return false;
+
+    this.tiltCooldown = 2.0;
+    this.tiltWarnings++;
+
+    if (this.tiltWarnings >= this.tiltMaxWarnings) {
+      this.tilted = true;
+      this.emitMessage('TILT! Flippers disabled!');
+      for (const cb of this.tiltCallbacks) cb(true);
+      return false; // tilt = no nudge effect
+    }
+
+    if (this.tiltWarnings === this.tiltMaxWarnings - 1) {
+      this.emitMessage('DANGER! One more nudge = TILT!');
+    }
+
+    return true; // nudge allowed
+  }
+
+  // === Lane completion ===
+
+  handleLaneHit(laneIndex: number, x: number, z: number): void {
+    if (laneIndex < 0 || laneIndex > 2 || this.laneStates[laneIndex]) return;
+
+    this.laneStates[laneIndex] = true;
+    for (const cb of this.laneCallbacks) cb([...this.laneStates]);
+
+    // Check all lanes complete
+    if (this.laneStates.every(l => l)) {
+      const eff = this.getEffectiveMultiplier();
+      const bonus = Math.floor(this.laneCompletionBonus * eff);
+      this.addScore(bonus, 'LANES COMPLETE!', x, z);
+      this.emitMessage(`LANES COMPLETE! +${bonus.toLocaleString()}`);
+      this.bumpIntensity(12);
+
+      // Reset lanes for next completion
+      this.laneStates = [false, false, false];
+      for (const cb of this.laneCallbacks) cb([...this.laneStates]);
+    }
   }
 
   // === Core scoring ===

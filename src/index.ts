@@ -256,6 +256,7 @@ async function main() {
   game.onWizardMode((active: boolean) => {
     if (active) {
       achievements.checkWizardMode();
+      effects.spawnWizardBurst(0, 0); // Burst at center of table
     }
   });
 
@@ -396,12 +397,23 @@ async function main() {
           ui.updatePlungerPower(plungerPower);
         }
 
-        // Nudge
+        // Nudge (with tilt mechanic)
         const nudgeL = keys['KeyQ'] || xrInput.nudgeLeft;
         const nudgeR = keys['KeyE'] || xrInput.nudgeRight;
-        for (const b of physics.getActiveBalls()) {
-          if (nudgeL) b.vx -= 0.3 * dt;
-          if (nudgeR) b.vx += 0.3 * dt;
+        if ((nudgeL || nudgeR) && !game.tilted) {
+          const allowed = game.handleNudge();
+          if (allowed) {
+            for (const b of physics.getActiveBalls()) {
+              if (nudgeL) b.vx -= 0.3 * dt;
+              if (nudgeR) b.vx += 0.3 * dt;
+            }
+          }
+        }
+
+        // Tilted = flippers disabled
+        if (game.tilted) {
+          physics.setFlipperActive('left', false);
+          physics.setFlipperActive('right', false);
         }
 
         // Physics update (all balls)
@@ -444,6 +456,17 @@ async function main() {
             // Ramp combo achievement tracking
             if (game.rampCombo >= 5) {
               achievements.checkRampCombo(game.rampCombo);
+            }
+
+            // Lane completion detection (ball passes through lane arrow zones)
+            if (b.x < -0.10 && b.x > -0.15 && b.z > 0.04 && b.z < 0.20 && b.vz < -0.3) {
+              game.handleLaneHit(0, b.x, b.z); // left lane
+            }
+            if (b.x > -0.02 && b.x < 0.02 && b.z > 0.06 && b.z < 0.17 && b.vz < -0.3) {
+              game.handleLaneHit(1, b.x, b.z); // center lane
+            }
+            if (b.x > 0.10 && b.x < 0.15 && b.z > 0.04 && b.z < 0.20 && b.vz < -0.3) {
+              game.handleLaneHit(2, b.x, b.z); // right lane
             }
           }
         }

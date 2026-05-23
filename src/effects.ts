@@ -1,10 +1,12 @@
 // Neon Pinball VR - Visual Effects
-// Round 2: Ramp trail, enhanced particles, multiball effects
+// Round 3: Enhanced particles, intensity-reactive effects, wizard mode visuals
 
 import {
   Mesh, SphereGeometry, PlaneGeometry, MeshBasicMaterial,
-  Color, Vector3, AdditiveBlending, Group, DoubleSide,
+  Color, Vector3, AdditiveBlending, Group, DoubleSide, CylinderGeometry,
 } from '@iwsdk/core';
+
+import { IntensityLevel } from './game';
 
 interface Particle {
   mesh: Mesh;
@@ -26,17 +28,29 @@ interface TrailPoint {
   life: number;
 }
 
+interface PulseRing {
+  mesh: Mesh;
+  life: number;
+  maxLife: number;
+  speed: number;
+}
+
 export class EffectsManager {
   private scene: any;
   private tableGroup: Group;
   private particles: Particle[] = [];
   private scorePopups: ScorePopup[] = [];
   private trail: TrailPoint[] = [];
-  private maxParticles = 120;
-  private maxTrail = 40;
+  private pulseRings: PulseRing[] = [];
+  private maxParticles = 150;
+  private maxTrail = 50;
 
   private particleGeo = new SphereGeometry(0.004, 4, 4);
   private trailGeo = new SphereGeometry(0.006, 4, 4);
+
+  // Bumper pulse animation
+  private bumperPulsePhase = 0;
+  private currentIntensity: IntensityLevel = 'calm';
 
   constructor(scene: any, tableGroup: Group) {
     this.scene = scene;
@@ -165,7 +179,67 @@ export class EffectsManager {
     this.trail.push({ mesh, life: 0.5 });
   }
 
+  setIntensity(level: IntensityLevel): void {
+    this.currentIntensity = level;
+  }
+
+  // Spawn a pulse ring at location (wizard mode / big hits)
+  spawnPulseRing(x: number, z: number, color: number): void {
+    const geo = new CylinderGeometry(0.01, 0.01, 0.002, 16, 1, true);
+    const mat = new MeshBasicMaterial({
+      color: new Color(color),
+      transparent: true,
+      opacity: 0.8,
+      blending: AdditiveBlending,
+      side: DoubleSide,
+    });
+    const mesh = new Mesh(geo, mat);
+    mesh.position.set(x, 0.005, z);
+    this.tableGroup.add(mesh);
+    this.pulseRings.push({
+      mesh,
+      life: 0.8,
+      maxLife: 0.8,
+      speed: 0.3,
+    });
+  }
+
+  // Wizard mode celebration burst
+  spawnWizardBurst(x: number, z: number): void {
+    const colors = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff88, 0xff8800];
+    for (let i = 0; i < 25; i++) {
+      if (this.particles.length >= this.maxParticles) break;
+      const color = colors[i % colors.length];
+      const mat = new MeshBasicMaterial({
+        color: new Color(color),
+        transparent: true,
+        opacity: 1,
+        blending: AdditiveBlending,
+      });
+      const mesh = new Mesh(this.particleGeo, mat);
+      mesh.position.set(x, 0.05, z);
+      this.tableGroup.add(mesh);
+
+      const angle = (i / 25) * Math.PI * 2;
+      const speed = 0.4 + Math.random() * 0.6;
+      this.particles.push({
+        mesh,
+        vx: Math.cos(angle) * speed,
+        vy: 0.8 + Math.random() * 0.8,
+        vz: Math.sin(angle) * speed,
+        life: 0.8 + Math.random() * 0.5,
+        maxLife: 1.3,
+      });
+    }
+    // Pulse rings
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => this.spawnPulseRing(x, z, colors[i]), i * 200);
+    }
+  }
+
   update(dt: number): void {
+    this.bumperPulsePhase += dt;
+
     // Update particles
     for (let i = this.particles.length - 1; i >= 0; i--) {
       const p = this.particles[i];
@@ -198,6 +272,21 @@ export class EffectsManager {
       const alpha = t.life / 0.5;
       (t.mesh.material as MeshBasicMaterial).opacity = alpha * 0.6;
       t.mesh.scale.setScalar(alpha * 0.8);
+    }
+
+    // Update pulse rings
+    for (let i = this.pulseRings.length - 1; i >= 0; i--) {
+      const pr = this.pulseRings[i];
+      pr.life -= dt;
+      if (pr.life <= 0) {
+        this.tableGroup.remove(pr.mesh);
+        this.pulseRings.splice(i, 1);
+        continue;
+      }
+      const progress = 1 - (pr.life / pr.maxLife);
+      const scale = 1 + progress * 15;
+      pr.mesh.scale.set(scale, 1, scale);
+      (pr.mesh.material as MeshBasicMaterial).opacity = (pr.life / pr.maxLife) * 0.8;
     }
 
     // Update score popups
