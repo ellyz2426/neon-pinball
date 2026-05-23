@@ -1,0 +1,23 @@
+<style>
+  .message-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 1;
+    padding-bottom: 1;
+    padding-left: 3;
+    padding-right: 3;
+    background-color: rgba(0, 0, 20, 0.8);
+    border-color: #ff00ff;
+    border-width: 0.1;
+    border-radius: 0.8;
+  }
+  .message-text {
+    font-size: 2.5;
+    color: #ff00ff;
+    font-weight: bold;
+  }
+</style>
+<div class="message-panel">
+  <span id="msg-text" class="message-text">READY</span>
+</div>

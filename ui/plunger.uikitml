@@ -1,0 +1,36 @@
+<style>
+  .plunger-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 1.5;
+    padding-bottom: 1.5;
+    padding-left: 3;
+    padding-right: 3;
+    background-color: rgba(0, 0, 20, 0.85);
+    border-color: #ff4400;
+    border-width: 0.1;
+    border-radius: 0.8;
+  }
+  .plunger-label {
+    font-size: 2;
+    color: #ff8800;
+    font-weight: bold;
+  }
+  .power-bar {
+    font-size: 2.5;
+    color: #ff4400;
+    font-weight: bold;
+    margin-top: 0.5;
+  }
+  .plunger-hint {
+    font-size: 1.2;
+    color: #666666;
+    margin-top: 0.5;
+  }
+</style>
+<div class="plunger-panel">
+  <span class="plunger-label">LAUNCH POWER</span>
+  <span id="power-bar" class="power-bar">----------</span>
+  <span class="plunger-hint">Hold SPACE or A, release to launch</span>
+</div>

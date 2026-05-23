@@ -1,0 +1,110 @@
+<style>
+  .settings-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 3;
+    padding-bottom: 3;
+    padding-left: 4;
+    padding-right: 4;
+    background-color: rgba(0, 0, 20, 0.92);
+    border-color: #00ff88;
+    border-width: 0.15;
+    border-radius: 1.5;
+  }
+  .settings-title {
+    font-size: 3.5;
+    color: #00ff88;
+    font-weight: bold;
+  }
+  .setting-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    margin-top: 1.5;
+  }
+  .setting-label {
+    font-size: 1.8;
+    color: #888888;
+    margin-right: 2;
+  }
+  .vol-btn {
+    padding-top: 0.5;
+    padding-bottom: 0.5;
+    padding-left: 1;
+    padding-right: 1;
+    background-color: rgba(0, 255, 136, 0.15);
+    border-color: #00ff88;
+    border-width: 0.06;
+    border-radius: 0.4;
+    cursor: pointer;
+  }
+  .vol-btn:hover {
+    background-color: rgba(0, 255, 136, 0.3);
+  }
+  .vol-btn-text {
+    font-size: 1.8;
+    color: #00ff88;
+    font-weight: bold;
+  }
+  .vol-value {
+    font-size: 1.8;
+    color: #00ffff;
+    font-weight: bold;
+    margin-left: 1;
+    margin-right: 1;
+  }
+  .settings-back-btn {
+    margin-top: 2;
+    padding-top: 0.8;
+    padding-bottom: 0.8;
+    padding-left: 2;
+    padding-right: 2;
+    background-color: rgba(0, 255, 136, 0.12);
+    border-color: #00ff88;
+    border-width: 0.08;
+    border-radius: 0.8;
+    cursor: pointer;
+  }
+  .settings-back-text {
+    font-size: 2;
+    color: #00ff88;
+    font-weight: bold;
+  }
+</style>
+<div class="settings-panel">
+  <span class="settings-title">SETTINGS</span>
+  <div class="setting-row">
+    <span class="setting-label">Master</span>
+    <div id="master-down" class="vol-btn" cursor="pointer">
+      <span class="vol-btn-text">-</span>
+    </div>
+    <span id="master-val" class="vol-value">80%</span>
+    <div id="master-up" class="vol-btn" cursor="pointer">
+      <span class="vol-btn-text">+</span>
+    </div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">SFX</span>
+    <div id="sfx-down" class="vol-btn" cursor="pointer">
+      <span class="vol-btn-text">-</span>
+    </div>
+    <span id="sfx-val" class="vol-value">70%</span>
+    <div id="sfx-up" class="vol-btn" cursor="pointer">
+      <span class="vol-btn-text">+</span>
+    </div>
+  </div>
+  <div class="setting-row">
+    <span class="setting-label">Music</span>
+    <div id="music-down" class="vol-btn" cursor="pointer">
+      <span class="vol-btn-text">-</span>
+    </div>
+    <span id="music-val" class="vol-value">30%</span>
+    <div id="music-up" class="vol-btn" cursor="pointer">
+      <span class="vol-btn-text">+</span>
+    </div>
+  </div>
+  <div id="settings-back-btn" class="settings-back-btn" cursor="pointer">
+    <span class="settings-back-text">BACK</span>
+  </div>
+</div>
