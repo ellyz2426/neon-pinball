@@ -1,0 +1,203 @@
+{
+  "element": {
+    "type": "container",
+    "sourceTag": "div",
+    "children": [
+      {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [
+          "MISSION"
+        ],
+        "properties": {
+          "class": "mission-label"
+        },
+        "dataUid": "uid-2"
+      },
+      {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [
+          "---"
+        ],
+        "properties": {
+          "id": "mission-name",
+          "class": "mission-name"
+        },
+        "dataUid": "uid-3"
+      },
+      {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [
+          "0/0"
+        ],
+        "properties": {
+          "id": "mission-progress",
+          "class": "mission-progress"
+        },
+        "dataUid": "uid-4"
+      },
+      {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [],
+        "properties": {
+          "id": "mission-desc",
+          "class": "mission-desc"
+        },
+        "dataUid": "uid-5"
+      }
+    ],
+    "properties": {
+      "class": "mission-panel"
+    },
+    "dataUid": "uid-1"
+  },
+  "classes": {
+    "mission-panel": {
+      "content": {
+        "display": "flex",
+        "flexDirection": "column",
+        "alignItems": "center",
+        "paddingTop": "1",
+        "paddingBottom": "1",
+        "paddingLeft": "2",
+        "paddingRight": "2",
+        "backgroundColor": "rgba(0, 0, 20, 0.8)",
+        "borderColor": "#ff00ff",
+        "borderWidth": "0.08",
+        "borderRadius": 0.6
+      }
+    },
+    "mission-label": {
+      "content": {
+        "fontSize": "1",
+        "color": "#888888"
+      }
+    },
+    "mission-name": {
+      "content": {
+        "fontSize": "1.8",
+        "color": "#ff00ff",
+        "fontWeight": "bold"
+      }
+    },
+    "mission-progress": {
+      "content": {
+        "fontSize": "1.5",
+        "color": "#00ffff",
+        "fontWeight": "bold"
+      }
+    },
+    "mission-desc": {
+      "content": {
+        "fontSize": "1",
+        "color": "#666666",
+        "marginTop": "0.3"
+      }
+    }
+  },
+  "ranges": {
+    "mission-panel": {
+      "start": {
+        "line": 1,
+        "column": 2
+      },
+      "end": {
+        "line": 1,
+        "column": 16
+      }
+    },
+    "mission-label": {
+      "start": {
+        "line": 14,
+        "column": 2
+      },
+      "end": {
+        "line": 14,
+        "column": 16
+      }
+    },
+    "mission-name": {
+      "start": {
+        "line": 18,
+        "column": 2
+      },
+      "end": {
+        "line": 18,
+        "column": 15
+      }
+    },
+    "mission-progress": {
+      "start": {
+        "line": 23,
+        "column": 2
+      },
+      "end": {
+        "line": 23,
+        "column": 19
+      }
+    },
+    "mission-desc": {
+      "start": {
+        "line": 28,
+        "column": 2
+      },
+      "end": {
+        "line": 28,
+        "column": 15
+      }
+    },
+    "uid-1": {
+      "start": {
+        "line": 34,
+        "column": 0
+      },
+      "end": {
+        "line": 39,
+        "column": 6
+      }
+    },
+    "uid-2": {
+      "start": {
+        "line": 35,
+        "column": 2
+      },
+      "end": {
+        "line": 35,
+        "column": 44
+      }
+    },
+    "uid-3": {
+      "start": {
+        "line": 36,
+        "column": 2
+      },
+      "end": {
+        "line": 36,
+        "column": 57
+      }
+    },
+    "uid-4": {
+      "start": {
+        "line": 37,
+        "column": 2
+      },
+      "end": {
+        "line": 37,
+        "column": 65
+      }
+    },
+    "uid-5": {
+      "start": {
+        "line": 38,
+        "column": 2
+      },
+      "end": {
+        "line": 38,
+        "column": 54
+      }
+    }
+  }
+}
