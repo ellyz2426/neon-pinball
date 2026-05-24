@@ -1,7 +1,7 @@
 // Neon Pinball VR - Game State Manager
-// Round 3: Wizard Mode, extra ball awards, achievement integration, dynamic intensity
+// Round 6: Time Attack mode, Frenzy bonus round, orbit shots, score milestones
 
-export type GameState = 'title' | 'playing' | 'plunger' | 'gameover' | 'paused' | 'leaderboard' | 'settings' | 'tables' | 'achievements' | 'stats' | 'controls' | 'bonus_countdown' | 'match_sequence' | 'daily' | 'themes';
+export type GameState = 'title' | 'playing' | 'plunger' | 'gameover' | 'paused' | 'leaderboard' | 'settings' | 'tables' | 'achievements' | 'stats' | 'controls' | 'bonus_countdown' | 'match_sequence' | 'daily' | 'themes' | 'timeattack_select';
 
 export interface ScoreEntry {
   score: number;
@@ -197,6 +197,30 @@ export class GameManager {
   // Party mode
   isPartyMode = false;
 
+  // Time Attack mode
+  isTimeAttack = false;
+  timeAttackDuration = 90;       // 60, 90, or 120 seconds
+  timeAttackTimer = 0;
+  timeAttackActive = false;
+
+  // Frenzy bonus round
+  frenzyActive = false;
+  frenzyTimer = 0;
+  frenzyDuration = 15;           // 15 seconds of 5x scoring
+  frenzyMultiplier = 5;
+
+  // Orbit shot tracking
+  orbitProgress = 0;             // 0 = none, advances through 3 checkpoints
+  orbitTimer = 0;
+  orbitTimeout = 6;              // seconds to complete orbit
+  totalOrbits = 0;
+  orbitCombo = 0;                // consecutive orbits for escalating bonus
+
+  // Score milestones
+  milestonesReached: number[] = [];
+  readonly MILESTONES = [100000, 250000, 500000, 1000000, 2500000, 5000000];
+  readonly MILESTONE_REWARDS = [5000, 15000, 50000, 100000, 250000, 500000];
+
   // Score values
   readonly BUMPER_SCORE = 100;
   readonly SLINGSHOT_SCORE = 50;
@@ -230,6 +254,10 @@ export class GameManager {
   private matchCallbacks: ((number: number, matched: boolean) => void)[] = [];
   private captiveBallCallbacks: ((hits: number) => void)[] = [];
   private magnaSaveCallbacks: ((side: 'left' | 'right', active: boolean, available: boolean) => void)[] = [];
+  private timeAttackCallbacks: ((remaining: number, active: boolean) => void)[] = [];
+  private frenzyCallbacks: ((active: boolean, timer: number) => void)[] = [];
+  private orbitCallbacks: ((complete: boolean, combo: number) => void)[] = [];
+  private milestoneCallbacks: ((milestone: number, reward: number) => void)[] = [];
 
   constructor() {
     this.loadHighScore();
@@ -259,6 +287,10 @@ export class GameManager {
   onMatch(cb: (number: number, matched: boolean) => void): void { this.matchCallbacks.push(cb); }
   onCaptiveBall(cb: (hits: number) => void): void { this.captiveBallCallbacks.push(cb); }
   onMagnaSave(cb: (side: 'left' | 'right', active: boolean, available: boolean) => void): void { this.magnaSaveCallbacks.push(cb); }
+  onTimeAttack(cb: (remaining: number, active: boolean) => void): void { this.timeAttackCallbacks.push(cb); }
+  onFrenzy(cb: (active: boolean, timer: number) => void): void { this.frenzyCallbacks.push(cb); }
+  onOrbit(cb: (complete: boolean, combo: number) => void): void { this.orbitCallbacks.push(cb); }
+  onMilestone(cb: (milestone: number, reward: number) => void): void { this.milestoneCallbacks.push(cb); }
 
   setState(state: GameState): void {
     this.state = state;
@@ -322,6 +354,16 @@ export class GameManager {
     this.magnaSaveSide = null;
     this.magnaSaveDuration = 0;
     this.isPartyMode = false;
+    this.isTimeAttack = false;
+    this.timeAttackActive = false;
+    this.timeAttackTimer = 0;
+    this.frenzyActive = false;
+    this.frenzyTimer = 0;
+    this.orbitProgress = 0;
+    this.orbitTimer = 0;
+    this.totalOrbits = 0;
+    this.orbitCombo = 0;
+    this.milestonesReached = [];
     this.initTargets();
     this.setState('plunger');
     this.emitMessage('BALL 1 - PULL TO LAUNCH!');
@@ -331,6 +373,7 @@ export class GameManager {
     let eff = this.multiplier;
     if (this.wizardModeActive) eff *= this.wizardModeMultiplier;
     if (this.isPartyMode) eff *= 2;
+    if (this.frenzyActive) eff *= this.frenzyMultiplier;
     return eff;
   }
 
@@ -400,6 +443,39 @@ export class GameManager {
 
     // Magna-Save timer
     this.updateMagnaSave(dt);
+
+    // Time Attack timer
+    if (this.isTimeAttack && this.timeAttackActive) {
+      this.timeAttackTimer -= dt;
+      for (const cb of this.timeAttackCallbacks) cb(this.timeAttackTimer, true);
+      if (this.timeAttackTimer <= 0) {
+        this.timeAttackTimer = 0;
+        this.timeAttackActive = false;
+        for (const cb of this.timeAttackCallbacks) cb(0, false);
+        this.endGame();
+      }
+    }
+
+    // Frenzy bonus round timer
+    if (this.frenzyActive) {
+      this.frenzyTimer -= dt;
+      for (const cb of this.frenzyCallbacks) cb(true, this.frenzyTimer);
+      if (this.frenzyTimer <= 0) {
+        this.endFrenzy();
+      }
+    }
+
+    // Orbit timer decay
+    if (this.orbitProgress > 0) {
+      this.orbitTimer -= dt;
+      if (this.orbitTimer <= 0) {
+        this.orbitProgress = 0;
+        this.orbitCombo = 0;
+      }
+    }
+
+    // Check score milestones
+    this.checkMilestones();
   }
 
   // === Dynamic intensity ===
@@ -623,6 +699,23 @@ export class GameManager {
     if (this.bonusCountdownData.totalBonus > 0) {
       this.bonusCountdownActive = true;
       for (const cb of this.bonusCallbacks) cb(this.bonusCountdownData);
+    }
+
+    // Time Attack: unlimited balls, just re-serve quickly
+    if (this.isTimeAttack && this.timeAttackActive) {
+      this.multiplier = 1;
+      this.comboCount = 0;
+      this.currentComboTier = '';
+      this.skillShotAvailable = true;
+      this.ballSaverActive = true;
+      this.ballSaverTimer = 5;
+      this.magnaSaveLeft = true;
+      this.magnaSaveRight = true;
+      this.magnaSaveActive = false;
+      this.magnaSaveSide = null;
+      this.setState('plunger');
+      this.emitMessage(`⏱️ ${Math.ceil(this.timeAttackTimer)}s - KEEP GOING!`);
+      return { saved: true, isMultiballDrain: false };
     }
 
     this.balls--;
@@ -1066,15 +1159,23 @@ export class GameManager {
       this.saveHighScore();
       this.emitMessage('NEW HIGH SCORE!');
     }
-    this.saveToLeaderboard();
+
+    if (this.isTimeAttack) {
+      this.saveTimeAttackScore();
+    } else {
+      this.saveToLeaderboard();
+    }
+
     this.setState('gameover');
 
-    // Run match sequence after a delay
-    setTimeout(() => {
-      if (this.state === 'gameover') {
-        this.runMatchSequence();
-      }
-    }, 2000);
+    // Run match sequence after a delay (not in time attack)
+    if (!this.isTimeAttack) {
+      setTimeout(() => {
+        if (this.state === 'gameover') {
+          this.runMatchSequence();
+        }
+      }, 2000);
+    }
   }
 
   private addCombo(): void {
@@ -1132,5 +1233,127 @@ export class GameManager {
       const raw = localStorage.getItem('neon-pinball-leaderboard');
       return raw ? JSON.parse(raw) : [];
     } catch { return []; }
+  }
+
+  // === Time Attack Mode ===
+
+  startTimeAttack(duration: number): void {
+    this.isTimeAttack = true;
+    this.timeAttackDuration = duration;
+    this.timeAttackTimer = duration;
+    this.timeAttackActive = true;
+    this.maxBalls = 99;  // Unlimited balls in time attack
+    this.startGame();
+    this.isTimeAttack = true;  // Re-set after startGame resets it
+    this.timeAttackActive = true;
+    this.timeAttackTimer = duration;
+    this.emitMessage(`⏱️ TIME ATTACK! ${duration}s GO! ⏱️`);
+  }
+
+  getTimeAttackLeaderboard(): ScoreEntry[] {
+    try {
+      const raw = localStorage.getItem('neon-pinball-timeattack-lb');
+      return raw ? JSON.parse(raw) : [];
+    } catch { return []; }
+  }
+
+  saveTimeAttackScore(): void {
+    try {
+      const key = 'neon-pinball-timeattack-lb';
+      const raw = localStorage.getItem(key);
+      const entries: ScoreEntry[] = raw ? JSON.parse(raw) : [];
+      entries.push({
+        score: this.score,
+        table: `${this.timeAttackDuration}s`,
+        date: new Date().toISOString(),
+      });
+      entries.sort((a, b) => b.score - a.score);
+      localStorage.setItem(key, JSON.stringify(entries.slice(0, 10)));
+    } catch {}
+  }
+
+  // === Frenzy Bonus Round ===
+
+  startFrenzy(): void {
+    if (this.frenzyActive) return;
+    this.frenzyActive = true;
+    this.frenzyTimer = this.frenzyDuration;
+    this.bumpIntensity(40);
+    this.emitMessage('🔥 FRENZY MODE! ALL SCORES x5! 🔥');
+    for (const cb of this.frenzyCallbacks) cb(true, this.frenzyTimer);
+  }
+
+  private endFrenzy(): void {
+    this.frenzyActive = false;
+    this.frenzyTimer = 0;
+    this.emitMessage('FRENZY ENDED');
+    for (const cb of this.frenzyCallbacks) cb(false, 0);
+  }
+
+  // === Orbit Shots ===
+  // Orbit = ball travels through 3 checkpoints in sequence (left ramp exit → upper lane → right ramp exit)
+
+  advanceOrbit(checkpoint: number, x: number, z: number): void {
+    if (checkpoint === this.orbitProgress + 1) {
+      this.orbitProgress = checkpoint;
+      this.orbitTimer = this.orbitTimeout;
+
+      if (this.orbitProgress >= 3) {
+        // Full orbit complete!
+        this.totalOrbits++;
+        this.orbitCombo++;
+        this.orbitProgress = 0;
+        this.orbitTimer = 0;
+
+        const eff = this.getEffectiveMultiplier();
+        const baseOrbitScore = 15000;
+        const comboMultiplier = this.orbitCombo;
+        const points = Math.floor(baseOrbitScore * comboMultiplier * eff);
+
+        this.addScore(points, `ORBIT x${comboMultiplier}!`, x, z);
+        this.emitMessage(`🌀 ORBIT COMPLETE x${comboMultiplier}! +${points.toLocaleString()} 🌀`);
+        this.bumpIntensity(25);
+
+        // 3 consecutive orbits triggers frenzy
+        if (this.orbitCombo >= 3 && !this.frenzyActive) {
+          this.startFrenzy();
+        }
+
+        for (const cb of this.orbitCallbacks) cb(true, this.orbitCombo);
+      } else {
+        this.emitMessage(`ORBIT ${this.orbitProgress}/3`);
+        for (const cb of this.orbitCallbacks) cb(false, this.orbitCombo);
+      }
+    }
+  }
+
+  // === Score Milestones ===
+
+  private checkMilestones(): void {
+    for (let i = 0; i < this.MILESTONES.length; i++) {
+      const milestone = this.MILESTONES[i];
+      if (this.score >= milestone && !this.milestonesReached.includes(milestone)) {
+        this.milestonesReached.push(milestone);
+        const reward = this.MILESTONE_REWARDS[i];
+        this.score += reward;
+
+        const milestoneStr = milestone >= 1000000
+          ? `${(milestone / 1000000).toFixed(0)}M`
+          : `${(milestone / 1000).toFixed(0)}K`;
+
+        this.emitMessage(`⭐ ${milestoneStr} MILESTONE! +${reward.toLocaleString()} ⭐`);
+        this.bumpIntensity(15);
+
+        // Grant special rewards at certain milestones
+        if (milestone === 500000 && !this.extraBallAwarded) {
+          this.awardExtraBall();
+        }
+        if (milestone === 1000000 && !this.frenzyActive) {
+          this.startFrenzy();
+        }
+
+        for (const cb of this.milestoneCallbacks) cb(milestone, reward);
+      }
+    }
   }
 }

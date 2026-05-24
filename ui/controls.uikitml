@@ -61,6 +61,10 @@
     <text class="tip">🌟 Build combos fast — multiplier decays after 2 seconds!</text>
     <text class="tip">⚠️ Nudge carefully — 3 warnings = TILT!</text>
     <text class="tip">🧲 Save Magna-Save for desperate moments near the outlanes!</text>
+    <text class="tip">🌀 Complete a full orbit (Left Ramp → Spinner → Right Ramp) for big points!</text>
+    <text class="tip">🔥 3 consecutive orbits triggers FRENZY MODE — all scoring x5!</text>
+    <text class="tip">⏱️ Try TIME ATTACK mode — unlimited balls, race the clock!</text>
+    <text class="tip">⭐ Hit score milestones for bonus awards (100K, 250K, 500K, 1M+)!</text>
 
     <view id="controls-back-btn" class="btn"><text class="btn-text">BACK</text></view>
   </view>

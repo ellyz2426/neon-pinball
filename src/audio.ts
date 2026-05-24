@@ -935,4 +935,132 @@ export class AudioManager {
     zap.start(t);
     zap.stop(t + 0.25);
   }
+
+  playFrenzyStart(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Epic ascending power chord
+    const freqs = [220, 330, 440, 660, 880];
+    for (let i = 0; i < freqs.length; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sawtooth';
+      const delay = i * 0.06;
+      osc.frequency.setValueAtTime(freqs[i], t + delay);
+      osc.frequency.exponentialRampToValueAtTime(freqs[i] * 1.5, t + delay + 0.4);
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0, t + delay);
+      g.gain.linearRampToValueAtTime(0.18, t + delay + 0.05);
+      g.gain.exponentialRampToValueAtTime(0.01, t + delay + 0.5);
+      osc.connect(g);
+      g.connect(this.sfxGain);
+      osc.start(t + delay);
+      osc.stop(t + delay + 0.5);
+    }
+  }
+
+  playFrenzyEnd(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Descending whoosh
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, t);
+    osc.frequency.exponentialRampToValueAtTime(100, t + 0.5);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.2, t);
+    g.gain.exponentialRampToValueAtTime(0.01, t + 0.5);
+    osc.connect(g);
+    g.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.5);
+  }
+
+  playMilestone(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Triumphant 3-note chime with shimmer
+    const notes = [523, 659, 784]; // C5, E5, G5
+    for (let i = 0; i < notes.length; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sine';
+      const delay = i * 0.12;
+      osc.frequency.value = notes[i];
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0, t + delay);
+      g.gain.linearRampToValueAtTime(0.25, t + delay + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.01, t + delay + 0.8);
+      osc.connect(g);
+      g.connect(this.sfxGain);
+      osc.start(t + delay);
+      osc.stop(t + delay + 0.8);
+    }
+
+    // High shimmer
+    const shimmer = this.ctx.createOscillator();
+    shimmer.type = 'sine';
+    shimmer.frequency.value = 1568; // G6
+    const sg = this.ctx.createGain();
+    sg.gain.setValueAtTime(0, t + 0.3);
+    sg.gain.linearRampToValueAtTime(0.12, t + 0.35);
+    sg.gain.exponentialRampToValueAtTime(0.01, t + 1.2);
+    shimmer.connect(sg);
+    sg.connect(this.sfxGain);
+    shimmer.start(t + 0.3);
+    shimmer.stop(t + 1.2);
+  }
+
+  playOrbitComplete(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Whooshing sweep + chime
+    const sweep = this.ctx.createOscillator();
+    sweep.type = 'triangle';
+    sweep.frequency.setValueAtTime(200, t);
+    sweep.frequency.linearRampToValueAtTime(800, t + 0.2);
+    sweep.frequency.linearRampToValueAtTime(400, t + 0.4);
+    const sg = this.ctx.createGain();
+    sg.gain.setValueAtTime(0, t);
+    sg.gain.linearRampToValueAtTime(0.2, t + 0.05);
+    sg.gain.exponentialRampToValueAtTime(0.01, t + 0.4);
+    sweep.connect(sg);
+    sg.connect(this.sfxGain);
+    sweep.start(t);
+    sweep.stop(t + 0.4);
+
+    // Completion chime
+    const chime = this.ctx.createOscillator();
+    chime.type = 'sine';
+    chime.frequency.value = 1047; // C6
+    const cg = this.ctx.createGain();
+    cg.gain.setValueAtTime(0, t + 0.15);
+    cg.gain.linearRampToValueAtTime(0.2, t + 0.18);
+    cg.gain.exponentialRampToValueAtTime(0.01, t + 0.7);
+    chime.connect(cg);
+    cg.connect(this.sfxGain);
+    chime.start(t + 0.15);
+    chime.stop(t + 0.7);
+  }
+
+  playTimeAttackWarning(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Urgent beep
+    const osc = this.ctx.createOscillator();
+    osc.type = 'square';
+    osc.frequency.value = 880;
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.15, t);
+    g.gain.setValueAtTime(0, t + 0.08);
+    g.gain.setValueAtTime(0.15, t + 0.12);
+    g.gain.setValueAtTime(0, t + 0.2);
+    osc.connect(g);
+    g.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.2);
+  }
 }

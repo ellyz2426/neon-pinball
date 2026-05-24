@@ -56,6 +56,12 @@ const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
   { id: 'all_themes', name: 'FASHIONISTA', description: 'Try all 5 table themes', icon: '🎨', color: '#ff00ff' },
   { id: 'daily_beat', name: 'DAILY CHAMPION', description: 'Beat a daily challenge target', icon: '📅', color: '#ffff00' },
   { id: 'score_2m', name: 'DOUBLE MILLIONAIRE', description: 'Score 2,000,000 points', icon: '💰', color: '#ff8800' },
+  { id: 'time_attack_100k', name: 'SPEED DEMON', description: 'Score 100K in Time Attack', icon: '⏱️', color: '#ff4400' },
+  { id: 'orbit_complete', name: 'ORBIT KING', description: 'Complete a full orbit shot', icon: '🌀', color: '#00ccff' },
+  { id: 'orbit_3x', name: 'ORBITAL MADNESS', description: 'Hit 3 consecutive orbits', icon: '🌀', color: '#00ffff' },
+  { id: 'frenzy_trigger', name: 'FRENZY!', description: 'Trigger Frenzy bonus round', icon: '🔥', color: '#ff6600' },
+  { id: 'milestone_1m', name: 'MILESTONE MASTER', description: 'Reach the 1M score milestone', icon: '⭐', color: '#ffd700' },
+  { id: 'score_5m', name: 'FIVE MILLION', description: 'Score 5,000,000 points', icon: '🏆', color: '#ffd700' },
 ];
 
 export class AchievementManager {
@@ -210,6 +216,27 @@ export class AchievementManager {
 
   checkDailyBeat(): void {
     this.unlock('daily_beat');
+  }
+
+  checkTimeAttackScore(score: number): void {
+    if (score >= 100000) this.unlock('time_attack_100k');
+  }
+
+  checkOrbitComplete(combo: number): void {
+    this.unlock('orbit_complete');
+    if (combo >= 3) this.unlock('orbit_3x');
+  }
+
+  checkFrenzyTriggered(): void {
+    this.unlock('frenzy_trigger');
+  }
+
+  checkMilestoneReached(milestone: number): void {
+    if (milestone >= 1000000) this.unlock('milestone_1m');
+  }
+
+  checkScoreMilestones(score: number): void {
+    if (score >= 5000000) this.unlock('score_5m');
   }
 
   private unlock(id: string): void {

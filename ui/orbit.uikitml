@@ -1,0 +1,32 @@
+<style>
+  .orbit-panel {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 0.8;
+    background-color: rgba(0, 100, 200, 0.8);
+    border-color: #00ccff;
+    border-width: 0.1;
+    border-radius: 0.5;
+    gap: 0.8;
+  }
+  .orbit-label {
+    font-size: 1.5;
+    color: #00ccff;
+    font-weight: bold;
+  }
+  .orbit-dots {
+    font-size: 2;
+    color: #ffffff;
+    font-weight: bold;
+  }
+  .orbit-combo {
+    font-size: 1.3;
+    color: #88ddff;
+  }
+</style>
+<div class="orbit-panel">
+  <span class="orbit-label">🌀 ORBIT</span>
+  <span id="orbit-dots" class="orbit-dots">○ ○ ○</span>
+  <span id="orbit-combo" class="orbit-combo"></span>
+</div>

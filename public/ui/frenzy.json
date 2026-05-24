@@ -1,0 +1,163 @@
+{
+  "element": {
+    "type": "container",
+    "sourceTag": "div",
+    "children": [
+      {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [
+          "🔥 FRENZY 🔥"
+        ],
+        "properties": {
+          "class": "frenzy-title"
+        },
+        "dataUid": "uid-2"
+      },
+      {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [
+          "x5 SCORING"
+        ],
+        "properties": {
+          "id": "frenzy-mult",
+          "class": "frenzy-mult"
+        },
+        "dataUid": "uid-3"
+      },
+      {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [
+          "15s"
+        ],
+        "properties": {
+          "id": "frenzy-timer",
+          "class": "frenzy-timer"
+        },
+        "dataUid": "uid-4"
+      }
+    ],
+    "properties": {
+      "class": "frenzy-panel"
+    },
+    "dataUid": "uid-1"
+  },
+  "classes": {
+    "frenzy-panel": {
+      "content": {
+        "display": "flex",
+        "flexDirection": "column",
+        "alignItems": "center",
+        "padding": "1",
+        "backgroundColor": "rgba(255, 40, 0, 0.85)",
+        "borderColor": "#ffaa00",
+        "borderWidth": "0.12",
+        "borderRadius": 0.6
+      }
+    },
+    "frenzy-title": {
+      "content": {
+        "fontSize": "2",
+        "color": "#ffff00",
+        "fontWeight": "bold"
+      }
+    },
+    "frenzy-mult": {
+      "content": {
+        "fontSize": "2.5",
+        "color": "#ffffff",
+        "fontWeight": "bold"
+      }
+    },
+    "frenzy-timer": {
+      "content": {
+        "fontSize": "1.5",
+        "color": "#ffcc00"
+      }
+    }
+  },
+  "ranges": {
+    "frenzy-panel": {
+      "start": {
+        "line": 1,
+        "column": 2
+      },
+      "end": {
+        "line": 1,
+        "column": 15
+      }
+    },
+    "frenzy-title": {
+      "start": {
+        "line": 11,
+        "column": 2
+      },
+      "end": {
+        "line": 11,
+        "column": 15
+      }
+    },
+    "frenzy-mult": {
+      "start": {
+        "line": 16,
+        "column": 2
+      },
+      "end": {
+        "line": 16,
+        "column": 14
+      }
+    },
+    "frenzy-timer": {
+      "start": {
+        "line": 21,
+        "column": 2
+      },
+      "end": {
+        "line": 21,
+        "column": 15
+      }
+    },
+    "uid-1": {
+      "start": {
+        "line": 26,
+        "column": 0
+      },
+      "end": {
+        "line": 30,
+        "column": 6
+      }
+    },
+    "uid-2": {
+      "start": {
+        "line": 27,
+        "column": 2
+      },
+      "end": {
+        "line": 27,
+        "column": 48
+      }
+    },
+    "uid-3": {
+      "start": {
+        "line": 28,
+        "column": 2
+      },
+      "end": {
+        "line": 28,
+        "column": 62
+      }
+    },
+    "uid-4": {
+      "start": {
+        "line": 29,
+        "column": 2
+      },
+      "end": {
+        "line": 29,
+        "column": 57
+      }
+    }
+  }
+}

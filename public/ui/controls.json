@@ -775,6 +775,50 @@
                             "dataUid": "uid-76"
                           },
                           {
+                            "sourceTag": "text",
+                            "type": "custom",
+                            "children": [
+                              "🌀 Complete a full orbit (Left Ramp → Spinner → Right Ramp) for big points!"
+                            ],
+                            "properties": {
+                              "class": "tip"
+                            },
+                            "dataUid": "uid-77"
+                          },
+                          {
+                            "sourceTag": "text",
+                            "type": "custom",
+                            "children": [
+                              "🔥 3 consecutive orbits triggers FRENZY MODE — all scoring x5!"
+                            ],
+                            "properties": {
+                              "class": "tip"
+                            },
+                            "dataUid": "uid-78"
+                          },
+                          {
+                            "sourceTag": "text",
+                            "type": "custom",
+                            "children": [
+                              "⏱️ Try TIME ATTACK mode — unlimited balls, race the clock!"
+                            ],
+                            "properties": {
+                              "class": "tip"
+                            },
+                            "dataUid": "uid-79"
+                          },
+                          {
+                            "sourceTag": "text",
+                            "type": "custom",
+                            "children": [
+                              "⭐ Hit score milestones for bonus awards (100K, 250K, 500K, 1M+)!"
+                            ],
+                            "properties": {
+                              "class": "tip"
+                            },
+                            "dataUid": "uid-80"
+                          },
+                          {
                             "sourceTag": "view",
                             "type": "custom",
                             "children": [
@@ -787,14 +831,14 @@
                                 "properties": {
                                   "class": "btn-text"
                                 },
-                                "dataUid": "uid-78"
+                                "dataUid": "uid-82"
                               }
                             ],
                             "properties": {
                               "id": "controls-back-btn",
                               "class": "btn"
                             },
-                            "dataUid": "uid-77"
+                            "dataUid": "uid-81"
                           }
                         ],
                         "properties": {
@@ -942,7 +986,7 @@
         "column": 0
       },
       "end": {
-        "line": 66,
+        "line": 70,
         "column": 10
       }
     },
@@ -1082,7 +1126,7 @@
         "column": 2
       },
       "end": {
-        "line": 66,
+        "line": 70,
         "column": 0
       }
     },
@@ -1292,7 +1336,7 @@
         "column": 4
       },
       "end": {
-        "line": 66,
+        "line": 70,
         "column": 0
       }
     },
@@ -1492,7 +1536,7 @@
         "column": 4
       },
       "end": {
-        "line": 66,
+        "line": 70,
         "column": 0
       }
     },
@@ -1522,7 +1566,7 @@
         "column": 4
       },
       "end": {
-        "line": 66,
+        "line": 70,
         "column": 0
       }
     },
@@ -1752,7 +1796,7 @@
         "column": 4
       },
       "end": {
-        "line": 65,
+        "line": 69,
         "column": 9
       }
     },
@@ -1828,21 +1872,61 @@
     },
     "uid-77": {
       "start": {
-        "line": 64,
+        "line": 63,
         "column": 4
       },
       "end": {
-        "line": 64,
-        "column": 86
+        "line": 63,
+        "column": 104
       }
     },
     "uid-78": {
       "start": {
         "line": 64,
-        "column": 45
+        "column": 4
       },
       "end": {
         "line": 64,
+        "column": 91
+      }
+    },
+    "uid-79": {
+      "start": {
+        "line": 65,
+        "column": 4
+      },
+      "end": {
+        "line": 65,
+        "column": 87
+      }
+    },
+    "uid-80": {
+      "start": {
+        "line": 66,
+        "column": 4
+      },
+      "end": {
+        "line": 66,
+        "column": 93
+      }
+    },
+    "uid-81": {
+      "start": {
+        "line": 68,
+        "column": 4
+      },
+      "end": {
+        "line": 68,
+        "column": 86
+      }
+    },
+    "uid-82": {
+      "start": {
+        "line": 68,
+        "column": 45
+      },
+      "end": {
+        "line": 68,
         "column": 79
       }
     }

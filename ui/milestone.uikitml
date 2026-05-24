@@ -1,0 +1,31 @@
+<style>
+  .ms-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.2;
+    background-color: rgba(255, 200, 0, 0.9);
+    border-color: #ffffff;
+    border-width: 0.15;
+    border-radius: 0.8;
+  }
+  .ms-title {
+    font-size: 2.5;
+    color: #ffffff;
+    font-weight: bold;
+  }
+  .ms-score {
+    font-size: 2;
+    color: #ffffcc;
+    font-weight: bold;
+  }
+  .ms-reward {
+    font-size: 1.5;
+    color: #ffffff;
+  }
+</style>
+<div class="ms-panel">
+  <span id="ms-title" class="ms-title">⭐ MILESTONE ⭐</span>
+  <span id="ms-score" class="ms-score">100,000</span>
+  <span id="ms-reward" class="ms-reward">+5,000 BONUS</span>
+</div>

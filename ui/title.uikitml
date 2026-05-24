@@ -153,6 +153,9 @@
   <div id="party-btn" class="menu-btn-party" cursor="pointer">
     <span class="btn-text-party">🎉 PARTY MODE</span>
   </div>
+  <div id="timeattack-btn" class="menu-btn-gold" cursor="pointer">
+    <span class="btn-text-gold">⏱️ TIME ATTACK</span>
+  </div>
   <div id="daily-btn" class="menu-btn-gold" cursor="pointer">
     <span class="btn-text-gold">📅 DAILY CHALLENGE</span>
   </div>

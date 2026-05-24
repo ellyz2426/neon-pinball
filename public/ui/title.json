@@ -79,7 +79,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "📅 DAILY CHALLENGE"
+              "⏱️ TIME ATTACK"
             ],
             "properties": {
               "class": "btn-text-gold"
@@ -88,11 +88,34 @@
           }
         ],
         "properties": {
-          "id": "daily-btn",
+          "id": "timeattack-btn",
           "class": "menu-btn-gold",
           "cursor": "pointer"
         },
         "dataUid": "uid-8"
+      },
+      {
+        "type": "container",
+        "sourceTag": "div",
+        "children": [
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "📅 DAILY CHALLENGE"
+            ],
+            "properties": {
+              "class": "btn-text-gold"
+            },
+            "dataUid": "uid-11"
+          }
+        ],
+        "properties": {
+          "id": "daily-btn",
+          "class": "menu-btn-gold",
+          "cursor": "pointer"
+        },
+        "dataUid": "uid-10"
       },
       {
         "type": "container",
@@ -107,7 +130,7 @@
             "properties": {
               "class": "btn-text"
             },
-            "dataUid": "uid-11"
+            "dataUid": "uid-13"
           }
         ],
         "properties": {
@@ -115,7 +138,7 @@
           "class": "menu-btn",
           "cursor": "pointer"
         },
-        "dataUid": "uid-10"
+        "dataUid": "uid-12"
       },
       {
         "type": "container",
@@ -130,7 +153,7 @@
             "properties": {
               "class": "btn-text-gold"
             },
-            "dataUid": "uid-13"
+            "dataUid": "uid-15"
           }
         ],
         "properties": {
@@ -138,7 +161,7 @@
           "class": "menu-btn-gold",
           "cursor": "pointer"
         },
-        "dataUid": "uid-12"
+        "dataUid": "uid-14"
       },
       {
         "type": "container",
@@ -153,7 +176,7 @@
             "properties": {
               "class": "btn-text-green"
             },
-            "dataUid": "uid-15"
+            "dataUid": "uid-17"
           }
         ],
         "properties": {
@@ -161,7 +184,7 @@
           "class": "menu-btn-green",
           "cursor": "pointer"
         },
-        "dataUid": "uid-14"
+        "dataUid": "uid-16"
       },
       {
         "type": "container",
@@ -176,7 +199,7 @@
             "properties": {
               "class": "btn-text-purple"
             },
-            "dataUid": "uid-17"
+            "dataUid": "uid-19"
           }
         ],
         "properties": {
@@ -184,7 +207,7 @@
           "class": "menu-btn-purple",
           "cursor": "pointer"
         },
-        "dataUid": "uid-16"
+        "dataUid": "uid-18"
       },
       {
         "type": "container",
@@ -199,7 +222,7 @@
             "properties": {
               "class": "btn-text"
             },
-            "dataUid": "uid-19"
+            "dataUid": "uid-21"
           }
         ],
         "properties": {
@@ -207,7 +230,7 @@
           "class": "menu-btn",
           "cursor": "pointer"
         },
-        "dataUid": "uid-18"
+        "dataUid": "uid-20"
       },
       {
         "type": "container",
@@ -222,7 +245,7 @@
             "properties": {
               "class": "btn-text"
             },
-            "dataUid": "uid-21"
+            "dataUid": "uid-23"
           }
         ],
         "properties": {
@@ -230,7 +253,7 @@
           "class": "menu-btn",
           "cursor": "pointer"
         },
-        "dataUid": "uid-20"
+        "dataUid": "uid-22"
       },
       {
         "sourceTag": "span",
@@ -241,7 +264,7 @@
         "properties": {
           "class": "highscore-label"
         },
-        "dataUid": "uid-22"
+        "dataUid": "uid-24"
       },
       {
         "sourceTag": "span",
@@ -253,7 +276,7 @@
           "id": "highscore-value",
           "class": "highscore-value"
         },
-        "dataUid": "uid-23"
+        "dataUid": "uid-25"
       },
       {
         "sourceTag": "span",
@@ -263,7 +286,7 @@
           "id": "ach-count-display",
           "class": "ach-count-hint"
         },
-        "dataUid": "uid-24"
+        "dataUid": "uid-26"
       },
       {
         "sourceTag": "span",
@@ -274,7 +297,7 @@
         "properties": {
           "class": "controls-hint"
         },
-        "dataUid": "uid-25"
+        "dataUid": "uid-27"
       },
       {
         "sourceTag": "span",
@@ -285,7 +308,7 @@
         "properties": {
           "class": "controls-hint"
         },
-        "dataUid": "uid-26"
+        "dataUid": "uid-28"
       }
     ],
     "properties": {
@@ -686,7 +709,7 @@
         "column": 0
       },
       "end": {
-        "line": 181,
+        "line": 184,
         "column": 6
       }
     },
@@ -767,7 +790,7 @@
       },
       "end": {
         "line": 156,
-        "column": 57
+        "column": 53
       }
     },
     "uid-10": {
@@ -787,7 +810,7 @@
       },
       "end": {
         "line": 159,
-        "column": 45
+        "column": 57
       }
     },
     "uid-12": {
@@ -807,7 +830,7 @@
       },
       "end": {
         "line": 162,
-        "column": 51
+        "column": 45
       }
     },
     "uid-14": {
@@ -827,7 +850,7 @@
       },
       "end": {
         "line": 165,
-        "column": 50
+        "column": 51
       }
     },
     "uid-16": {
@@ -847,7 +870,7 @@
       },
       "end": {
         "line": 168,
-        "column": 52
+        "column": 50
       }
     },
     "uid-18": {
@@ -867,7 +890,7 @@
       },
       "end": {
         "line": 171,
-        "column": 40
+        "column": 52
       }
     },
     "uid-20": {
@@ -887,7 +910,7 @@
       },
       "end": {
         "line": 174,
-        "column": 42
+        "column": 40
       }
     },
     "uid-22": {
@@ -896,47 +919,67 @@
         "column": 2
       },
       "end": {
-        "line": 176,
-        "column": 49
+        "line": 178,
+        "column": 8
       }
     },
     "uid-23": {
       "start": {
         "line": 177,
-        "column": 2
+        "column": 4
       },
       "end": {
         "line": 177,
-        "column": 61
+        "column": 42
       }
     },
     "uid-24": {
       "start": {
-        "line": 178,
+        "line": 179,
         "column": 2
       },
       "end": {
-        "line": 178,
-        "column": 61
+        "line": 179,
+        "column": 49
       }
     },
     "uid-25": {
       "start": {
-        "line": 179,
+        "line": 180,
         "column": 2
       },
       "end": {
-        "line": 179,
-        "column": 77
+        "line": 180,
+        "column": 61
       }
     },
     "uid-26": {
       "start": {
-        "line": 180,
+        "line": 181,
         "column": 2
       },
       "end": {
-        "line": 180,
+        "line": 181,
+        "column": 61
+      }
+    },
+    "uid-27": {
+      "start": {
+        "line": 182,
+        "column": 2
+      },
+      "end": {
+        "line": 182,
+        "column": 77
+      }
+    },
+    "uid-28": {
+      "start": {
+        "line": 183,
+        "column": 2
+      },
+      "end": {
+        "line": 183,
         "column": 78
       }
     }

@@ -447,7 +447,7 @@ async function main() {
   }
 
   // Game loop
-  const gameLoop = world.createSystem({
+  const gameLoop = (world as any).createSystem({
     name: 'PinballGameLoop',
     update: (_ecs: any, delta: number) => {
       const dt = Math.min(delta, 0.033);
@@ -740,6 +740,8 @@ async function main() {
             audio.playSpinnerHit();
             effects.spawnBumperHit(event.x, event.z, 0xffff00);
             spinnerCooldowns[sid] = 0.15;
+            // Orbit checkpoint 2: spinner acts as middle checkpoint
+            game.advanceOrbit(2, event.x, event.z);
           }
           break;
         }
@@ -753,6 +755,12 @@ async function main() {
           audio.playRampExit();
           const triggeredMultiball = game.handleRampShot(event.id || '', event.x, event.z);
           effects.spawnBumperHit(event.x, event.z, event.id === 'ramp-left' ? 0xff00ff : 0x00ff88);
+          // Orbit checkpoint: left ramp exit = checkpoint 1, right ramp exit = checkpoint 3
+          if (event.id === 'ramp-left') {
+            game.advanceOrbit(1, event.x, event.z);
+          } else if (event.id === 'ramp-right') {
+            game.advanceOrbit(3, event.x, event.z);
+          }
           break;
         }
 

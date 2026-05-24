@@ -1,5 +1,5 @@
 // Neon Pinball VR - UI Manager
-// Round 3: Achievements panel, stats panel, wizard HUD, achievement toast, dynamic updates
+// Round 6: Time Attack mode, Frenzy bonus round, orbit shots, milestones
 
 import {
   PanelUI, ScreenSpace, Follower, FollowBehavior,
@@ -10,6 +10,11 @@ import { GameManager, GameState, Mission, IntensityLevel, BonusCountdown } from 
 import { AudioManager } from './audio';
 import { AchievementManager, Achievement } from './achievements';
 import { getDailyChallenge, getDailyBestScore, saveDailyScore, THEMES, TableTheme } from './themes';
+
+// Helper to safely set text on UIKit elements (runtime has .text signal, TS types don't expose it)
+function setText(el: any, value: string): void {
+  if (el && el.text) el.text.value = value;
+}
 
 interface UIPanel {
   entity: any;
@@ -39,6 +44,10 @@ export class UIManager {
   private bonusPanel: UIPanel | null = null;
   private dailyPanel: UIPanel | null = null;
   private themesPanel: UIPanel | null = null;
+  private timeattackPanel: UIPanel | null = null;
+  private frenzyPanel: UIPanel | null = null;
+  private orbitPanel: UIPanel | null = null;
+  private milestonePanel: UIPanel | null = null;
 
   private messageTimer = 0;
   private achToastTimer = 0;
@@ -46,6 +55,7 @@ export class UIManager {
   private comboTierDisplay = '';
   private bonusCountdownTimer = 0;
   private themeChangeCallbacks: ((theme: TableTheme) => void)[] = [];
+  private milestoneTimer = 0;
   private initDone = false;
 
   onThemeChange(cb: (theme: TableTheme) => void): void {
@@ -111,6 +121,18 @@ export class UIManager {
     // Theme selection panel
     this.themesPanel = await this.createWorldPanel('/ui/themes.json', 0.6, 0.9, [0, 1.3, -0.8], 0.8);
 
+    // Time Attack selection panel
+    this.timeattackPanel = await this.createWorldPanel('/ui/timeattack.json', 0.7, 1.0, [0, 1.3, -0.8], 0.8);
+
+    // Frenzy bonus indicator (head-following, top center)
+    this.frenzyPanel = await this.createFollowerPanel('/ui/frenzy.json', 0.2, 0.08, [0, 0.08, -0.5]);
+
+    // Orbit progress indicator (head-following, upper right)
+    this.orbitPanel = await this.createFollowerPanel('/ui/orbit.json', 0.25, 0.05, [0.2, 0.02, -0.5]);
+
+    // Milestone notification (head-following, center)
+    this.milestonePanel = await this.createFollowerPanel('/ui/milestone.json', 0.3, 0.1, [0, 0, -0.5]);
+
     // Initial state
     this.showState('title');
 
@@ -151,6 +173,57 @@ export class UIManager {
     // Wire bonus countdown
     this.game.onBonus((data: BonusCountdown) => {
       this.showBonusCountdown(data);
+    });
+
+    // Wire frenzy mode
+    this.game.onFrenzy((active, timer) => {
+      if (this.frenzyPanel) {
+        this.frenzyPanel.entity.object3D.visible = active;
+        if (active) {
+          const doc = this.getDoc(this.frenzyPanel);
+          if (doc) {
+            setText(doc.getElementById('frenzy-timer'), `${Math.ceil(timer)}s`);
+          }
+        }
+      }
+      // Play frenzy sounds + achievement
+      if (active && timer > 14) {
+        this.audio.playFrenzyStart();
+        this.achievements.checkFrenzyTriggered();
+      } else if (!active) {
+        this.audio.playFrenzyEnd();
+      }
+    });
+
+    // Wire orbit progress
+    this.game.onOrbit((complete, combo) => {
+      if (this.orbitPanel) {
+        this.orbitPanel.entity.object3D.visible = this.game.orbitProgress > 0 || complete;
+        const doc = this.getDoc(this.orbitPanel);
+        if (doc) {
+          const p = this.game.orbitProgress;
+          const dots = [p >= 1 ? '●' : '○', p >= 2 ? '●' : '○', p >= 3 ? '●' : '○'].join(' ');
+          setText(doc.getElementById('orbit-dots'), dots);
+          setText(doc.getElementById('orbit-combo'), combo > 1 ? `x${combo}` : '');
+        }
+        if (complete) {
+          this.audio.playOrbitComplete();
+          this.achievements.checkOrbitComplete(combo);
+          setTimeout(() => {
+            if (this.orbitPanel && this.game.orbitProgress === 0) {
+              this.orbitPanel.entity.object3D.visible = false;
+            }
+          }, 2000);
+        }
+      }
+    });
+
+    // Wire milestones
+    this.game.onMilestone((milestone, reward) => {
+      this.showMilestone(milestone, reward);
+      this.audio.playMilestone();
+      this.achievements.checkMilestoneReached(milestone);
+      this.achievements.checkScoreMilestones(this.game.score);
     });
 
     this.initDone = true;
@@ -205,18 +278,18 @@ export class UIManager {
     const best = getDailyBestScore();
 
     const dateEl = doc.getElementById('daily-date');
-    if (dateEl) dateEl.text.value = challenge.dateStr;
+    if (dateEl) setText(dateEl, challenge.dateStr);
 
     const targetEl = doc.getElementById('daily-target');
-    if (targetEl) targetEl.text.value = challenge.targetScore.toLocaleString();
+    if (targetEl) setText(targetEl, challenge.targetScore.toLocaleString());
 
     for (let i = 0; i < 3; i++) {
       const modEl = doc.getElementById(`daily-mod-${i}`);
-      if (modEl) modEl.text.value = i < challenge.modifiers.length ? `• ${challenge.modifiers[i]}` : '';
+      if (modEl) setText(modEl, i < challenge.modifiers.length ? `• ${challenge.modifiers[i]}` : '');
     }
 
     const bestEl = doc.getElementById('daily-best');
-    if (bestEl) bestEl.text.value = best > 0 ? `Today's Best: ${best.toLocaleString()}` : 'No attempts yet today';
+    if (bestEl) setText(bestEl, best > 0 ? `Today's Best: ${best.toLocaleString()}` : 'No attempts yet today');
   }
 
   private selectTheme(themeId: string): void {
@@ -245,7 +318,7 @@ export class UIManager {
     };
     for (const [elId, themeId] of Object.entries(checks)) {
       const el = doc.getElementById(elId);
-      if (el) el.text.value = current === themeId ? '✓' : '';
+      if (el) setText(el, current === themeId ? '✓' : '');
     }
   }
 
@@ -288,8 +361,11 @@ export class UIManager {
       titleDoc.getElementById('theme-btn')?.addEventListener('click', () => {
         this.game.setState('themes');
       });
+      titleDoc.getElementById('timeattack-btn')?.addEventListener('click', () => {
+        this.game.setState('timeattack_select');
+      });
       const hsEl = titleDoc.getElementById('highscore-value');
-      if (hsEl) hsEl.text.value = this.game.highScore.toLocaleString();
+      if (hsEl) setText(hsEl, this.game.highScore.toLocaleString());
       this.updateTitleAchCount(titleDoc);
     }
 
@@ -398,6 +474,35 @@ export class UIManager {
         this.selectTheme('toxic-green');
       });
     }
+
+    // Time Attack buttons
+    const taDoc = this.getDoc(this.timeattackPanel!);
+    if (taDoc) {
+      taDoc.getElementById('ta-back-btn')?.addEventListener('click', () => {
+        this.game.setState('title');
+      });
+      taDoc.getElementById('ta-60-btn')?.addEventListener('click', () => {
+        this.audio.init();
+        this.audio.resume();
+        this.audio.startAmbient();
+        this.game.startTimeAttack(60);
+        this.achievements.startGame();
+      });
+      taDoc.getElementById('ta-90-btn')?.addEventListener('click', () => {
+        this.audio.init();
+        this.audio.resume();
+        this.audio.startAmbient();
+        this.game.startTimeAttack(90);
+        this.achievements.startGame();
+      });
+      taDoc.getElementById('ta-120-btn')?.addEventListener('click', () => {
+        this.audio.init();
+        this.audio.resume();
+        this.audio.startAmbient();
+        this.game.startTimeAttack(120);
+        this.achievements.startGame();
+      });
+    }
   }
 
   private wireVolumeControl(doc: UIKitDocument, prefix: string, getter: () => number, setter: (v: number) => void): void {
@@ -405,12 +510,12 @@ export class UIManager {
     doc.getElementById(`${prefix}-down`)?.addEventListener('click', () => {
       const v = Math.max(0, getter() - 0.1);
       setter(v);
-      if (valEl) valEl.text.value = `${Math.round(v * 100)}%`;
+      if (valEl) setText(valEl, `${Math.round(v * 100)}%`);
     });
     doc.getElementById(`${prefix}-up`)?.addEventListener('click', () => {
       const v = Math.min(1, getter() + 0.1);
       setter(v);
-      if (valEl) valEl.text.value = `${Math.round(v * 100)}%`;
+      if (valEl) setText(valEl, `${Math.round(v * 100)}%`);
     });
   }
 
@@ -419,7 +524,7 @@ export class UIManager {
     if (el) {
       const unlocked = this.achievements.getUnlockedCount();
       const total = this.achievements.getTotalCount();
-      el.text.value = unlocked > 0 ? `${unlocked}/${total} Achievements Unlocked` : '';
+      setText(el, unlocked > 0 ? `${unlocked}/${total} Achievements Unlocked` : '');
     }
   }
 
@@ -429,17 +534,20 @@ export class UIManager {
       this.pausePanel, this.leaderboardPanel, this.settingsPanel,
       this.plungerPanel, this.achievementsPanel, this.statsPanel,
       this.controlsPanel, this.bonusPanel, this.dailyPanel,
-      this.themesPanel,
+      this.themesPanel, this.timeattackPanel,
     ];
 
     for (const p of panels) {
       if (p) p.entity.object3D.visible = false;
     }
 
-    // Hide mission/wizard panel when not playing
+    // Hide mission/wizard/frenzy/orbit panels when not playing
     if (state !== 'playing' && state !== 'plunger') {
       if (this.missionPanel) this.missionPanel.entity.object3D.visible = false;
       if (this.wizardPanel) this.wizardPanel.entity.object3D.visible = false;
+      if (this.frenzyPanel) this.frenzyPanel.entity.object3D.visible = false;
+      if (this.orbitPanel) this.orbitPanel.entity.object3D.visible = false;
+      if (this.milestonePanel) this.milestonePanel.entity.object3D.visible = false;
     }
 
     switch (state) {
@@ -449,7 +557,7 @@ export class UIManager {
           const doc = this.getDoc(this.titlePanel);
           if (doc) {
             const hsEl = doc.getElementById('highscore-value');
-            if (hsEl) hsEl.text.value = this.game.highScore.toLocaleString();
+            if (hsEl) setText(hsEl, this.game.highScore.toLocaleString());
             this.updateTitleAchCount(doc);
           }
         }
@@ -476,29 +584,31 @@ export class UIManager {
           const doc = this.getDoc(this.gameoverPanel);
           if (doc) {
             const scoreEl = doc.getElementById('go-score');
-            if (scoreEl) scoreEl.text.value = this.game.score.toLocaleString();
+            if (scoreEl) setText(scoreEl, this.game.score.toLocaleString());
             const bumpEl = doc.getElementById('go-bumpers');
-            if (bumpEl) bumpEl.text.value = String(this.game.totalBumperHits);
+            if (bumpEl) setText(bumpEl, String(this.game.totalBumperHits));
             const rampEl = doc.getElementById('go-ramps');
-            if (rampEl) rampEl.text.value = String(this.game.totalRampShots);
+            if (rampEl) setText(rampEl, String(this.game.totalRampShots));
             const comboEl = doc.getElementById('go-combo');
-            if (comboEl) comboEl.text.value = `x${this.game.multiplier.toFixed(1)}`;
+            if (comboEl) setText(comboEl, `x${this.game.multiplier.toFixed(1)}`);
             const missEl = doc.getElementById('go-missions');
-            if (missEl) missEl.text.value = String(this.game.missionsCompleted);
+            if (missEl) setText(missEl, String(this.game.missionsCompleted));
             const wizEl = doc.getElementById('go-wizard');
-            if (wizEl) wizEl.text.value = this.game.wizardModeTriggered ? 'YES!' : 'No';
+            if (wizEl) setText(wizEl, this.game.wizardModeTriggered ? 'YES!' : 'No');
             const nhEl = doc.getElementById('go-newhigh');
-            if (nhEl) nhEl.text.value = this.game.score >= this.game.highScore ? 'NEW HIGH SCORE!' : '';
+            if (nhEl) setText(nhEl, this.game.score >= this.game.highScore ? 'NEW HIGH SCORE!' : '');
             // Daily challenge display
             const dailyEl = doc.getElementById('go-daily');
             if (dailyEl) {
               if (this.game.isDailyChallenge) {
                 const challenge = getDailyChallenge();
                 const beat = this.game.score >= challenge.targetScore;
-                dailyEl.text.value = beat ? 'DAILY CHALLENGE BEATEN!' : `Daily target: ${challenge.targetScore.toLocaleString()}`;
+                setText(dailyEl, beat ? 'DAILY CHALLENGE BEATEN!' : `Daily target: ${challenge.targetScore.toLocaleString()}`);
                 if (beat) this.achievements.checkDailyBeat();
+              } else if (this.game.isTimeAttack) {
+                setText(dailyEl, `⏱️ TIME ATTACK ${this.game.timeAttackDuration}s`);
               } else {
-                dailyEl.text.value = '';
+                setText(dailyEl, '');
               }
             }
           }
@@ -514,6 +624,10 @@ export class UIManager {
           this.game.totalBumperHits,
           this.game.multiplier,
         );
+        // Time attack achievements
+        if (this.game.isTimeAttack) {
+          this.achievements.checkTimeAttackScore(this.game.score);
+        }
         break;
 
       case 'paused':
@@ -522,7 +636,7 @@ export class UIManager {
           const doc = this.getDoc(this.pausePanel);
           if (doc) {
             const el = doc.getElementById('pause-score');
-            if (el) el.text.value = `Score: ${this.game.score.toLocaleString()}`;
+            if (el) setText(el, `Score: ${this.game.score.toLocaleString()}`);
           }
         }
         break;
@@ -571,6 +685,13 @@ export class UIManager {
           this.updateThemesPanel();
         }
         break;
+
+      case 'timeattack_select':
+        if (this.timeattackPanel) {
+          this.timeattackPanel.entity.object3D.visible = true;
+          this.updateTimeAttackPanel();
+        }
+        break;
     }
   }
 
@@ -582,11 +703,11 @@ export class UIManager {
       const scoreEl = doc.getElementById(`lb-score-${i}`);
       const dateEl = doc.getElementById(`lb-date-${i}`);
       if (i < entries.length) {
-        if (scoreEl) scoreEl.text.value = entries[i].score.toLocaleString();
-        if (dateEl) dateEl.text.value = new Date(entries[i].date).toLocaleDateString();
+        if (scoreEl) setText(scoreEl, entries[i].score.toLocaleString());
+        if (dateEl) setText(dateEl, new Date(entries[i].date).toLocaleDateString());
       } else {
-        if (scoreEl) scoreEl.text.value = '---';
-        if (dateEl) dateEl.text.value = '';
+        if (scoreEl) setText(scoreEl, '---');
+        if (dateEl) setText(dateEl, '');
       }
     }
   }
@@ -597,7 +718,7 @@ export class UIManager {
 
     const countEl = doc.getElementById('ach-count');
     if (countEl) {
-      countEl.text.value = `${this.achievements.getUnlockedCount()} / ${this.achievements.getTotalCount()}`;
+      setText(countEl, `${this.achievements.getUnlockedCount()} / ${this.achievements.getTotalCount()}`);
     }
 
     // Update displayed achievements (first 8 shown in panel)
@@ -607,9 +728,9 @@ export class UIManager {
       const descEl = doc.getElementById(`ach-desc-${i}`);
       const iconEl = doc.getElementById(`ach-icon-${i}`);
 
-      if (nameEl) nameEl.text.value = ach.unlocked ? ach.name : '???';
-      if (descEl) descEl.text.value = ach.unlocked ? ach.description : 'Locked';
-      if (iconEl) iconEl.text.value = ach.unlocked ? ach.icon : '🔒';
+      if (nameEl) setText(nameEl, ach.unlocked ? ach.name : '???');
+      if (descEl) setText(descEl, ach.unlocked ? ach.description : 'Locked');
+      if (iconEl) setText(iconEl, ach.unlocked ? ach.icon : '🔒');
     }
   }
 
@@ -620,7 +741,7 @@ export class UIManager {
     const s = this.achievements.stats;
     const setEl = (id: string, val: string) => {
       const el = doc.getElementById(id);
-      if (el) el.text.value = val;
+      if (el) setText(el, val);
     };
 
     setEl('stat-games', String(s.totalGames));
@@ -652,13 +773,13 @@ export class UIManager {
     if (!doc) return;
 
     const nameEl = doc.getElementById('mission-name');
-    if (nameEl) nameEl.text.value = mission.name;
+    if (nameEl) setText(nameEl, mission.name);
 
     const progEl = doc.getElementById('mission-progress');
-    if (progEl) progEl.text.value = `${mission.progress}/${mission.target}`;
+    if (progEl) setText(progEl, `${mission.progress}/${mission.target}`);
 
     const descEl = doc.getElementById('mission-desc');
-    if (descEl) descEl.text.value = mission.description;
+    if (descEl) setText(descEl, mission.description);
   }
 
   // Achievement toast queue
@@ -684,9 +805,9 @@ export class UIManager {
     const doc = this.getDoc(this.achToastPanel);
     if (doc) {
       const iconEl = doc.getElementById('ach-toast-icon');
-      if (iconEl) iconEl.text.value = ach.icon;
+      if (iconEl) setText(iconEl, ach.icon);
       const nameEl = doc.getElementById('ach-toast-name');
-      if (nameEl) nameEl.text.value = ach.name;
+      if (nameEl) setText(nameEl, ach.name);
     }
   }
 
@@ -701,7 +822,7 @@ export class UIManager {
 
     const setEl = (id: string, val: string) => {
       const el = doc.getElementById(id);
-      if (el) el.text.value = val;
+      if (el) setText(el, val);
     };
 
     setEl('bonus-bumpers', `${data.bumperHits} × 50 = ${(data.bumperHits * 50).toLocaleString()}`);
@@ -723,7 +844,7 @@ export class UIManager {
     const doc = this.getDoc(this.messagePanel);
     if (doc) {
       const el = doc.getElementById('msg-text');
-      if (el) el.text.value = msg;
+      if (el) setText(el, msg);
     }
   }
 
@@ -732,12 +853,12 @@ export class UIManager {
     if (!doc) return;
 
     const scoreEl = doc.getElementById('hud-score');
-    if (scoreEl) scoreEl.text.value = this.game.score.toLocaleString();
+    if (scoreEl) setText(scoreEl, this.game.score.toLocaleString());
 
     const ballEl = doc.getElementById('hud-ball');
     if (ballEl) {
       const extraStr = this.game.extraBallPending ? '+1' : '';
-      ballEl.text.value = `${this.game.currentBall}/${this.game.maxBalls}${extraStr}`;
+      setText(ballEl, `${this.game.currentBall}/${this.game.maxBalls}${extraStr}`);
     }
 
     const multEl = doc.getElementById('hud-multiplier');
@@ -745,47 +866,47 @@ export class UIManager {
       const eff = this.game.wizardModeActive
         ? this.game.multiplier * this.game.wizardModeMultiplier
         : this.game.multiplier;
-      multEl.text.value = `x${eff.toFixed(1)}`;
+      setText(multEl, `x${eff.toFixed(1)}`);
     }
 
     const saverEl = doc.getElementById('hud-saver');
     if (saverEl) {
-      saverEl.text.value = this.game.ballSaverActive
+      setText(saverEl, this.game.ballSaverActive
         ? `SAVER ${Math.ceil(this.game.ballSaverTimer)}s`
-        : '';
+        : '');
     }
 
     const mbEl = doc.getElementById('hud-multiball');
     if (mbEl) {
-      mbEl.text.value = this.game.multiballActive
+      setText(mbEl, this.game.multiballActive
         ? `MULTIBALL ${this.game.multiballBallCount}x`
         : this.game.ballsLocked > 0
           ? `LOCK ${this.game.ballsLocked}/${this.game.maxLockBalls}`
-          : '';
+          : '');
     }
 
     const extraEl = doc.getElementById('hud-extra');
     if (extraEl) {
-      extraEl.text.value = this.game.extraBallPending ? 'EXTRA BALL!' : '';
+      setText(extraEl, this.game.extraBallPending ? 'EXTRA BALL!' : '');
     }
 
     const wizEl = doc.getElementById('hud-wizard');
     if (wizEl) {
-      wizEl.text.value = this.game.wizardModeActive
+      setText(wizEl, this.game.wizardModeActive
         ? `WIZARD ${Math.ceil(this.game.wizardModeTimer)}s`
-        : '';
+        : '');
     }
 
     // Combo tier display
     const tierEl = doc.getElementById('hud-combo-tier');
     if (tierEl) {
-      tierEl.text.value = this.comboTierDisplay;
+      setText(tierEl, this.comboTierDisplay);
     }
 
     // Super jackpot indicator
     const sjEl = doc.getElementById('hud-superjp');
     if (sjEl) {
-      sjEl.text.value = this.game.superJackpotCharged ? 'SUPER JP!' : '';
+      setText(sjEl, this.game.superJackpotCharged ? 'SUPER JP!' : '');
     }
 
     // Magna-Save indicators
@@ -798,7 +919,7 @@ export class UIManager {
         if (this.game.magnaSaveLeft) parts.push('◀MAG');
         if (this.game.magnaSaveRight) parts.push('MAG▶');
       }
-      magEl.text.value = parts.join(' ');
+      setText(magEl, parts.join(' '));
     }
 
     // Update wizard panel timer
@@ -806,7 +927,7 @@ export class UIManager {
       const wDoc = this.getDoc(this.wizardPanel);
       if (wDoc) {
         const timerEl = wDoc.getElementById('wizard-timer');
-        if (timerEl) timerEl.text.value = `${Math.ceil(this.game.wizardModeTimer)}s`;
+        if (timerEl) setText(timerEl, `${Math.ceil(this.game.wizardModeTimer)}s`);
       }
     }
 
@@ -823,7 +944,53 @@ export class UIManager {
 
     const filled = Math.floor(power * 10);
     const bar = '#'.repeat(filled) + '-'.repeat(10 - filled);
-    el.text.value = bar;
+    setText(el, bar);
+  }
+
+  // Time Attack panel helpers
+  private updateTimeAttackPanel(): void {
+    const doc = this.getDoc(this.timeattackPanel!);
+    if (!doc) return;
+    const entries = this.game.getTimeAttackLeaderboard();
+    const best = entries.length > 0 ? entries[0].score : 0;
+    setText(doc.getElementById('ta-best-score'),
+      best > 0 ? `Best: ${best.toLocaleString()}` : 'No scores yet');
+  }
+
+  // Milestone notification
+  private showMilestone(milestone: number, reward: number): void {
+    if (!this.milestonePanel) return;
+    this.milestonePanel.entity.object3D.visible = true;
+    this.milestoneTimer = 3.0;
+
+    const doc = this.getDoc(this.milestonePanel);
+    if (doc) {
+      const milestoneStr = milestone >= 1000000
+        ? `${(milestone / 1000000).toFixed(0)}M`
+        : `${(milestone / 1000).toFixed(0)}K`;
+      setText(doc.getElementById('ms-score'), milestoneStr);
+      setText(doc.getElementById('ms-reward'), `+${reward.toLocaleString()} BONUS`);
+    }
+  }
+
+  // Update Time Attack timer in HUD
+  updateTimeAttackHUD(): void {
+    if (!this.game.isTimeAttack || !this.game.timeAttackActive) return;
+    const doc = this.getDoc(this.hudPanel!);
+    if (!doc) return;
+    const taEl = doc.getElementById('hud-multiball');
+    if (taEl) {
+      setText(taEl, `⏱️ ${Math.ceil(this.game.timeAttackTimer)}s`);
+    }
+  }
+
+  // Update Frenzy HUD
+  updateFrenzyHUD(): void {
+    if (!this.game.frenzyActive || !this.frenzyPanel) return;
+    const doc = this.getDoc(this.frenzyPanel);
+    if (doc) {
+      setText(doc.getElementById('frenzy-timer'), `${Math.ceil(this.game.frenzyTimer)}s`);
+    }
   }
 
   update(dt: number): void {
@@ -849,6 +1016,18 @@ export class UIManager {
         this.bonusPanel.entity.object3D.visible = false;
       }
     }
+
+    // Milestone timer
+    if (this.milestoneTimer > 0) {
+      this.milestoneTimer -= dt;
+      if (this.milestoneTimer <= 0 && this.milestonePanel) {
+        this.milestonePanel.entity.object3D.visible = false;
+      }
+    }
+
+    // Update time attack + frenzy HUDs
+    this.updateTimeAttackHUD();
+    this.updateFrenzyHUD();
 
     if (this.initDone && !this.titlePanel?.doc) {
       this.wireEvents();
