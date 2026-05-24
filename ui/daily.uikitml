@@ -1,0 +1,48 @@
+<uikitml>
+  <style>
+    .root { background-color: rgba(0, 5, 20, 0.92); padding: 20; border-radius: 12; border-color: #ff8800; border-width: 2; }
+    .title { color: #ff8800; font-size: 28; font-weight: bold; text-align: center; margin-bottom: 8; }
+    .date { color: #ffff00; font-size: 18; text-align: center; margin-bottom: 12; }
+    .section { margin-top: 10; }
+    .section-title { color: #00ffff; font-size: 16; font-weight: bold; margin-bottom: 6; }
+    .row { flex-direction: row; justify-content: space-between; padding-vertical: 4; }
+    .label { color: #cccccc; font-size: 14; }
+    .value { color: #ffff00; font-size: 14; font-weight: bold; }
+    .modifier { color: #ff8800; font-size: 13; padding-vertical: 2; padding-left: 8; }
+    .divider { height: 1; background-color: #333355; margin-vertical: 8; }
+    .btn { background-color: #ff8800; padding-vertical: 8; padding-horizontal: 24; border-radius: 8; margin-top: 12; align-self: center; }
+    .btn-back { background-color: rgba(255,255,255,0.1); padding-vertical: 6; padding-horizontal: 20; border-radius: 8; margin-top: 8; align-self: center; border-color: #666666; border-width: 1; }
+    .btn-text { color: white; font-size: 16; font-weight: bold; text-align: center; }
+    .btn-text-dim { color: #aaaaaa; font-size: 14; text-align: center; }
+    .best { color: #00ff88; font-size: 16; font-weight: bold; text-align: center; margin-top: 8; }
+  </style>
+
+  <view class="root">
+    <text class="title">DAILY CHALLENGE</text>
+    <text id="daily-date" class="date"></text>
+
+    <view class="section">
+      <text class="section-title">TARGET SCORE</text>
+      <view class="row">
+        <text class="label">Par Score</text>
+        <text id="daily-target" class="value">0</text>
+      </view>
+    </view>
+
+    <view class="divider" />
+
+    <view class="section">
+      <text class="section-title">MODIFIERS</text>
+      <text id="daily-mod-0" class="modifier"></text>
+      <text id="daily-mod-1" class="modifier"></text>
+      <text id="daily-mod-2" class="modifier"></text>
+    </view>
+
+    <view class="divider" />
+
+    <text id="daily-best" class="best"></text>
+
+    <view id="daily-play-btn" class="btn"><text class="btn-text">PLAY CHALLENGE</text></view>
+    <view id="daily-back-btn" class="btn-back"><text class="btn-text-dim">BACK</text></view>
+  </view>
+</uikitml>

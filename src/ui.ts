@@ -9,6 +9,7 @@ import {
 import { GameManager, GameState, Mission, IntensityLevel, BonusCountdown } from './game';
 import { AudioManager } from './audio';
 import { AchievementManager, Achievement } from './achievements';
+import { getDailyChallenge, getDailyBestScore, saveDailyScore, THEMES, TableTheme } from './themes';
 
 interface UIPanel {
   entity: any;
@@ -36,13 +37,20 @@ export class UIManager {
   private achToastPanel: UIPanel | null = null;
   private controlsPanel: UIPanel | null = null;
   private bonusPanel: UIPanel | null = null;
+  private dailyPanel: UIPanel | null = null;
+  private themesPanel: UIPanel | null = null;
 
   private messageTimer = 0;
   private achToastTimer = 0;
   private achToastQueue: Achievement[] = [];
   private comboTierDisplay = '';
   private bonusCountdownTimer = 0;
+  private themeChangeCallbacks: ((theme: TableTheme) => void)[] = [];
   private initDone = false;
+
+  onThemeChange(cb: (theme: TableTheme) => void): void {
+    this.themeChangeCallbacks.push(cb);
+  }
 
   constructor(world: any, game: GameManager, audio: AudioManager, achievements: AchievementManager) {
     this.world = world;
@@ -96,6 +104,12 @@ export class UIManager {
 
     // Bonus countdown panel (head-following)
     this.bonusPanel = await this.createFollowerPanel('/ui/bonus.json', 0.3, 0.15, [0, -0.1, -0.5]);
+
+    // Daily challenge panel
+    this.dailyPanel = await this.createWorldPanel('/ui/daily.json', 0.7, 1.0, [0, 1.3, -0.8], 0.8);
+
+    // Theme selection panel
+    this.themesPanel = await this.createWorldPanel('/ui/themes.json', 0.6, 0.9, [0, 1.3, -0.8], 0.8);
 
     // Initial state
     this.showState('title');
@@ -183,6 +197,58 @@ export class UIManager {
     return null;
   }
 
+  private updateDailyPanel(): void {
+    const doc = this.getDoc(this.dailyPanel!);
+    if (!doc) return;
+
+    const challenge = getDailyChallenge();
+    const best = getDailyBestScore();
+
+    const dateEl = doc.getElementById('daily-date');
+    if (dateEl) dateEl.text.value = challenge.dateStr;
+
+    const targetEl = doc.getElementById('daily-target');
+    if (targetEl) targetEl.text.value = challenge.targetScore.toLocaleString();
+
+    for (let i = 0; i < 3; i++) {
+      const modEl = doc.getElementById(`daily-mod-${i}`);
+      if (modEl) modEl.text.value = i < challenge.modifiers.length ? `• ${challenge.modifiers[i]}` : '';
+    }
+
+    const bestEl = doc.getElementById('daily-best');
+    if (bestEl) bestEl.text.value = best > 0 ? `Today's Best: ${best.toLocaleString()}` : 'No attempts yet today';
+  }
+
+  private selectTheme(themeId: string): void {
+    this.game.currentThemeId = themeId;
+    try { localStorage.setItem('neon-pinball-theme', themeId); } catch {}
+    this.updateThemesPanel();
+    this.achievements.checkThemeUsed(themeId);
+
+    const theme = THEMES.find(t => t.id === themeId);
+    if (theme) {
+      for (const cb of this.themeChangeCallbacks) cb(theme);
+    }
+  }
+
+  private updateThemesPanel(): void {
+    const doc = this.getDoc(this.themesPanel!);
+    if (!doc) return;
+
+    const current = this.game.currentThemeId;
+    const checks: Record<string, string> = {
+      'theme-neon-check': 'neon-classic',
+      'theme-red-check': 'cyber-red',
+      'theme-blue-check': 'ocean-blue',
+      'theme-solar-check': 'solar-flare',
+      'theme-toxic-check': 'toxic-green',
+    };
+    for (const [elId, themeId] of Object.entries(checks)) {
+      const el = doc.getElementById(elId);
+      if (el) el.text.value = current === themeId ? '✓' : '';
+    }
+  }
+
   private wireEvents(): void {
     // Title buttons
     const titleDoc = this.getDoc(this.titlePanel!);
@@ -192,6 +258,13 @@ export class UIManager {
         this.audio.resume();
         this.audio.startAmbient();
         this.game.startGame();
+        this.achievements.startGame();
+      });
+      titleDoc.getElementById('party-btn')?.addEventListener('click', () => {
+        this.audio.init();
+        this.audio.resume();
+        this.audio.startAmbient();
+        this.game.startPartyMode();
         this.achievements.startGame();
       });
       titleDoc.getElementById('leaderboard-btn')?.addEventListener('click', () => {
@@ -208,6 +281,12 @@ export class UIManager {
       });
       titleDoc.getElementById('controls-btn')?.addEventListener('click', () => {
         this.game.setState('controls');
+      });
+      titleDoc.getElementById('daily-btn')?.addEventListener('click', () => {
+        this.game.setState('daily');
+      });
+      titleDoc.getElementById('theme-btn')?.addEventListener('click', () => {
+        this.game.setState('themes');
       });
       const hsEl = titleDoc.getElementById('highscore-value');
       if (hsEl) hsEl.text.value = this.game.highScore.toLocaleString();
@@ -280,6 +359,45 @@ export class UIManager {
         this.game.setState('title');
       });
     }
+
+    // Daily challenge
+    const dailyDoc = this.getDoc(this.dailyPanel!);
+    if (dailyDoc) {
+      dailyDoc.getElementById('daily-back-btn')?.addEventListener('click', () => {
+        this.game.setState('title');
+      });
+      dailyDoc.getElementById('daily-play-btn')?.addEventListener('click', () => {
+        this.audio.init();
+        this.audio.resume();
+        this.audio.startAmbient();
+        this.game.isDailyChallenge = true;
+        this.game.startGame();
+        this.achievements.startGame();
+      });
+    }
+
+    // Theme selection
+    const themeDoc = this.getDoc(this.themesPanel!);
+    if (themeDoc) {
+      themeDoc.getElementById('theme-back-btn')?.addEventListener('click', () => {
+        this.game.setState('title');
+      });
+      themeDoc.getElementById('theme-neon-btn')?.addEventListener('click', () => {
+        this.selectTheme('neon-classic');
+      });
+      themeDoc.getElementById('theme-red-btn')?.addEventListener('click', () => {
+        this.selectTheme('cyber-red');
+      });
+      themeDoc.getElementById('theme-blue-btn')?.addEventListener('click', () => {
+        this.selectTheme('ocean-blue');
+      });
+      themeDoc.getElementById('theme-solar-btn')?.addEventListener('click', () => {
+        this.selectTheme('solar-flare');
+      });
+      themeDoc.getElementById('theme-toxic-btn')?.addEventListener('click', () => {
+        this.selectTheme('toxic-green');
+      });
+    }
   }
 
   private wireVolumeControl(doc: UIKitDocument, prefix: string, getter: () => number, setter: (v: number) => void): void {
@@ -310,7 +428,8 @@ export class UIManager {
       this.titlePanel, this.hudPanel, this.gameoverPanel,
       this.pausePanel, this.leaderboardPanel, this.settingsPanel,
       this.plungerPanel, this.achievementsPanel, this.statsPanel,
-      this.controlsPanel, this.bonusPanel,
+      this.controlsPanel, this.bonusPanel, this.dailyPanel,
+      this.themesPanel,
     ];
 
     for (const p of panels) {
@@ -370,6 +489,23 @@ export class UIManager {
             if (wizEl) wizEl.text.value = this.game.wizardModeTriggered ? 'YES!' : 'No';
             const nhEl = doc.getElementById('go-newhigh');
             if (nhEl) nhEl.text.value = this.game.score >= this.game.highScore ? 'NEW HIGH SCORE!' : '';
+            // Daily challenge display
+            const dailyEl = doc.getElementById('go-daily');
+            if (dailyEl) {
+              if (this.game.isDailyChallenge) {
+                const challenge = getDailyChallenge();
+                const beat = this.game.score >= challenge.targetScore;
+                dailyEl.text.value = beat ? 'DAILY CHALLENGE BEATEN!' : `Daily target: ${challenge.targetScore.toLocaleString()}`;
+                if (beat) this.achievements.checkDailyBeat();
+              } else {
+                dailyEl.text.value = '';
+              }
+            }
+          }
+          // Save daily score
+          if (this.game.isDailyChallenge) {
+            saveDailyScore(this.game.score);
+            this.game.isDailyChallenge = false;
           }
         }
         // Report to achievements
@@ -419,6 +555,20 @@ export class UIManager {
       case 'controls':
         if (this.controlsPanel) {
           this.controlsPanel.entity.object3D.visible = true;
+        }
+        break;
+
+      case 'daily':
+        if (this.dailyPanel) {
+          this.dailyPanel.entity.object3D.visible = true;
+          this.updateDailyPanel();
+        }
+        break;
+
+      case 'themes':
+        if (this.themesPanel) {
+          this.themesPanel.entity.object3D.visible = true;
+          this.updateThemesPanel();
         }
         break;
     }
@@ -636,6 +786,19 @@ export class UIManager {
     const sjEl = doc.getElementById('hud-superjp');
     if (sjEl) {
       sjEl.text.value = this.game.superJackpotCharged ? 'SUPER JP!' : '';
+    }
+
+    // Magna-Save indicators
+    const magEl = doc.getElementById('hud-magna');
+    if (magEl) {
+      const parts: string[] = [];
+      if (this.game.magnaSaveActive) {
+        parts.push(`MAG ${this.game.magnaSaveSide?.toUpperCase()}`);
+      } else {
+        if (this.game.magnaSaveLeft) parts.push('◀MAG');
+        if (this.game.magnaSaveRight) parts.push('MAG▶');
+      }
+      magEl.text.value = parts.join(' ');
     }
 
     // Update wizard panel timer

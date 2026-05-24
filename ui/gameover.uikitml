@@ -96,6 +96,7 @@
     <span class="stat-label">Wizard Mode:</span>
     <span id="go-wizard" class="stat-highlight">---</span>
   </div>
+  <span id="go-daily" class="new-high"></span>
   <div id="go-replay-btn" class="go-btn" cursor="pointer">
     <span class="go-btn-text">PLAY AGAIN</span>
   </div>

@@ -40,7 +40,7 @@ import { PinballPhysics, BALL_RADIUS, HALF_W, HALF_L, TILT_ANGLE, CollisionEvent
 import {
   createTable, createBumperMeshes, createFlipperMeshes, createPlunger,
   createTargetBank, createSpinnerMeshes, createRampMeshes, createOutlaneMeshes,
-  createCaptiveBallMesh, createSkillShotIndicator,
+  createCaptiveBallMesh, createSkillShotIndicator, createVUKMesh,
   TABLE_Y, TABLE_TILT,
 } from './table';
 import { GameManager, GameState, IntensityLevel } from './game';
@@ -50,6 +50,7 @@ import { EffectsManager } from './effects';
 import { UIManager } from './ui';
 import { XRInputHandler } from './xrinput';
 import { AchievementManager } from './achievements';
+import { getTheme, TableTheme, THEMES } from './themes';
 
 interface BallVisual {
   mesh: Mesh;
@@ -95,6 +96,7 @@ async function main() {
   const outlaneMeshes = createOutlaneMeshes(tableGroup);
   const captiveBallMeshes = createCaptiveBallMesh(tableGroup);
   const skillShotIndicator = createSkillShotIndicator(tableGroup);
+  const vukMeshes = createVUKMesh(tableGroup);
 
   // Ball pool (multiball support)
   const ballVisuals: BallVisual[] = [];
@@ -140,6 +142,46 @@ async function main() {
 
   await ui.init();
 
+  // Load saved theme
+  try {
+    const savedTheme = localStorage.getItem('neon-pinball-theme');
+    if (savedTheme) game.currentThemeId = savedTheme;
+  } catch {}
+
+  // Theme change handler: apply theme colors to table elements
+  function applyTheme(theme: TableTheme): void {
+    // Update bumper colors
+    const bumperIds = ['pop-center', 'pop-left', 'pop-right'];
+    for (let i = 0; i < bumperIds.length; i++) {
+      const meshSet = bumperMeshes.get(bumperIds[i]);
+      if (meshSet && theme.bumperColors[i] !== undefined) {
+        for (const mesh of Object.values(meshSet)) {
+          if ((mesh as any).material?.emissive) {
+            ((mesh as any).material as MeshStandardMaterial).emissive.setHex(theme.bumperColors[i]);
+          }
+        }
+      }
+    }
+
+    // Update flipper colors
+    (flipperMeshes.left.material as MeshStandardMaterial).color.setHex(theme.flipperColor);
+    (flipperMeshes.left.material as MeshStandardMaterial).emissive.setHex(theme.flipperEmissive);
+    (flipperMeshes.right.material as MeshStandardMaterial).color.setHex(theme.flipperColor);
+    (flipperMeshes.right.material as MeshStandardMaterial).emissive.setHex(theme.flipperEmissive);
+
+    // Update table lights
+    if (tableLights.main) tableLights.main.color.setHex(theme.mainLightColor);
+    if (tableLights.left) tableLights.left.color.setHex(theme.leftLightColor);
+    if (tableLights.right) tableLights.right.color.setHex(theme.rightLightColor);
+  }
+
+  ui.onThemeChange((theme) => {
+    applyTheme(theme);
+  });
+
+  // Apply initial theme
+  applyTheme(getTheme(game.currentThemeId));
+
   // Dynamic lighting references for intensity-reactive effects
   const tableLights = {
     main: world.scene.children.find((c: any) => c instanceof PointLight && Math.abs(c.position.x) < 0.01) as PointLight | undefined,
@@ -173,6 +215,13 @@ async function main() {
       audio.startAmbient();
       game.startGame();
       achievements.startGame();
+    }
+    // Magna-Save: Z = left, C = right
+    if (e.code === 'KeyZ' && game.state === 'playing') {
+      game.activateMagnaSave('left');
+    }
+    if (e.code === 'KeyC' && game.state === 'playing') {
+      game.activateMagnaSave('right');
     }
   });
 
@@ -274,7 +323,13 @@ async function main() {
     // Visual feedback handled by UI
   });
 
-  // Wire skill shot audio
+  // Wire magna-save
+  game.onMagnaSave((_side, active, _available) => {
+    if (active) {
+      audio.playMagnaSave();
+      achievements.checkMagnaSave();
+    }
+  });
   game.onSkillShot((zone) => {
     if (zone) {
       audio.playSkillShot(zone.name as 'GOOD' | 'GREAT' | 'PERFECT');
@@ -458,6 +513,15 @@ async function main() {
           physics.setFlipperActive('right', false);
         }
 
+        // Magna-Save magnetic force on balls
+        const magnaSaveForce = game.getMagnaSaveForce();
+        if (magnaSaveForce && game.state === 'playing') {
+          for (const b of physics.getActiveBalls()) {
+            b.vx += magnaSaveForce.fx * dt;
+            b.vz += magnaSaveForce.fz * dt;
+          }
+        }
+
         // Physics update (all balls)
         if (game.state === 'playing') {
           const events = physics.update(dt);
@@ -588,6 +652,21 @@ async function main() {
           }
         }
 
+        // Update VUK visuals
+        for (const vuk of physics.vuks) {
+          const vm = vukMeshes.get(vuk.id);
+          if (vm) {
+            // Pulse glow when cooldown is active (ball inside)
+            if (vuk.captured) {
+              (vm.glow.material as MeshBasicMaterial).opacity = 0.5 + Math.sin(time * 15) * 0.3;
+              (vm.scoop.material as MeshStandardMaterial).emissiveIntensity = 0.5 + Math.sin(time * 15) * 0.3;
+            } else {
+              (vm.glow.material as MeshBasicMaterial).opacity = 0.3 + Math.sin(time * 2) * 0.1;
+              (vm.scoop.material as MeshStandardMaterial).emissiveIntensity = 0.3;
+            }
+          }
+        }
+
         // Update HUD
         ui.updateHUD();
       }
@@ -599,6 +678,14 @@ async function main() {
         } else if (game.state === 'paused') {
           game.setState('playing');
         }
+      }
+
+      // VR magna-save input
+      if (xrInput.magnaSaveLeftPressed && game.state === 'playing') {
+        game.activateMagnaSave('left');
+      }
+      if (xrInput.magnaSaveRightPressed && game.state === 'playing') {
+        game.activateMagnaSave('right');
       }
 
       effects.update(dt);
@@ -679,6 +766,12 @@ async function main() {
           game.handleCaptiveBallHit(event.x, event.z);
           audio.playCaptiveBall();
           effects.spawnBumperHit(event.x, event.z, 0x4400ff);
+          break;
+
+        case 'vuk':
+          game.handleVUKHit(event.x, event.z);
+          audio.playRampEnter();  // Reuse ramp enter sound for VUK capture
+          effects.spawnBumperHit(event.x, event.z, 0xff8800);
           break;
 
         case 'outlane':

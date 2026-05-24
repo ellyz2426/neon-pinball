@@ -24,6 +24,7 @@
     <view class="row"><text class="key">A Button</text><text class="action">Launch Ball</text></view>
     <view class="row"><text class="key">B Button</text><text class="action">Pause</text></view>
     <view class="row"><text class="key">Squeeze</text><text class="action">Nudge Table</text></view>
+    <view class="row"><text class="key">Thumbstick L/R</text><text class="action">Magna-Save L/R</text></view>
 
     <view class="divider" />
 
@@ -33,6 +34,12 @@
     <view class="row"><text class="key">Space (hold)</text><text class="action">Charge + Launch</text></view>
     <view class="row"><text class="key">Escape</text><text class="action">Pause</text></view>
     <view class="row"><text class="key">Q / E</text><text class="action">Nudge Left / Right</text></view>
+    <view class="row"><text class="key">Z / C</text><text class="action">Magna-Save L / R</text></view>
+
+    <view class="divider" />
+
+    <text class="section-title">🧲 MAGNA-SAVE</text>
+    <text class="tip">Press Z/C (keyboard) or flick thumbstick (VR) to activate a magnetic save near the outlanes. One use per side per ball — pulls the ball back toward center!</text>
 
     <view class="divider" />
 
@@ -53,6 +60,7 @@
     <text class="tip">⚡ Complete all 5 mission types to trigger WIZARD MODE!</text>
     <text class="tip">🌟 Build combos fast — multiplier decays after 2 seconds!</text>
     <text class="tip">⚠️ Nudge carefully — 3 warnings = TILT!</text>
+    <text class="tip">🧲 Save Magna-Save for desperate moments near the outlanes!</text>
 
     <view id="controls-back-btn" class="btn"><text class="btn-text">BACK</text></view>
   </view>

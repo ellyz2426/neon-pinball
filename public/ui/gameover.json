@@ -213,6 +213,16 @@
         "dataUid": "uid-18"
       },
       {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [],
+        "properties": {
+          "id": "go-daily",
+          "class": "new-high"
+        },
+        "dataUid": "uid-21"
+      },
+      {
         "type": "container",
         "sourceTag": "div",
         "children": [
@@ -225,7 +235,7 @@
             "properties": {
               "class": "go-btn-text"
             },
-            "dataUid": "uid-22"
+            "dataUid": "uid-23"
           }
         ],
         "properties": {
@@ -233,7 +243,7 @@
           "class": "go-btn",
           "cursor": "pointer"
         },
-        "dataUid": "uid-21"
+        "dataUid": "uid-22"
       },
       {
         "type": "container",
@@ -248,7 +258,7 @@
             "properties": {
               "class": "go-btn-text"
             },
-            "dataUid": "uid-24"
+            "dataUid": "uid-25"
           }
         ],
         "properties": {
@@ -256,7 +266,7 @@
           "class": "go-btn",
           "cursor": "pointer"
         },
-        "dataUid": "uid-23"
+        "dataUid": "uid-24"
       }
     ],
     "properties": {
@@ -476,7 +486,7 @@
         "column": 0
       },
       "end": {
-        "line": 104,
+        "line": 105,
         "column": 6
       }
     },
@@ -676,37 +686,47 @@
         "column": 2
       },
       "end": {
-        "line": 100,
-        "column": 8
+        "line": 98,
+        "column": 46
       }
     },
     "uid-22": {
       "start": {
         "line": 99,
-        "column": 4
+        "column": 2
       },
       "end": {
-        "line": 99,
-        "column": 47
+        "line": 101,
+        "column": 8
       }
     },
     "uid-23": {
       "start": {
-        "line": 101,
-        "column": 2
+        "line": 100,
+        "column": 4
       },
       "end": {
-        "line": 103,
-        "column": 8
+        "line": 100,
+        "column": 47
       }
     },
     "uid-24": {
       "start": {
         "line": 102,
+        "column": 2
+      },
+      "end": {
+        "line": 104,
+        "column": 8
+      }
+    },
+    "uid-25": {
+      "start": {
+        "line": 103,
         "column": 4
       },
       "end": {
-        "line": 102,
+        "line": 103,
         "column": 46
       }
     }

@@ -901,4 +901,38 @@ export class AudioManager {
     ring.start(t + 0.05);
     ring.stop(t + 0.4);
   }
+
+  playMagnaSave(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Magnetic hum: rising low-frequency oscillator
+    const hum = this.ctx.createOscillator();
+    hum.type = 'sawtooth';
+    hum.frequency.setValueAtTime(60, t);
+    hum.frequency.linearRampToValueAtTime(200, t + 0.3);
+    hum.frequency.linearRampToValueAtTime(120, t + 1.0);
+    const humGain = this.ctx.createGain();
+    humGain.gain.setValueAtTime(0, t);
+    humGain.gain.linearRampToValueAtTime(0.25, t + 0.1);
+    humGain.gain.linearRampToValueAtTime(0.15, t + 0.5);
+    humGain.gain.exponentialRampToValueAtTime(0.01, t + 1.2);
+    hum.connect(humGain);
+    humGain.connect(this.sfxGain);
+    hum.start(t);
+    hum.stop(t + 1.2);
+
+    // High "zap" accent
+    const zap = this.ctx.createOscillator();
+    zap.type = 'sine';
+    zap.frequency.setValueAtTime(1200, t);
+    zap.frequency.exponentialRampToValueAtTime(300, t + 0.25);
+    const zapGain = this.ctx.createGain();
+    zapGain.gain.setValueAtTime(0.2, t);
+    zapGain.gain.exponentialRampToValueAtTime(0.01, t + 0.25);
+    zap.connect(zapGain);
+    zapGain.connect(this.sfxGain);
+    zap.start(t);
+    zap.stop(t + 0.25);
+  }
 }

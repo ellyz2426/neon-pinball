@@ -1,7 +1,7 @@
 // Neon Pinball VR - Game State Manager
 // Round 3: Wizard Mode, extra ball awards, achievement integration, dynamic intensity
 
-export type GameState = 'title' | 'playing' | 'plunger' | 'gameover' | 'paused' | 'leaderboard' | 'settings' | 'tables' | 'achievements' | 'stats' | 'controls' | 'bonus_countdown' | 'match_sequence';
+export type GameState = 'title' | 'playing' | 'plunger' | 'gameover' | 'paused' | 'leaderboard' | 'settings' | 'tables' | 'achievements' | 'stats' | 'controls' | 'bonus_countdown' | 'match_sequence' | 'daily' | 'themes';
 
 export interface ScoreEntry {
   score: number;
@@ -180,6 +180,23 @@ export class GameManager {
   captiveBallHits = 0;
   captiveBallBonus = 2000;
 
+  // Daily challenge mode
+  isDailyChallenge = false;
+
+  // Current theme
+  currentThemeId = 'neon-classic';
+
+  // Magna-Save system: one magnetic outlane save per ball, activated by button press
+  magnaSaveLeft = true;
+  magnaSaveRight = true;
+  magnaSaveActive = false;       // Currently pulling ball toward center?
+  magnaSaveSide: 'left' | 'right' | null = null;
+  magnaSaveDuration = 0;
+  magnaSaveMaxDuration = 1.5;    // 1.5s of magnetic pull
+
+  // Party mode
+  isPartyMode = false;
+
   // Score values
   readonly BUMPER_SCORE = 100;
   readonly SLINGSHOT_SCORE = 50;
@@ -212,6 +229,7 @@ export class GameManager {
   private bonusCallbacks: ((data: BonusCountdown) => void)[] = [];
   private matchCallbacks: ((number: number, matched: boolean) => void)[] = [];
   private captiveBallCallbacks: ((hits: number) => void)[] = [];
+  private magnaSaveCallbacks: ((side: 'left' | 'right', active: boolean, available: boolean) => void)[] = [];
 
   constructor() {
     this.loadHighScore();
@@ -240,6 +258,7 @@ export class GameManager {
   onBonus(cb: (data: BonusCountdown) => void): void { this.bonusCallbacks.push(cb); }
   onMatch(cb: (number: number, matched: boolean) => void): void { this.matchCallbacks.push(cb); }
   onCaptiveBall(cb: (hits: number) => void): void { this.captiveBallCallbacks.push(cb); }
+  onMagnaSave(cb: (side: 'left' | 'right', active: boolean, available: boolean) => void): void { this.magnaSaveCallbacks.push(cb); }
 
   setState(state: GameState): void {
     this.state = state;
@@ -297,13 +316,22 @@ export class GameManager {
     this.matchNumber = -1;
     this.matchResult = false;
     this.captiveBallHits = 0;
+    this.magnaSaveLeft = true;
+    this.magnaSaveRight = true;
+    this.magnaSaveActive = false;
+    this.magnaSaveSide = null;
+    this.magnaSaveDuration = 0;
+    this.isPartyMode = false;
     this.initTargets();
     this.setState('plunger');
     this.emitMessage('BALL 1 - PULL TO LAUNCH!');
   }
 
   private getEffectiveMultiplier(): number {
-    return this.wizardModeActive ? this.multiplier * this.wizardModeMultiplier : this.multiplier;
+    let eff = this.multiplier;
+    if (this.wizardModeActive) eff *= this.wizardModeMultiplier;
+    if (this.isPartyMode) eff *= 2;
+    return eff;
   }
 
   update(dt: number): void {
@@ -369,6 +397,9 @@ export class GameManager {
     // Intensity decay
     this.intensityScore = Math.max(0, this.intensityScore - dt * 8);
     this.updateIntensity();
+
+    // Magna-Save timer
+    this.updateMagnaSave(dt);
   }
 
   // === Dynamic intensity ===
@@ -619,6 +650,11 @@ export class GameManager {
     this.ballSaveExtended = false;
     this.ballSaverActive = true;
     this.ballSaverTimer = this.ballSaverDuration;
+    this.magnaSaveLeft = true;
+    this.magnaSaveRight = true;
+    this.magnaSaveActive = false;
+    this.magnaSaveSide = null;
+    this.magnaSaveDuration = 0;
     this.setState('plunger');
     this.emitMessage(`BALL ${this.currentBall} - PULL TO LAUNCH!`);
     return { saved: false, isMultiballDrain: false };
@@ -891,6 +927,56 @@ export class GameManager {
     for (const cb of this.captiveBallCallbacks) cb(this.captiveBallHits);
   }
 
+  // === Magna-Save ===
+
+  activateMagnaSave(side: 'left' | 'right'): boolean {
+    if (this.magnaSaveActive) return false;
+    if (side === 'left' && !this.magnaSaveLeft) return false;
+    if (side === 'right' && !this.magnaSaveRight) return false;
+    if (this.state !== 'playing') return false;
+
+    this.magnaSaveActive = true;
+    this.magnaSaveSide = side;
+    this.magnaSaveDuration = this.magnaSaveMaxDuration;
+
+    if (side === 'left') this.magnaSaveLeft = false;
+    else this.magnaSaveRight = false;
+
+    this.emitMessage(`MAGNA-SAVE ${side.toUpperCase()}!`);
+    this.bumpIntensity(5);
+
+    for (const cb of this.magnaSaveCallbacks) cb(side, true, side === 'left' ? this.magnaSaveLeft : this.magnaSaveRight);
+    return true;
+  }
+
+  updateMagnaSave(dt: number): void {
+    if (!this.magnaSaveActive) return;
+    this.magnaSaveDuration -= dt;
+    if (this.magnaSaveDuration <= 0) {
+      this.magnaSaveActive = false;
+      const side = this.magnaSaveSide || 'left';
+      this.magnaSaveSide = null;
+      for (const cb of this.magnaSaveCallbacks) cb(side, false, false);
+    }
+  }
+
+  getMagnaSaveForce(): { fx: number; fz: number } | null {
+    if (!this.magnaSaveActive || !this.magnaSaveSide) return null;
+    // Pull ball toward center of table (away from outlane)
+    const force = 2.5;
+    const fx = this.magnaSaveSide === 'left' ? force : -force;
+    return { fx, fz: -force * 0.3 };
+  }
+
+  // === Party Mode ===
+
+  startPartyMode(): void {
+    this.isPartyMode = true;
+    this.maxBalls = 1;
+    this.startGame();
+    this.emitMessage('🎉 PARTY MODE! 1 BALL, 2x SCORING! 🎉');
+  }
+
   // === Bonus Countdown ===
 
   calculateBonus(): BonusCountdown {
@@ -959,6 +1045,17 @@ export class GameManager {
       this.ballSaverTimer += seconds;
       this.emitMessage(`BALL SAVER +${seconds}s!`);
     }
+  }
+
+  // === VUK ===
+
+  handleVUKHit(x: number, z: number): void {
+    this.bumpIntensity(8);
+    const eff = this.getEffectiveMultiplier();
+    const points = Math.floor(3000 * eff);
+    this.addScore(points, 'VUK!', x, z);
+    this.emitMessage(`VUK LAUNCH! +${points.toLocaleString()}`);
+    this.addCombo();
   }
 
   // === Core scoring ===

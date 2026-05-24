@@ -23,9 +23,9 @@
     margin-top: 0.5;
   }
   .menu-btn {
-    margin-top: 1.2;
-    padding-top: 0.8;
-    padding-bottom: 0.8;
+    margin-top: 1;
+    padding-top: 0.7;
+    padding-bottom: 0.7;
     padding-left: 3;
     padding-right: 3;
     background-color: rgba(0, 255, 255, 0.15);
@@ -35,9 +35,9 @@
     cursor: pointer;
   }
   .menu-btn-gold {
-    margin-top: 1.2;
-    padding-top: 0.8;
-    padding-bottom: 0.8;
+    margin-top: 1;
+    padding-top: 0.7;
+    padding-bottom: 0.7;
     padding-left: 3;
     padding-right: 3;
     background-color: rgba(255, 255, 0, 0.1);
@@ -47,9 +47,9 @@
     cursor: pointer;
   }
   .menu-btn-green {
-    margin-top: 1.2;
-    padding-top: 0.8;
-    padding-bottom: 0.8;
+    margin-top: 1;
+    padding-top: 0.7;
+    padding-bottom: 0.7;
     padding-left: 3;
     padding-right: 3;
     background-color: rgba(0, 255, 136, 0.1);
@@ -59,9 +59,9 @@
     cursor: pointer;
   }
   .menu-btn-purple {
-    margin-top: 1.2;
-    padding-top: 0.8;
-    padding-bottom: 0.8;
+    margin-top: 1;
+    padding-top: 0.7;
+    padding-bottom: 0.7;
     padding-left: 3;
     padding-right: 3;
     background-color: rgba(136, 0, 255, 0.1);
@@ -70,30 +70,52 @@
     border-radius: 0.8;
     cursor: pointer;
   }
+  .menu-btn-party {
+    margin-top: 1;
+    padding-top: 0.7;
+    padding-bottom: 0.7;
+    padding-left: 3;
+    padding-right: 3;
+    background-color: rgba(255, 0, 136, 0.1);
+    border-color: #ff0088;
+    border-width: 0.08;
+    border-radius: 0.8;
+    cursor: pointer;
+  }
   .btn-text {
-    font-size: 2.5;
+    font-size: 2.2;
     color: #00ffff;
     font-weight: bold;
   }
   .btn-text-gold {
-    font-size: 2.2;
+    font-size: 2;
     color: #ffff00;
     font-weight: bold;
   }
   .btn-text-green {
-    font-size: 2.2;
+    font-size: 2;
     color: #00ff88;
     font-weight: bold;
   }
   .btn-text-purple {
-    font-size: 2.2;
+    font-size: 2;
     color: #aa55ff;
+    font-weight: bold;
+  }
+  .btn-text-party {
+    font-size: 2;
+    color: #ff0088;
+    font-weight: bold;
+  }
+  .btn-text-play {
+    font-size: 2.5;
+    color: #00ffff;
     font-weight: bold;
   }
   .highscore-label {
     font-size: 1.3;
     color: #888888;
-    margin-top: 1.5;
+    margin-top: 1.2;
   }
   .highscore-value {
     font-size: 2;
@@ -101,21 +123,38 @@
     font-weight: bold;
   }
   .controls-hint {
-    font-size: 1.1;
+    font-size: 1;
     color: #555555;
-    margin-top: 0.8;
+    margin-top: 0.6;
   }
   .ach-count-hint {
-    font-size: 1.1;
+    font-size: 1;
     color: #666600;
     margin-top: 0.3;
+  }
+  .menu-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.5;
+  }
+  .menu-row-item {
+    margin-left: 0.5;
+    margin-right: 0.5;
   }
 </style>
 <div class="title-panel">
   <span class="title-text">NEON PINBALL</span>
   <span class="subtitle">HOLODECK EDITION</span>
   <div id="play-btn" class="menu-btn" cursor="pointer">
-    <span class="btn-text">PLAY</span>
+    <span class="btn-text-play">PLAY</span>
+  </div>
+  <div id="party-btn" class="menu-btn-party" cursor="pointer">
+    <span class="btn-text-party">🎉 PARTY MODE</span>
+  </div>
+  <div id="daily-btn" class="menu-btn-gold" cursor="pointer">
+    <span class="btn-text-gold">📅 DAILY CHALLENGE</span>
   </div>
   <div id="leaderboard-btn" class="menu-btn" cursor="pointer">
     <span class="btn-text">LEADERBOARD</span>
@@ -128,6 +167,9 @@
   </div>
   <div id="controls-btn" class="menu-btn-purple" cursor="pointer">
     <span class="btn-text-purple">HOW TO PLAY</span>
+  </div>
+  <div id="theme-btn" class="menu-btn" cursor="pointer">
+    <span class="btn-text">THEMES</span>
   </div>
   <div id="settings-btn" class="menu-btn" cursor="pointer">
     <span class="btn-text">SETTINGS</span>

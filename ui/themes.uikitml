@@ -1,0 +1,74 @@
+<uikitml>
+  <style>
+    .root { background-color: rgba(0, 5, 20, 0.92); padding: 20; border-radius: 12; border-color: #00ffff; border-width: 2; }
+    .title { color: #00ffff; font-size: 26; font-weight: bold; text-align: center; margin-bottom: 16; }
+    .theme-btn { padding-vertical: 8; padding-horizontal: 20; border-radius: 8; margin-top: 8; border-width: 2; }
+    .theme-neon { background-color: rgba(0, 255, 255, 0.1); border-color: #00ffff; }
+    .theme-red { background-color: rgba(255, 34, 34, 0.1); border-color: #ff2222; }
+    .theme-blue { background-color: rgba(0, 136, 255, 0.1); border-color: #0088ff; }
+    .theme-solar { background-color: rgba(255, 170, 0, 0.1); border-color: #ffaa00; }
+    .theme-toxic { background-color: rgba(0, 255, 68, 0.1); border-color: #00ff44; }
+    .theme-row { flex-direction: row; justify-content: space-between; align-items: center; }
+    .theme-name { font-size: 16; font-weight: bold; }
+    .name-neon { color: #00ffff; }
+    .name-red { color: #ff2222; }
+    .name-blue { color: #0088ff; }
+    .name-solar { color: #ffaa00; }
+    .name-toxic { color: #00ff44; }
+    .theme-check { font-size: 14; color: #00ff88; }
+    .btn-back { background-color: rgba(255,255,255,0.1); padding-vertical: 8; padding-horizontal: 24; border-radius: 8; margin-top: 14; align-self: center; border-color: #666666; border-width: 1; }
+    .btn-text-dim { color: #aaaaaa; font-size: 14; text-align: center; }
+    .preview-bar { height: 3; border-radius: 2; margin-top: 3; }
+    .bar-neon { background-color: #00ffff; }
+    .bar-red { background-color: #ff2222; }
+    .bar-blue { background-color: #0088ff; }
+    .bar-solar { background-color: #ffaa00; }
+    .bar-toxic { background-color: #00ff44; }
+  </style>
+
+  <view class="root">
+    <text class="title">TABLE THEME</text>
+
+    <view id="theme-neon-btn" class="theme-btn theme-neon">
+      <view class="theme-row">
+        <text class="theme-name name-neon">NEON CLASSIC</text>
+        <text id="theme-neon-check" class="theme-check">✓</text>
+      </view>
+      <view class="preview-bar bar-neon" />
+    </view>
+
+    <view id="theme-red-btn" class="theme-btn theme-red">
+      <view class="theme-row">
+        <text class="theme-name name-red">CYBER RED</text>
+        <text id="theme-red-check" class="theme-check"></text>
+      </view>
+      <view class="preview-bar bar-red" />
+    </view>
+
+    <view id="theme-blue-btn" class="theme-btn theme-blue">
+      <view class="theme-row">
+        <text class="theme-name name-blue">OCEAN BLUE</text>
+        <text id="theme-blue-check" class="theme-check"></text>
+      </view>
+      <view class="preview-bar bar-blue" />
+    </view>
+
+    <view id="theme-solar-btn" class="theme-btn theme-solar">
+      <view class="theme-row">
+        <text class="theme-name name-solar">SOLAR FLARE</text>
+        <text id="theme-solar-check" class="theme-check"></text>
+      </view>
+      <view class="preview-bar bar-solar" />
+    </view>
+
+    <view id="theme-toxic-btn" class="theme-btn theme-toxic">
+      <view class="theme-row">
+        <text class="theme-name name-toxic">TOXIC GREEN</text>
+        <text id="theme-toxic-check" class="theme-check"></text>
+      </view>
+      <view class="preview-bar bar-toxic" />
+    </view>
+
+    <view id="theme-back-btn" class="btn-back"><text class="btn-text-dim">BACK</text></view>
+  </view>
+</uikitml>

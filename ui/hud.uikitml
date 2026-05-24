@@ -67,6 +67,11 @@
     color: #ff00ff;
     font-weight: bold;
   }
+  .hud-magna {
+    font-size: 1;
+    color: #4488ff;
+    font-weight: bold;
+  }
 </style>
 <div class="hud-panel">
   <div class="hud-section">
@@ -88,5 +93,6 @@
     <span id="hud-extra" class="hud-extra"></span>
     <span id="hud-wizard" class="hud-wizard"></span>
     <span id="hud-superjp" class="hud-superjp"></span>
+    <span id="hud-magna" class="hud-magna"></span>
   </div>
 </div>

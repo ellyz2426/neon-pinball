@@ -650,3 +650,37 @@ export function createSkillShotIndicator(table: Group): { zones: Mesh[] } {
 
   return { zones };
 }
+
+export function createVUKMesh(table: Group): Map<string, { scoop: Mesh; glow: Mesh }> {
+  const meshes = new Map<string, { scoop: Mesh; glow: Mesh }>();
+
+  // VUK scoop on left side
+  const scoopGeo = new CylinderGeometry(0.018, 0.022, 0.015, 8);
+  const scoopMat = new MeshStandardMaterial({
+    color: new Color(0x222244),
+    emissive: new Color(0xff8800),
+    emissiveIntensity: 0.3,
+    metalness: 0.8,
+    roughness: 0.2,
+  });
+  const scoop = new Mesh(scoopGeo, scoopMat);
+  scoop.position.set(-0.18, 0.008, 0.05);
+  table.add(scoop);
+
+  // Glowing rim
+  const glowGeo = new RingGeometry(0.019, 0.025, 12);
+  const glowMat = new MeshBasicMaterial({
+    color: new Color(0xff8800),
+    transparent: true,
+    opacity: 0.5,
+    side: DoubleSide,
+    blending: AdditiveBlending,
+  });
+  const glow = new Mesh(glowGeo, glowMat);
+  glow.rotation.x = -Math.PI / 2;
+  glow.position.set(-0.18, 0.016, 0.05);
+  table.add(glow);
+
+  meshes.set('vuk-left', { scoop, glow });
+  return meshes;
+}

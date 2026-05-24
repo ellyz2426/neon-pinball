@@ -90,7 +90,7 @@ export interface FlipperState {
 }
 
 export interface CollisionEvent {
-  type: 'wall' | 'bumper' | 'flipper' | 'drain' | 'slingshot' | 'target' | 'spinner' | 'ramp_enter' | 'ramp_exit' | 'outlane' | 'kickback' | 'captive_ball';
+  type: 'wall' | 'bumper' | 'flipper' | 'drain' | 'slingshot' | 'target' | 'spinner' | 'ramp_enter' | 'ramp_exit' | 'outlane' | 'kickback' | 'captive_ball' | 'vuk';
   id?: string;
   x: number;
   z: number;
@@ -112,6 +112,19 @@ export interface CaptiveBallDef {
   id: string;
 }
 
+// VUK (Vertical Up-Kicker): scoop that captures ball then launches it
+export interface VUKDef {
+  x: number;
+  z: number;
+  radius: number;
+  launchVx: number;
+  launchVz: number;
+  cooldown: number;
+  timer: number;  // countdown before launch
+  captured: boolean;
+  id: string;
+}
+
 let nextBallId = 0;
 
 export class PinballPhysics {
@@ -123,6 +136,7 @@ export class PinballPhysics {
   ramps: RampDef[] = [];
   outlanes: OutlaneDef[] = [];
   captiveBalls: CaptiveBallDef[] = [];
+  vuks: VUKDef[] = [];
   leftFlipper: FlipperState;
   rightFlipper: FlipperState;
   collisionEvents: CollisionEvent[] = [];
@@ -174,6 +188,7 @@ export class PinballPhysics {
     this.initRamps();
     this.initOutlanes();
     this.initCaptiveBalls();
+    this.initVUKs();
   }
 
   private createBall(x: number, z: number, inPlunger: boolean): BallState {
@@ -311,6 +326,18 @@ export class PinballPhysics {
     });
   }
 
+  private initVUKs(): void {
+    // VUK scoop on left side
+    this.vuks.push({
+      x: -0.18, z: 0.05,
+      radius: 0.02,
+      launchVx: 0.3, launchVz: -2.5,
+      cooldown: 0, timer: 0,
+      captured: false,
+      id: 'vuk-left',
+    });
+  }
+
   resetBall(): void {
     // Reset primary ball
     this.ball.x = 0.23;
@@ -367,6 +394,7 @@ export class PinballPhysics {
       this.updateFlippers(subDt);
       this.updateSpinners(subDt);
       this.updateCaptiveBalls(subDt);
+      this.updateVUKs(subDt);
 
       // Update all active balls
       for (const b of this.balls) {
@@ -481,6 +509,11 @@ export class PinballPhysics {
     // Captive ball collisions
     for (const cap of this.captiveBalls) {
       this.collideCaptiveBall(b, cap);
+    }
+
+    // VUK scoops
+    for (const vuk of this.vuks) {
+      this.checkVUK(b, vuk);
     }
 
     // Flipper collisions
@@ -807,6 +840,52 @@ export class PinballPhysics {
           });
         }
       }
+    }
+  }
+
+  private updateVUKs(dt: number): void {
+    for (const vuk of this.vuks) {
+      if (vuk.cooldown > 0) vuk.cooldown -= dt;
+      if (vuk.captured && vuk.timer > 0) {
+        vuk.timer -= dt;
+        if (vuk.timer <= 0) {
+          // Launch!
+          vuk.captured = false;
+          // Find the ball sitting in the VUK and launch it
+          for (const b of this.balls) {
+            if (b.active && Math.abs(b.x - vuk.x) < 0.03 && Math.abs(b.z - vuk.z) < 0.03) {
+              b.vx = vuk.launchVx;
+              b.vz = vuk.launchVz;
+              break;
+            }
+          }
+          vuk.cooldown = 1.0;
+        }
+      }
+    }
+  }
+
+  private checkVUK(b: BallState, vuk: VUKDef): void {
+    if (vuk.captured || vuk.cooldown > 0) return;
+
+    const dx = b.x - vuk.x;
+    const dz = b.z - vuk.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+
+    if (dist < vuk.radius && b.vz > 0.2) {
+      // Capture ball
+      vuk.captured = true;
+      vuk.timer = 0.8; // Hold for 0.8 seconds then launch
+      b.x = vuk.x;
+      b.z = vuk.z;
+      b.vx = 0;
+      b.vz = 0;
+
+      this.collisionEvents.push({
+        type: 'vuk', id: vuk.id,
+        x: vuk.x, z: vuk.z,
+        force: 1.0, ballId: b.id,
+      });
     }
   }
 

@@ -51,6 +51,11 @@ const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
   { id: 'bonus_50k', name: 'BONUS BONANZA', description: 'Earn 50,000+ end-of-ball bonus', icon: '🎰', color: '#ffff00' },
   { id: 'games_10', name: 'REGULAR', description: 'Play 10 games', icon: '🏠', color: '#00ffff' },
   { id: 'games_50', name: 'ADDICT', description: 'Play 50 games', icon: '🔥', color: '#ff4400' },
+  // Round 5 achievements
+  { id: 'magna_save', name: 'MAGNETIC PULL', description: 'Use Magna-Save to save the ball', icon: '🧲', color: '#4488ff' },
+  { id: 'all_themes', name: 'FASHIONISTA', description: 'Try all 5 table themes', icon: '🎨', color: '#ff00ff' },
+  { id: 'daily_beat', name: 'DAILY CHAMPION', description: 'Beat a daily challenge target', icon: '📅', color: '#ffff00' },
+  { id: 'score_2m', name: 'DOUBLE MILLIONAIRE', description: 'Score 2,000,000 points', icon: '💰', color: '#ff8800' },
 ];
 
 export class AchievementManager {
@@ -94,6 +99,7 @@ export class AchievementManager {
     if (score >= 100000) this.unlock('score_100k');
     if (score >= 500000) this.unlock('score_500k');
     if (score >= 1000000) this.unlock('score_1m');
+    if (score >= 2000000) this.unlock('score_2m');
 
     // Bumper achievement
     if (bumperHits >= 100) this.unlock('bumper_100');
@@ -182,6 +188,28 @@ export class AchievementManager {
   checkGamesPlayed(): void {
     if (this.stats.totalGames >= 10) this.unlock('games_10');
     if (this.stats.totalGames >= 50) this.unlock('games_50');
+  }
+
+  checkMagnaSave(): void {
+    this.unlock('magna_save');
+  }
+
+  private usedThemes = new Set<string>();
+
+  checkThemeUsed(themeId: string): void {
+    this.usedThemes.add(themeId);
+    // Also persist used themes
+    try {
+      const saved = localStorage.getItem('neon-pinball-used-themes');
+      const themes: string[] = saved ? JSON.parse(saved) : [];
+      if (!themes.includes(themeId)) themes.push(themeId);
+      localStorage.setItem('neon-pinball-used-themes', JSON.stringify(themes));
+      if (themes.length >= 5) this.unlock('all_themes');
+    } catch {}
+  }
+
+  checkDailyBeat(): void {
+    this.unlock('daily_beat');
   }
 
   private unlock(id: string): void {
