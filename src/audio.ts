@@ -171,13 +171,21 @@ export class AudioManager {
 
   // === Standard SFX ===
 
-  playBumperHit(): void {
+  playBumperHit(bumperId?: string): void {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
 
+    // Different pitch per bumper for variety
+    const baseFreq = bumperId === 'pop-center' ? 900 :
+                     bumperId === 'pop-left' ? 700 :
+                     bumperId === 'pop-right' ? 1100 : 800;
+    const bellFreq = bumperId === 'pop-center' ? 1400 :
+                     bumperId === 'pop-left' ? 1000 :
+                     bumperId === 'pop-right' ? 1600 : 1200;
+
     const osc = this.ctx.createOscillator();
     osc.type = 'square';
-    osc.frequency.setValueAtTime(800, t);
+    osc.frequency.setValueAtTime(baseFreq, t);
     osc.frequency.exponentialRampToValueAtTime(200, t + 0.15);
 
     const gain = this.ctx.createGain();
@@ -191,7 +199,7 @@ export class AudioManager {
 
     const bell = this.ctx.createOscillator();
     bell.type = 'sine';
-    bell.frequency.value = 1200;
+    bell.frequency.value = bellFreq;
     const bellGain = this.ctx.createGain();
     bellGain.gain.setValueAtTime(0.2, t);
     bellGain.gain.exponentialRampToValueAtTime(0.01, t + 0.3);

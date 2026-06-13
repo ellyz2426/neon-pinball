@@ -580,6 +580,14 @@ export class PinballGameLoopSystem extends createSystem({}) {
       flipperMeshes.left.rotation.y = -physics.leftFlipper.angle;
       flipperMeshes.right.rotation.y = -(physics.rightFlipper.angle - Math.PI);
 
+      // Flipper glow: brighter emissive when active
+      const leftActive = this.keys['KeyA'] || this.keys['ArrowLeft'];
+      const rightActive = this.keys['KeyD'] || this.keys['ArrowRight'];
+      const leftMat = flipperMeshes.left.material as MeshStandardMaterial;
+      const rightMat = flipperMeshes.right.material as MeshStandardMaterial;
+      leftMat.emissiveIntensity = leftActive ? 1.5 : 0.4;
+      rightMat.emissiveIntensity = rightActive ? 1.5 : 0.4;
+
       // Update spinner visuals
       for (const spinner of physics.spinners) {
         const sm = spinnerMeshes.get(spinner.id);
@@ -866,7 +874,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
       switch (event.type) {
         case 'bumper':
           game.handleBumperHit(event.id || '', event.x, event.z);
-          audio.playBumperHit();
+          audio.playBumperHit(event.id);
           effects.spawnBumperHit(event.x, event.z, this.getBumperColor(event.id));
           effects.flashBumper(bumperMeshes, event.id || '');
           break;
