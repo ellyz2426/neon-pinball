@@ -388,6 +388,11 @@ export class PinballPhysics {
     flipper.targetAngle = active ? flipper.activeAngle : flipper.restAngle;
   }
 
+  isFlipperActive(side: 'left' | 'right'): boolean {
+    const flipper = side === 'left' ? this.leftFlipper : this.rightFlipper;
+    return flipper.targetAngle === flipper.activeAngle;
+  }
+
   update(dt: number): CollisionEvent[] {
     this.collisionEvents = [];
 

@@ -43,6 +43,11 @@
 
     <view class="divider" />
 
+    <text class="section-title">> VR HAPTICS</text>
+    <text class="tip">Your controllers vibrate on every hit: flippers, bumpers, slingshots, ramps, launches, drains, tilt warnings, jackpots, combo tier-ups, wizard mode, and more. The intensity scales with the event.</text>
+
+    <view class="divider" />
+
     <text class="section-title">> SCORING</text>
     <view class="score-row"><text class="score-item">Pop Bumpers</text><text class="score-val">100</text></view>
     <view class="score-row"><text class="score-item">Slingshots</text><text class="score-val">50</text></view>

@@ -1,8 +1,41 @@
 // Neon Pinball VR - XR Controller Input
 // Maps VR controller buttons to pinball actions
-// Round 5: Magna-Save via thumbstick flick
+// Round 30: Haptic feedback for VR immersion
 
 import { InputComponent } from '@iwsdk/core';
+
+/** Haptic pulse descriptor */
+export interface HapticPulse {
+  intensity: number;  // 0-1
+  duration: number;   // milliseconds
+}
+
+/** Predefined haptic patterns for pinball events */
+export const HAPTIC_PATTERNS = {
+  flipperActivate:    { intensity: 0.3, duration: 40 } as HapticPulse,
+  bumperHit:          { intensity: 0.6, duration: 60 } as HapticPulse,
+  slingshotHit:       { intensity: 0.4, duration: 50 } as HapticPulse,
+  ballLaunch:         { intensity: 0.5, duration: 120 } as HapticPulse,
+  ballDrain:          { intensity: 0.7, duration: 200 } as HapticPulse,
+  tiltWarning:        { intensity: 0.8, duration: 150 } as HapticPulse,
+  tiltFull:           { intensity: 1.0, duration: 300 } as HapticPulse,
+  jackpot:            { intensity: 0.9, duration: 180 } as HapticPulse,
+  superJackpot:       { intensity: 1.0, duration: 250 } as HapticPulse,
+  multiballStart:     { intensity: 1.0, duration: 200 } as HapticPulse,
+  comboTierUp:        { intensity: 0.4, duration: 80 } as HapticPulse,
+  wizardMode:         { intensity: 1.0, duration: 300 } as HapticPulse,
+  magnaSave:          { intensity: 0.5, duration: 100 } as HapticPulse,
+  skillShotGood:      { intensity: 0.3, duration: 60 } as HapticPulse,
+  skillShotPerfect:   { intensity: 0.7, duration: 120 } as HapticPulse,
+  nudge:              { intensity: 0.5, duration: 80 } as HapticPulse,
+  ballSaved:          { intensity: 0.4, duration: 100 } as HapticPulse,
+  missionComplete:    { intensity: 0.6, duration: 120 } as HapticPulse,
+  rampShot:           { intensity: 0.25, duration: 50 } as HapticPulse,
+  spinnerHit:         { intensity: 0.15, duration: 30 } as HapticPulse,
+  targetHit:          { intensity: 0.2, duration: 40 } as HapticPulse,
+  frenzyStart:        { intensity: 0.8, duration: 160 } as HapticPulse,
+  milestone:          { intensity: 0.7, duration: 150 } as HapticPulse,
+} as const;
 
 export class XRInputHandler {
   private world: any;
@@ -31,6 +64,32 @@ export class XRInputHandler {
   constructor(world: any) {
     this.world = world;
   }
+
+  /**
+   * Send haptic pulse to one or both XR controllers.
+   * Falls back silently if not in XR or haptics unavailable.
+   */
+  hapticPulse(pulse: HapticPulse, hand: 'left' | 'right' | 'both' = 'both'): void {
+    try {
+      const session = this.world.renderer?.xr?.getSession?.();
+      if (!session?.inputSources) return;
+
+      for (const source of session.inputSources) {
+        if (!source.gamepad?.hapticActuators?.length) continue;
+        const h = source.handedness;
+        if (hand === 'both' || h === hand) {
+          source.gamepad.hapticActuators[0].pulse(pulse.intensity, pulse.duration);
+        }
+      }
+    } catch {
+      // Haptics not available — silently ignore
+    }
+  }
+
+  /** Convenience: left controller only */
+  hapticLeft(pulse: HapticPulse): void { this.hapticPulse(pulse, 'left'); }
+  /** Convenience: right controller only */
+  hapticRight(pulse: HapticPulse): void { this.hapticPulse(pulse, 'right'); }
 
   update(dt: number): void {
     // Reset per-frame flags

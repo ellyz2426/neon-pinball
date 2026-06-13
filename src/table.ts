@@ -914,3 +914,59 @@ export function createMissionProgressBar(table: Group): Mesh {
   table.add(mesh);
   return mesh;
 }
+
+// Plunger lane lights — animated sequence of small lights in the shooter lane
+export function createPlungerLaneLights(table: Group): Mesh[] {
+  const lights: Mesh[] = [];
+  const count = 8;
+  for (let i = 0; i < count; i++) {
+    const geo = new SphereGeometry(0.004, 6, 4);
+    const mat = new MeshBasicMaterial({
+      color: new Color(0x00ffff),
+      transparent: true,
+      opacity: 0.3,
+      blending: AdditiveBlending,
+    });
+    const mesh = new Mesh(geo, mat);
+    // Spread from bottom to top of plunger lane
+    const t = i / (count - 1);
+    mesh.position.set(0.23, 0.003, 0.4 - t * 0.7);
+    table.add(mesh);
+    lights.push(mesh);
+  }
+  return lights;
+}
+
+// Table edge accent strips — thin neon glow along the table perimeter
+export function createTableEdgeAccents(table: Group): Mesh[] {
+  const accents: Mesh[] = [];
+  const accentMat = new MeshBasicMaterial({
+    color: new Color(0x00ffff),
+    transparent: true,
+    opacity: 0.15,
+    blending: AdditiveBlending,
+  });
+
+  // Left edge
+  const leftGeo = new BoxGeometry(0.003, 0.001, PLAYFIELD_LENGTH - 0.02);
+  const leftAccent = new Mesh(leftGeo, accentMat.clone());
+  leftAccent.position.set(-HALF_W - 0.018, 0.001, 0);
+  table.add(leftAccent);
+  accents.push(leftAccent);
+
+  // Right edge
+  const rightGeo = new BoxGeometry(0.003, 0.001, PLAYFIELD_LENGTH - 0.02);
+  const rightAccent = new Mesh(rightGeo, accentMat.clone());
+  rightAccent.position.set(HALF_W + 0.018, 0.001, 0);
+  table.add(rightAccent);
+  accents.push(rightAccent);
+
+  // Bottom edge
+  const bottomGeo = new BoxGeometry(PLAYFIELD_WIDTH - 0.02, 0.001, 0.003);
+  const bottomAccent = new Mesh(bottomGeo, accentMat.clone());
+  bottomAccent.position.set(0, 0.001, HALF_L + 0.018);
+  table.add(bottomAccent);
+  accents.push(bottomAccent);
+
+  return accents;
+}

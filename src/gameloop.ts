@@ -19,7 +19,7 @@ import { GameManager, GameState, IntensityLevel, COMBO_TIERS } from './game';
 import { AudioManager } from './audio';
 import { EffectsManager } from './effects';
 import { UIManager } from './ui';
-import { XRInputHandler } from './xrinput';
+import { XRInputHandler, HAPTIC_PATTERNS } from './xrinput';
 import { AchievementManager } from './achievements';
 import { EnvState, updateEnvironment, applyEnvironmentTheme } from './environment';
 import { getTheme } from './themes';
@@ -64,6 +64,8 @@ export interface GameLoopRefs {
   rampEntryGlows: Mesh[];
   orbitCheckpoints: Mesh[];
   missionProgressBar: Mesh;
+  plungerLaneLights: Mesh[];
+  tableEdgeAccents: Mesh[];
 }
 
 export class PinballGameLoopSystem extends createSystem({}) {
@@ -264,6 +266,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
       if (label.includes('JACKPOT')) {
         audio.playJackpot();
         achievements.checkJackpot();
+        xrInput.hapticPulse(HAPTIC_PATTERNS.jackpot);
       } else if (label.includes('BONUS')) {
         audio.playCombo();
       } else if (label.includes('LOCKED')) {
@@ -272,6 +275,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
       if (label.includes('SUPER JACKPOT')) {
         audio.playSuperJackpot();
         achievements.checkSuperJackpot();
+        xrInput.hapticPulse(HAPTIC_PATTERNS.superJackpot);
       }
 
       // Score popup at hit location
@@ -298,9 +302,13 @@ export class PinballGameLoopSystem extends createSystem({}) {
 
     game.onMessage((msg: string) => {
       this.refs.ui.showMessage(msg);
-      if (msg.includes('SAVED')) audio.playBallSaved();
+      if (msg.includes('SAVED')) {
+        audio.playBallSaved();
+        xrInput.hapticPulse(HAPTIC_PATTERNS.ballSaved);
+      }
       if (msg.includes('MISSION COMPLETE')) {
         audio.playMissionComplete();
+        xrInput.hapticPulse(HAPTIC_PATTERNS.missionComplete);
         if (game.completedMissionTypes.size > 0) {
           const lastType = Array.from(game.completedMissionTypes).pop();
           if (lastType) achievements.checkMissionComplete(lastType);
@@ -315,6 +323,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
         audio.playMultiballStart();
         achievements.checkMultiball();
         effects.spawnMultiballLaunch(0, -0.1);
+        xrInput.hapticPulse(HAPTIC_PATTERNS.multiballStart);
         const positions = [
           { x: -0.15, z: -0.2, vx: 0.3, vz: 0.5 },
           { x: 0.15, z: -0.2, vx: -0.3, vz: 0.5 },
@@ -335,6 +344,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
       if (active) {
         achievements.checkWizardMode();
         effects.spawnWizardBurst(0, 0);
+        xrInput.hapticPulse(HAPTIC_PATTERNS.wizardMode);
       }
     });
 
@@ -342,6 +352,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
       if (active) {
         audio.playMagnaSave();
         achievements.checkMagnaSave();
+        xrInput.hapticPulse(HAPTIC_PATTERNS.magnaSave, _side === 'left' ? 'left' : 'right');
       }
     });
 
@@ -349,6 +360,9 @@ export class PinballGameLoopSystem extends createSystem({}) {
       if (zone) {
         audio.playSkillShot(zone.name as 'GOOD' | 'GREAT' | 'PERFECT');
         achievements.checkSkillShot(zone.name);
+        xrInput.hapticPulse(
+          zone.name === 'PERFECT' ? HAPTIC_PATTERNS.skillShotPerfect : HAPTIC_PATTERNS.skillShotGood
+        );
       }
     });
 
@@ -369,8 +383,12 @@ export class PinballGameLoopSystem extends createSystem({}) {
           const idx = COMBO_TIERS.indexOf(tierDef);
           if (idx >= 4) {
             effects.spawnWizardBurst(0, 0);
+            xrInput.hapticPulse({ intensity: 0.7, duration: 120 });
           } else if (idx >= 2) {
             effects.spawnBumperHit(0, 0, color);
+            xrInput.hapticPulse(HAPTIC_PATTERNS.comboTierUp);
+          } else {
+            xrInput.hapticPulse(HAPTIC_PATTERNS.comboTierUp);
           }
         }
       }
@@ -399,12 +417,14 @@ export class PinballGameLoopSystem extends createSystem({}) {
         effects.spawnTiltWarning();
         this.tiltFlashTimer = 0.8;
         this.tiltShakeIntensity = 0.006;
+        xrInput.hapticPulse(HAPTIC_PATTERNS.tiltFull);
       } else {
         // Warning
         audio.playTiltWarning();
         effects.spawnTiltWarning();
         this.tiltFlashTimer = 0.3;
         this.tiltShakeIntensity = 0.003;
+        xrInput.hapticPulse(HAPTIC_PATTERNS.tiltWarning);
       }
     });
 
@@ -421,8 +441,16 @@ export class PinballGameLoopSystem extends createSystem({}) {
       effects.spawnWizardBurst(0, -0.15);
       this.tableShakeTimer = 0.3;
       this.tableShakeIntensity = 0.004;
+      xrInput.hapticPulse(HAPTIC_PATTERNS.milestone);
       // Check difficulty achievement
       achievements.checkDifficultyLevel(game.difficultyLevel);
+    });
+
+    game.onFrenzy((active, _timer) => {
+      if (active) {
+        xrInput.hapticPulse(HAPTIC_PATTERNS.frenzyStart);
+        achievements.checkFrenzyTriggered();
+      }
     });
   }
 
@@ -483,8 +511,13 @@ export class PinballGameLoopSystem extends createSystem({}) {
       // Flipper input
       const leftFlip = this.keys['KeyA'] || this.keys['ArrowLeft'] || xrInput.leftFlipperPressed;
       const rightFlip = this.keys['KeyD'] || this.keys['ArrowRight'] || xrInput.rightFlipperPressed;
+      const wasLeftFlip = physics.isFlipperActive('left');
+      const wasRightFlip = physics.isFlipperActive('right');
       physics.setFlipperActive('left', leftFlip);
       physics.setFlipperActive('right', rightFlip);
+      // Haptic on flipper engage
+      if (leftFlip && !wasLeftFlip) xrInput.hapticLeft(HAPTIC_PATTERNS.flipperActivate);
+      if (rightFlip && !wasRightFlip) xrInput.hapticRight(HAPTIC_PATTERNS.flipperActivate);
 
       // Plunger input
       if (game.state === 'plunger') {
@@ -497,6 +530,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
           const launchPower = this.plungerPower;
           physics.launchBall(this.plungerPower);
           audio.playLaunch();
+          xrInput.hapticPulse({ intensity: 0.3 + launchPower * 0.7, duration: 80 + launchPower * 120 });
           game.setState('playing');
           game.handleSkillShot(launchPower, physics.ball.x, physics.ball.z);
           this.plungerPower = 0;
@@ -516,6 +550,8 @@ export class PinballGameLoopSystem extends createSystem({}) {
             if (nudgeL) b.vx -= 0.3 * dt;
             if (nudgeR) b.vx += 0.3 * dt;
           }
+          if (nudgeL) xrInput.hapticLeft(HAPTIC_PATTERNS.nudge);
+          if (nudgeR) xrInput.hapticRight(HAPTIC_PATTERNS.nudge);
         }
       }
 
@@ -554,6 +590,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
               game.handleTargetHit(`target-${i}`, tx, targetZ);
               audio.playTargetHit();
               effects.spawnTargetHit(tx, targetZ, [0xff0044, 0xff8800, 0xffff00, 0x00ff88, 0x0088ff][i]);
+              xrInput.hapticPulse(HAPTIC_PATTERNS.targetHit);
               b.vz = Math.abs(b.vz) * 0.8;
 
               // Check target bank completion achievement
@@ -930,6 +967,53 @@ export class PinballGameLoopSystem extends createSystem({}) {
 
       // === Idle bumper pulse animation ===
       // Bumpers gently pulse even when not being hit, inviting attention
+
+      // === Plunger lane lights animation ===
+      const { plungerLaneLights, tableEdgeAccents } = this.refs;
+      if (plungerLaneLights && plungerLaneLights.length > 0) {
+        const theme = getTheme(game.currentThemeId);
+        const isPlungerPhase = game.state === 'plunger';
+        const waveSpeed = isPlungerPhase ? 4 : 1.5;
+        for (let i = 0; i < plungerLaneLights.length; i++) {
+          const light = plungerLaneLights[i];
+          const mat = light.material as MeshBasicMaterial;
+          // Traveling wave upward through the lights
+          const phase = this.gameTime * waveSpeed - i * 0.5;
+          const wave = Math.max(0, Math.sin(phase));
+          if (isPlungerPhase) {
+            // Brighter, faster animation during plunger charging
+            mat.opacity = 0.3 + wave * 0.7;
+            mat.color.setHex(0x00ffff);
+            const s = 1.0 + wave * 0.5;
+            light.scale.set(s, s, s);
+          } else if (game.state === 'playing') {
+            mat.opacity = 0.15 + wave * 0.2;
+            mat.color.setHex(theme.accentPrimary);
+            light.scale.set(1, 1, 1);
+          } else {
+            mat.opacity = 0.1 + wave * 0.1;
+            light.scale.set(1, 1, 1);
+          }
+        }
+      }
+
+      // === Table edge accent animation ===
+      if (tableEdgeAccents && tableEdgeAccents.length > 0) {
+        const theme = getTheme(game.currentThemeId);
+        const edgePulse = 0.15 + Math.sin(this.gameTime * 1.2) * 0.08;
+        const edgeColor = game.wizardModeActive
+          ? new Color().setHSL((this.gameTime * 0.3) % 1, 1, 0.5).getHex()
+          : game.frenzyActive
+            ? 0xff6600
+            : theme.accentPrimary;
+        for (const accent of tableEdgeAccents) {
+          const mat = accent.material as MeshBasicMaterial;
+          mat.opacity = edgePulse;
+          mat.color.setHex(edgeColor);
+        }
+      }
+
+      // === Idle bumper pulse animation (continued) ===
       // At higher difficulty, bumpers pulse faster and with a red tinge
       const diffPulseSpeed = 1.5 + (game.difficultyLevel - 1) * 0.3;
       const diffRedShift = Math.min(1, (game.difficultyLevel - 1) * 0.15);
@@ -1163,7 +1247,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
   }
 
   private handleCollisionEvents(events: CollisionEvent[]): void {
-    const { game, audio, effects, bumperMeshes, physics, achievements } = this.refs;
+    const { game, audio, effects, bumperMeshes, physics, achievements, xrInput } = this.refs;
 
     for (const event of events) {
       switch (event.type) {
@@ -1172,6 +1256,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
           audio.playBumperHit(event.id);
           effects.spawnBumperHit(event.x, event.z, this.getBumperColor(event.id));
           effects.flashBumper(bumperMeshes, event.id || '');
+          xrInput.hapticPulse(HAPTIC_PATTERNS.bumperHit);
           // Micro table shake on bumper hits
           if (this.tableShakeTimer <= 0) {
             this.tableShakeTimer = 0.08;
@@ -1185,6 +1270,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
           // Directional particle spray toward center
           effects.spawnSlingshotHit(event.x, event.z, event.x < 0 ? 1 : -1);
           effects.flashBumper(bumperMeshes, event.id || '');
+          xrInput.hapticPulse(HAPTIC_PATTERNS.slingshotHit);
           break;
 
         case 'flipper':
@@ -1199,6 +1285,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
         case 'drain': {
           audio.playDrain();
           effects.spawnDrain(event.x, event.z);
+          xrInput.hapticPulse(HAPTIC_PATTERNS.ballDrain);
           const result = game.handleDrain();
           if (result.saved) {
             physics.resetBall();
@@ -1220,6 +1307,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
             this.spinnerCooldowns[sid] = 0.15;
             game.advanceOrbit(2, event.x, event.z);
             achievements.checkSpinnerCount(game.totalSpinnerHits);
+            xrInput.hapticPulse(HAPTIC_PATTERNS.spinnerHit);
           }
           break;
         }
@@ -1227,6 +1315,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
         case 'ramp_enter':
           audio.playRampEnter();
           effects.spawnRampTrail(event.x, event.z);
+          xrInput.hapticPulse(HAPTIC_PATTERNS.rampShot);
           break;
 
         case 'ramp_exit':
@@ -1243,18 +1332,21 @@ export class PinballGameLoopSystem extends createSystem({}) {
           game.handleKickback(event.id || '', event.x, event.z);
           audio.playKickback();
           effects.spawnBumperHit(event.x, event.z, 0x00ff88);
+          xrInput.hapticPulse(HAPTIC_PATTERNS.bumperHit);
           break;
 
         case 'captive_ball':
           game.handleCaptiveBallHit(event.x, event.z);
           audio.playCaptiveBall();
           effects.spawnBumperHit(event.x, event.z, 0x4400ff);
+          xrInput.hapticPulse(HAPTIC_PATTERNS.targetHit);
           break;
 
         case 'vuk':
           game.handleVUKHit(event.x, event.z);
           audio.playRampEnter();
           effects.spawnBumperHit(event.x, event.z, 0xff8800);
+          xrInput.hapticPulse(HAPTIC_PATTERNS.rampShot);
           // VUK capture celebration — extra particles
           for (let vi = 0; vi < 6; vi++) {
             effects.spawnBumperHit(
