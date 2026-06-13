@@ -553,6 +553,11 @@ export class PinballGameLoopSystem extends createSystem({}) {
               effects.spawnTargetHit(tx, targetZ, [0xff0044, 0xff8800, 0xffff00, 0x00ff88, 0x0088ff][i]);
               b.vz = Math.abs(b.vz) * 0.8;
 
+              // Check target bank completion achievement
+              if (game.targetBankCompletions > 0) {
+                this.refs.achievements.checkTargetBankCompletions(game.targetBankCompletions);
+              }
+
               const mesh = targetMeshes.get(`target-${i}`);
               if (mesh) {
                 mesh.visible = false;
@@ -607,7 +612,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
                 // Use theme-reactive trail color
                 const theme = getTheme(game.currentThemeId);
                 this.trailColor = theme.ballGlow;
-                effects.addTrailPoint(b.x, physics.getBallY(b, 0) - TABLE_Y, b.z, this.trailColor);
+                effects.addTrailPoint(b.x, physics.getBallY(b, 0) - TABLE_Y, b.z, this.trailColor, speed);
               }
             }
           }

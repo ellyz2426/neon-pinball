@@ -101,6 +101,7 @@ export class GameManager {
   ballSaverDuration = 10;
   targets: TargetState[] = [];
   allTargetsHit = false;
+  targetBankCompletions = 0; // Track how many times targets were all cleared
   highScore = 0;
   tableName = 'Neon Classic';
 
@@ -318,6 +319,7 @@ export class GameManager {
     this.ballSaverActive = true;
     this.ballSaverTimer = this.ballSaverDuration;
     this.allTargetsHit = false;
+    this.targetBankCompletions = 0;
     this.multiballActive = false;
     this.multiballBallCount = 0;
     this.ballsLocked = 0;
@@ -553,8 +555,16 @@ export class GameManager {
     const allDown = this.targets.every(t => !t.active);
     if (allDown && !this.allTargetsHit) {
       this.allTargetsHit = true;
-      points += Math.floor(this.ALL_TARGETS_BONUS * eff);
-      this.emitMessage('ALL TARGETS! +5000 BONUS!');
+      this.targetBankCompletions++;
+      // Progressive target bonus: increases with each completion
+      const completionMultiplier = 1 + (this.targetBankCompletions - 1) * 0.5;
+      const allBonus = Math.floor(this.ALL_TARGETS_BONUS * completionMultiplier * eff);
+      points += allBonus;
+      if (this.targetBankCompletions > 1) {
+        this.emitMessage(`ALL TARGETS x${this.targetBankCompletions}! +${allBonus.toLocaleString()} BONUS!`);
+      } else {
+        this.emitMessage('ALL TARGETS! +5000 BONUS!');
+      }
       this.bumpIntensity(15);
 
       if (this.ballsLocked < this.maxLockBalls && !this.multiballActive) {

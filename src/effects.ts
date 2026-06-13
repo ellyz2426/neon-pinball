@@ -269,7 +269,7 @@ export class EffectsManager {
     }
   }
 
-  addTrailPoint(x: number, y: number, z: number, color: number = 0x00ffff): void {
+  addTrailPoint(x: number, y: number, z: number, color: number = 0x00ffff, speed: number = 0.5): void {
     if (this.trail.length >= this.maxTrail) {
       const old = this.trail.shift()!;
       this.releaseTrailMesh(old.mesh);
@@ -277,7 +277,11 @@ export class EffectsManager {
 
     const mesh = this.acquireTrailMesh(color, x, y, z);
     if (!mesh) return;
-    this.trail.push({ mesh, life: 0.5 });
+    // Scale trail by ball speed — faster = bigger, brighter trail
+    const speedScale = Math.min(2.0, 0.6 + speed * 0.8);
+    mesh.scale.setScalar(speedScale);
+    (mesh.material as MeshBasicMaterial).opacity = Math.min(0.9, 0.3 + speed * 0.3);
+    this.trail.push({ mesh, life: 0.3 + speed * 0.3 });
   }
 
   // Score popup: glowing orb sized by score value, floats up and fades

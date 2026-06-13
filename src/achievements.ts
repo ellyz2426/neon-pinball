@@ -82,6 +82,7 @@ const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
   { id: 'games_100', name: 'PINBALL VETERAN', description: 'Play 100 games', icon: 'V', color: '#ffd700' },
   { id: 'difficulty_5', name: 'IRONMAN', description: 'Reach difficulty level 5', icon: '!', color: '#ff0044' },
   { id: 'combo_godlike_2', name: 'DOUBLE GODLIKE', description: 'Reach GODLIKE combo twice in one game', icon: '!', color: '#ff00ff' },
+  { id: 'target_master', name: 'TARGET MASTER', description: 'Clear all targets 5 times in one game', icon: 'T', color: '#00ff88' },
 ];
 
 export class AchievementManager {
@@ -333,6 +334,10 @@ export class AchievementManager {
 
   checkSpinnerCount(count: number): void {
     if (count >= 50) this.unlock('spinner_50');
+  }
+
+  checkTargetBankCompletions(count: number): void {
+    if (count >= 5) this.unlock('target_master');
   }
 
   private unlock(id: string): void {

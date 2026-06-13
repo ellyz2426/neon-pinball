@@ -359,11 +359,13 @@ export class AudioManager {
   playLaunch(): void {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
+    const fm = this.themeFreqMul;
 
+    // Whoosh
     const noise = this.ctx.createOscillator();
     noise.type = 'sawtooth';
-    noise.frequency.setValueAtTime(200, t);
-    noise.frequency.exponentialRampToValueAtTime(2000, t + 0.1);
+    noise.frequency.setValueAtTime(200 * fm, t);
+    noise.frequency.exponentialRampToValueAtTime(2000 * fm, t + 0.1);
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0.3, t);
     gain.gain.exponentialRampToValueAtTime(0.01, t + 0.15);
@@ -371,6 +373,19 @@ export class AudioManager {
     gain.connect(this.sfxGain);
     noise.start(t);
     noise.stop(t + 0.15);
+
+    // Impact thud
+    const thud = this.ctx.createOscillator();
+    thud.type = 'sine';
+    thud.frequency.setValueAtTime(150 * fm, t + 0.05);
+    thud.frequency.exponentialRampToValueAtTime(60, t + 0.2);
+    const thudG = this.ctx.createGain();
+    thudG.gain.setValueAtTime(0.2, t + 0.05);
+    thudG.gain.exponentialRampToValueAtTime(0.01, t + 0.2);
+    thud.connect(thudG);
+    thudG.connect(this.sfxGain);
+    thud.start(t + 0.05);
+    thud.stop(t + 0.2);
   }
 
   playWallBounce(): void {
