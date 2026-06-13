@@ -823,3 +823,20 @@ export function createLegNeonRings(table: Group): Mesh[] {
 
   return rings;
 }
+
+
+// Ball saver indicator — glowing bar above the drain area
+export function createBallSaverBar(table: Group): Mesh {
+  const geo = new BoxGeometry(0.20, 0.003, 0.008);
+  const mat = new MeshBasicMaterial({
+    color: new Color(0x00ff88),
+    transparent: true,
+    opacity: 0,
+    blending: AdditiveBlending,
+  });
+  const mesh = new Mesh(geo, mat);
+  // Position just above the drain, between flippers
+  mesh.position.set(0, 0.005, HALF_L - 0.06);
+  table.add(mesh);
+  return mesh;
+}

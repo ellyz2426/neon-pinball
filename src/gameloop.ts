@@ -15,7 +15,7 @@ import {
 
 import { PinballPhysics, BALL_RADIUS, CollisionEvent } from './physics';
 import { TABLE_Y } from './table';
-import { GameManager, GameState, IntensityLevel } from './game';
+import { GameManager, GameState, IntensityLevel, COMBO_TIERS } from './game';
 import { AudioManager } from './audio';
 import { EffectsManager } from './effects';
 import { UIManager } from './ui';
@@ -60,6 +60,7 @@ export interface GameLoopRefs {
   skillShotZones: Mesh[];
   backglassScoreMesh: Mesh | null;
   legRings: Mesh[];
+  ballSaverBar: Mesh;
 }
 
 export class PinballGameLoopSystem extends createSystem({}) {
@@ -313,7 +314,23 @@ export class PinballGameLoopSystem extends createSystem({}) {
     });
 
     game.onComboTier((tier) => {
-      if (tier) achievements.checkComboTier(tier);
+      if (tier) {
+        achievements.checkComboTier(tier);
+        // Visual escalation based on combo tier
+        const tierDef = COMBO_TIERS.find(t => t.name === tier);
+        if (tierDef) {
+          const color = parseInt(tierDef.color.replace('#', ''), 16);
+          // Burst particles at center of table
+          effects.spawnPulseRing(0, 0, color);
+          // Bigger burst for higher tiers
+          const idx = COMBO_TIERS.indexOf(tierDef);
+          if (idx >= 4) {
+            effects.spawnWizardBurst(0, 0);
+          } else if (idx >= 2) {
+            effects.spawnBumperHit(0, 0, color);
+          }
+        }
+      }
     });
 
     game.onLaneComplete((lanes) => {
@@ -715,6 +732,30 @@ export class PinballGameLoopSystem extends createSystem({}) {
           mat.opacity = baseBright + Math.sin(this.gameTime * 2) * 0.1;
         } else {
           mat.opacity = 0.3 + Math.sin(this.gameTime) * 0.1;
+        }
+      }
+
+      // === Ball saver indicator ===
+      if (this.refs.ballSaverBar) {
+        const saverMat = this.refs.ballSaverBar.material as MeshBasicMaterial;
+        if (game.ballSaverActive && game.ballSaverTimer > 0) {
+          const pct = game.ballSaverTimer / game.ballSaverDuration;
+          // Bright green that fades to red as timer runs out
+          saverMat.opacity = 0.5 + Math.sin(this.gameTime * 6) * 0.2;
+          if (pct > 0.5) {
+            saverMat.color.setHex(0x00ff88);
+          } else if (pct > 0.25) {
+            saverMat.color.setHex(0xffff00);
+          } else {
+            saverMat.color.setHex(0xff4400);
+            // Urgent flashing when almost out
+            saverMat.opacity = Math.sin(this.gameTime * 15) > 0 ? 0.8 : 0.2;
+          }
+          // Scale width proportional to remaining time
+          this.refs.ballSaverBar.scale.x = pct;
+        } else {
+          saverMat.opacity = 0;
+          this.refs.ballSaverBar.scale.x = 1;
         }
       }
 

@@ -42,7 +42,7 @@ import {
   createTargetBank, createSpinnerMeshes, createRampMeshes, createOutlaneMeshes,
   createCaptiveBallMesh, createSkillShotIndicator, createVUKMesh,
   createLaneIndicators, createBallLockIndicators, createBackglassScore,
-  createLegNeonRings,
+  createLegNeonRings, createBallSaverBar,
   TABLE_Y, TABLE_TILT,
 } from './table';
 import { GameManager } from './game';
@@ -98,6 +98,7 @@ async function main() {
   const ballLockIndicators = createBallLockIndicators(tableGroup);
   const backglassScoreMesh = createBackglassScore(tableGroup);
   const legRings = createLegNeonRings(tableGroup);
+  const ballSaverBar = createBallSaverBar(tableGroup);
 
   // Initialize systems
   const physics = new PinballPhysics();
@@ -177,6 +178,7 @@ async function main() {
     skillShotZones: skillShotIndicator.zones,
     backglassScoreMesh,
     legRings,
+    ballSaverBar,
   });
 }
 
