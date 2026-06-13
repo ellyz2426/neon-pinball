@@ -43,6 +43,7 @@ import {
   createCaptiveBallMesh, createSkillShotIndicator, createVUKMesh,
   createLaneIndicators, createBallLockIndicators, createBackglassScore,
   createLegNeonRings, createBallSaverBar,
+  createRampEntryGlows, createOrbitCheckpoints, createMissionProgressBar,
   TABLE_Y, TABLE_TILT,
 } from './table';
 import { GameManager } from './game';
@@ -99,6 +100,9 @@ async function main() {
   const backglassScoreMesh = createBackglassScore(tableGroup);
   const legRings = createLegNeonRings(tableGroup);
   const ballSaverBar = createBallSaverBar(tableGroup);
+  const rampEntryGlows = createRampEntryGlows(tableGroup);
+  const orbitCheckpoints = createOrbitCheckpoints(tableGroup);
+  const missionProgressBar = createMissionProgressBar(tableGroup);
 
   // Initialize systems
   const physics = new PinballPhysics();
@@ -179,6 +183,9 @@ async function main() {
     backglassScoreMesh,
     legRings,
     ballSaverBar,
+    rampEntryGlows,
+    orbitCheckpoints,
+    missionProgressBar,
   });
 }
 

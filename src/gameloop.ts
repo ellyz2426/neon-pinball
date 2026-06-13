@@ -61,6 +61,9 @@ export interface GameLoopRefs {
   backglassScoreMesh: Mesh | null;
   legRings: Mesh[];
   ballSaverBar: Mesh;
+  rampEntryGlows: Mesh[];
+  orbitCheckpoints: Mesh[];
+  missionProgressBar: Mesh;
 }
 
 export class PinballGameLoopSystem extends createSystem({}) {
@@ -589,7 +592,16 @@ export class PinballGameLoopSystem extends createSystem({}) {
           (bv.glow.material as MeshBasicMaterial).opacity = 0.2 + Math.min(0.5, speed * 0.15);
 
           if (!game.wizardModeActive && b !== physics.ball && game.multiballActive) {
-            (bv.mesh.material as MeshStandardMaterial).emissive.setHex(0xff00ff);
+            // Multiball differentiation: each extra ball gets a unique color
+            const multiballColors = [0xff00ff, 0xff8800, 0x44ff00, 0x4488ff];
+            const colorIdx = (bv.ballId - 1) % multiballColors.length;
+            const mbColor = multiballColors[Math.max(0, colorIdx)];
+            (bv.mesh.material as MeshStandardMaterial).emissive.setHex(mbColor);
+            (bv.glow.material as MeshBasicMaterial).color.setHex(mbColor);
+            // Slight size variation per ball for visual distinction
+            const sizeScale = 1.0 + (colorIdx % 2) * 0.08;
+            bv.mesh.scale.setScalar(sizeScale);
+            bv.glow.scale.setScalar(sizeScale);
           } else if (!game.wizardModeActive) {
             const theme = getTheme(game.currentThemeId);
             (bv.mesh.material as MeshStandardMaterial).emissive.setHex(theme.ballEmissive);
@@ -868,6 +880,97 @@ export class PinballGameLoopSystem extends createSystem({}) {
           if (gMat.opacity < 0.5) {
             gMat.opacity = glowPulse;
           }
+        }
+      }
+
+      // === Ramp entry glow indicators ===
+      // Pulsing glows at ramp entrances; urgent when multiball is ready
+      const { rampEntryGlows } = this.refs;
+      if (rampEntryGlows && rampEntryGlows.length >= 2) {
+        const multiballReady = game.ballsLocked >= game.maxLockBalls && !game.multiballActive;
+        for (let i = 0; i < rampEntryGlows.length; i++) {
+          const rGlow = rampEntryGlows[i];
+          const rMat = rGlow.material as MeshBasicMaterial;
+          if (multiballReady) {
+            // Urgent flash when multiball is ready (ramp triggers it)
+            rMat.opacity = 0.5 + Math.sin(this.gameTime * 10 + i * Math.PI) * 0.4;
+            const scale = 1.0 + Math.sin(this.gameTime * 10 + i * Math.PI) * 0.2;
+            rGlow.scale.set(scale, 1, scale);
+          } else if (game.state === 'playing') {
+            // Gentle pulse during play
+            const phase = this.gameTime * 2 + i * 1.5;
+            rMat.opacity = 0.25 + Math.sin(phase) * 0.15;
+            const scale = 1.0 + Math.sin(phase) * 0.08;
+            rGlow.scale.set(scale, 1, scale);
+          } else {
+            rMat.opacity = 0.15;
+            rGlow.scale.set(1, 1, 1);
+          }
+        }
+      }
+
+      // === Spinner speed visual feedback ===
+      // Spinner gate brightness and scale proportional to spin velocity
+      for (const spinner of physics.spinners) {
+        const sm = spinnerMeshes.get(spinner.id);
+        if (sm) {
+          const absVel = Math.abs(spinner.spinVel);
+          const intensity = Math.min(1, absVel / 20);
+          // Scale gate slightly wider when spinning fast
+          const gateScale = 1.0 + intensity * 0.25;
+          sm.gate.scale.set(gateScale, 1 + intensity * 0.1, 1);
+          // Brighten post to match
+          (sm.post.material as MeshStandardMaterial).emissiveIntensity = 0.3 + intensity * 0.7;
+          // Flash color shifts toward white at high speed
+          if (intensity > 0.7) {
+            const white = intensity - 0.7;
+            (sm.gate.material as MeshStandardMaterial).emissive.lerp(
+              new Color(0xffffff), white * 0.5 * dt * 5
+            );
+          }
+        }
+      }
+
+      // === Orbit progress checkpoint indicators ===
+      const { orbitCheckpoints } = this.refs;
+      if (orbitCheckpoints && orbitCheckpoints.length === 3) {
+        for (let i = 0; i < 3; i++) {
+          const cp = orbitCheckpoints[i];
+          const cMat = cp.material as MeshBasicMaterial;
+          if (i < game.orbitProgress) {
+            // Lit checkpoint — bright pulsing glow
+            cMat.opacity = 0.6 + Math.sin(this.gameTime * 5 + i * 2) * 0.2;
+            const scale = 1.2 + Math.sin(this.gameTime * 5 + i * 2) * 0.15;
+            cp.scale.set(scale, 1, scale);
+          } else if (i === game.orbitProgress && game.orbitProgress > 0) {
+            // Next checkpoint — subtle beckoning pulse
+            cMat.opacity = 0.25 + Math.sin(this.gameTime * 3) * 0.15;
+            cp.scale.set(1.1, 1, 1.1);
+          } else {
+            // Unlit — dim
+            cMat.opacity = 0.08;
+            cp.scale.set(1, 1, 1);
+          }
+        }
+      }
+
+      // === Mission progress bar ===
+      const { missionProgressBar } = this.refs;
+      if (missionProgressBar) {
+        const mMat = missionProgressBar.material as MeshBasicMaterial;
+        if (game.currentMission && game.currentMission.active) {
+          const progress = game.currentMission.progress / game.currentMission.target;
+          mMat.opacity = 0.5 + Math.sin(this.gameTime * 4) * 0.15;
+          mMat.color.setHex(parseInt(game.currentMission.color.replace('#', ''), 16));
+          // Scale width proportional to progress
+          missionProgressBar.scale.x = Math.max(0.05, progress);
+          // Flash faster as completion nears
+          if (progress > 0.8) {
+            mMat.opacity = 0.6 + Math.sin(this.gameTime * 8) * 0.3;
+          }
+        } else {
+          mMat.opacity = 0;
+          missionProgressBar.scale.x = 1;
         }
       }
 

@@ -48,6 +48,10 @@ export class EffectsManager {
   private particleGeo = new SphereGeometry(0.004, 4, 4);
   private trailGeo = new SphereGeometry(0.006, 4, 4);
 
+  // Particle pool: reuse meshes instead of creating/destroying
+  private particlePool: Mesh[] = [];
+  private trailPool: Mesh[] = [];
+
   // Bumper pulse animation
   private bumperPulsePhase = 0;
   private currentIntensity: IntensityLevel = 'calm';
@@ -55,21 +59,103 @@ export class EffectsManager {
   constructor(scene: any, tableGroup: Group) {
     this.scene = scene;
     this.tableGroup = tableGroup;
+    this.preallocatePool();
+  }
+
+  private preallocatePool(): void {
+    // Pre-create particle meshes for reuse
+    for (let i = 0; i < 60; i++) {
+      const mat = new MeshBasicMaterial({
+        color: new Color(0xffffff),
+        transparent: true,
+        opacity: 0,
+        blending: AdditiveBlending,
+      });
+      const mesh = new Mesh(this.particleGeo, mat);
+      mesh.visible = false;
+      this.tableGroup.add(mesh);
+      this.particlePool.push(mesh);
+    }
+    // Pre-create trail meshes
+    for (let i = 0; i < this.maxTrail; i++) {
+      const mat = new MeshBasicMaterial({
+        color: new Color(0x00ffff),
+        transparent: true,
+        opacity: 0,
+        blending: AdditiveBlending,
+      });
+      const mesh = new Mesh(this.trailGeo, mat);
+      mesh.visible = false;
+      this.tableGroup.add(mesh);
+      this.trailPool.push(mesh);
+    }
+  }
+
+  private acquireParticle(color: number, x: number, y: number, z: number): Mesh | null {
+    // Try to get from pool first
+    const pooled = this.particlePool.pop();
+    if (pooled) {
+      (pooled.material as MeshBasicMaterial).color.setHex(color);
+      (pooled.material as MeshBasicMaterial).opacity = 1;
+      pooled.position.set(x, y, z);
+      pooled.scale.setScalar(1);
+      pooled.visible = true;
+      return pooled;
+    }
+    // Fallback: create new if pool is empty
+    if (this.particles.length >= this.maxParticles) return null;
+    const mat = new MeshBasicMaterial({
+      color: new Color(color),
+      transparent: true,
+      opacity: 1,
+      blending: AdditiveBlending,
+    });
+    const mesh = new Mesh(this.particleGeo, mat);
+    mesh.position.set(x, y, z);
+    this.tableGroup.add(mesh);
+    return mesh;
+  }
+
+  private releaseParticle(mesh: Mesh): void {
+    mesh.visible = false;
+    (mesh.material as MeshBasicMaterial).opacity = 0;
+    this.particlePool.push(mesh);
+  }
+
+  private acquireTrailMesh(color: number, x: number, y: number, z: number): Mesh | null {
+    const pooled = this.trailPool.pop();
+    if (pooled) {
+      (pooled.material as MeshBasicMaterial).color.setHex(color);
+      (pooled.material as MeshBasicMaterial).opacity = 0.6;
+      pooled.position.set(x, y, z);
+      pooled.scale.setScalar(1);
+      pooled.visible = true;
+      return pooled;
+    }
+    // Fallback
+    const mat = new MeshBasicMaterial({
+      color: new Color(color),
+      transparent: true,
+      opacity: 0.6,
+      blending: AdditiveBlending,
+    });
+    const mesh = new Mesh(this.trailGeo, mat);
+    mesh.position.set(x, y, z);
+    this.tableGroup.add(mesh);
+    return mesh;
+  }
+
+  private releaseTrailMesh(mesh: Mesh): void {
+    mesh.visible = false;
+    (mesh.material as MeshBasicMaterial).opacity = 0;
+    this.trailPool.push(mesh);
   }
 
   spawnBumperHit(x: number, z: number, color: number): void {
     const count = 12;
     for (let i = 0; i < count; i++) {
-      if (this.particles.length >= this.maxParticles) break;
-      const mat = new MeshBasicMaterial({
-        color: new Color(color),
-        transparent: true,
-        opacity: 1,
-        blending: AdditiveBlending,
-      });
-      const mesh = new Mesh(this.particleGeo, mat);
-      mesh.position.set(x, 0.03, z);
-      this.tableGroup.add(mesh);
+      const mesh = this.acquireParticle(color, x, 0.03, z);
+      if (!mesh) break;
 
       const angle = (i / count) * Math.PI * 2 + Math.random() * 0.3;
       const speed = 0.3 + Math.random() * 0.4;
@@ -87,16 +173,8 @@ export class EffectsManager {
   spawnTargetHit(x: number, z: number, color: number): void {
     const count = 8;
     for (let i = 0; i < count; i++) {
-      if (this.particles.length >= this.maxParticles) break;
-      const mat = new MeshBasicMaterial({
-        color: new Color(color),
-        transparent: true,
-        opacity: 1,
-        blending: AdditiveBlending,
-      });
-      const mesh = new Mesh(this.particleGeo, mat);
-      mesh.position.set(x, 0.02, z);
-      this.tableGroup.add(mesh);
+      const mesh = this.acquireParticle(color, x, 0.02, z);
+      if (!mesh) break;
 
       const angle = Math.random() * Math.PI * 2;
       const speed = 0.2 + Math.random() * 0.3;
@@ -113,16 +191,8 @@ export class EffectsManager {
 
   spawnDrain(x: number, z: number): void {
     for (let i = 0; i < 15; i++) {
-      if (this.particles.length >= this.maxParticles) break;
-      const mat = new MeshBasicMaterial({
-        color: new Color(0xff0044),
-        transparent: true,
-        opacity: 1,
-        blending: AdditiveBlending,
-      });
-      const mesh = new Mesh(this.particleGeo, mat);
-      mesh.position.set(x, 0.02, z);
-      this.tableGroup.add(mesh);
+      const mesh = this.acquireParticle(0xff0044, x, 0.02, z);
+      if (!mesh) break;
 
       this.particles.push({
         mesh,
@@ -136,19 +206,10 @@ export class EffectsManager {
   }
 
   spawnRampTrail(x: number, z: number): void {
-    // Burst of particles along ramp entry
     for (let i = 0; i < 8; i++) {
-      if (this.particles.length >= this.maxParticles) break;
       const color = i % 2 === 0 ? 0xff00ff : 0x00ffff;
-      const mat = new MeshBasicMaterial({
-        color: new Color(color),
-        transparent: true,
-        opacity: 1,
-        blending: AdditiveBlending,
-      });
-      const mesh = new Mesh(this.particleGeo, mat);
-      mesh.position.set(x, 0.04, z);
-      this.tableGroup.add(mesh);
+      const mesh = this.acquireParticle(color, x, 0.04, z);
+      if (!mesh) break;
 
       this.particles.push({
         mesh,
@@ -164,18 +225,11 @@ export class EffectsManager {
   addTrailPoint(x: number, y: number, z: number, color: number = 0x00ffff): void {
     if (this.trail.length >= this.maxTrail) {
       const old = this.trail.shift()!;
-      this.tableGroup.remove(old.mesh);
+      this.releaseTrailMesh(old.mesh);
     }
 
-    const mat = new MeshBasicMaterial({
-      color: new Color(color),
-      transparent: true,
-      opacity: 0.6,
-      blending: AdditiveBlending,
-    });
-    const mesh = new Mesh(this.trailGeo, mat);
-    mesh.position.set(x, y, z);
-    this.tableGroup.add(mesh);
+    const mesh = this.acquireTrailMesh(color, x, y, z);
+    if (!mesh) return;
     this.trail.push({ mesh, life: 0.5 });
   }
 
@@ -206,16 +260,8 @@ export class EffectsManager {
     // For mega scores spawn extra particles
     if (score >= 50000) {
       for (let i = 0; i < 6; i++) {
-        if (this.particles.length >= this.maxParticles) break;
-        const pmat = new MeshBasicMaterial({
-          color: new Color(color),
-          transparent: true,
-          opacity: 1,
-          blending: AdditiveBlending,
-        });
-        const pmesh = new Mesh(this.particleGeo, pmat);
-        pmesh.position.set(x, 0.04, z);
-        this.tableGroup.add(pmesh);
+        const pmesh = this.acquireParticle(color, x, 0.04, z);
+        if (!pmesh) break;
         const angle = (i / 6) * Math.PI * 2;
         this.particles.push({
           mesh: pmesh,
@@ -251,16 +297,8 @@ export class EffectsManager {
 
     // Red particle burst from center
     for (let i = 0; i < 8; i++) {
-      if (this.particles.length >= this.maxParticles) break;
-      const pmat = new MeshBasicMaterial({
-        color: new Color(0xff0022),
-        transparent: true,
-        opacity: 1,
-        blending: AdditiveBlending,
-      });
-      const pmesh = new Mesh(this.particleGeo, pmat);
-      pmesh.position.set(0, 0.02, 0);
-      this.tableGroup.add(pmesh);
+      const pmesh = this.acquireParticle(0xff0022, 0, 0.02, 0);
+      if (!pmesh) break;
       const angle = (i / 8) * Math.PI * 2;
       this.particles.push({
         mesh: pmesh,
@@ -302,17 +340,9 @@ export class EffectsManager {
   spawnWizardBurst(x: number, z: number): void {
     const colors = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff88, 0xff8800];
     for (let i = 0; i < 25; i++) {
-      if (this.particles.length >= this.maxParticles) break;
       const color = colors[i % colors.length];
-      const mat = new MeshBasicMaterial({
-        color: new Color(color),
-        transparent: true,
-        opacity: 1,
-        blending: AdditiveBlending,
-      });
-      const mesh = new Mesh(this.particleGeo, mat);
-      mesh.position.set(x, 0.05, z);
-      this.tableGroup.add(mesh);
+      const mesh = this.acquireParticle(color, x, 0.05, z);
+      if (!mesh) break;
 
       const angle = (i / 25) * Math.PI * 2;
       const speed = 0.4 + Math.random() * 0.6;
@@ -339,7 +369,7 @@ export class EffectsManager {
       const p = this.particles[i];
       p.life -= dt;
       if (p.life <= 0) {
-        this.tableGroup.remove(p.mesh);
+        this.releaseParticle(p.mesh);
         this.particles.splice(i, 1);
         continue;
       }
@@ -359,7 +389,7 @@ export class EffectsManager {
       const t = this.trail[i];
       t.life -= dt;
       if (t.life <= 0) {
-        this.tableGroup.remove(t.mesh);
+        this.releaseTrailMesh(t.mesh);
         this.trail.splice(i, 1);
         continue;
       }

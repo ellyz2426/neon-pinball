@@ -840,3 +840,77 @@ export function createBallSaverBar(table: Group): Mesh {
   table.add(mesh);
   return mesh;
 }
+
+
+// Ramp entry glow indicators — animated glow arches at ramp entrances
+export function createRampEntryGlows(table: Group): Mesh[] {
+  const glows: Mesh[] = [];
+  const rampEntries = [
+    { x: -0.125, z: 0.05, color: 0xff00ff },  // left ramp
+    { x: 0.125, z: 0.05, color: 0x00ff88 },   // right ramp
+  ];
+
+  for (const re of rampEntries) {
+    // Glowing floor indicator beneath the ramp entry
+    const geo = new PlaneGeometry(0.05, 0.03);
+    const mat = new MeshBasicMaterial({
+      color: new Color(re.color),
+      transparent: true,
+      opacity: 0.3,
+      side: DoubleSide,
+      blending: AdditiveBlending,
+    });
+    const mesh = new Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(re.x, 0.002, re.z);
+    table.add(mesh);
+    glows.push(mesh);
+  }
+
+  return glows;
+}
+
+// Orbit progress checkpoint indicators — 3 markers showing orbit shot progress
+export function createOrbitCheckpoints(table: Group): Mesh[] {
+  const checkpoints: Mesh[] = [];
+  // Orbit path: left ramp exit → upper lane → right ramp exit
+  const cpData = [
+    { x: -0.20, z: -0.38, color: 0xff00ff },   // checkpoint 1 (left ramp exit area)
+    { x: 0, z: -0.06, color: 0xffff00 },        // checkpoint 2 (spinner/upper lane area)
+    { x: 0.20, z: -0.38, color: 0x00ff88 },     // checkpoint 3 (right ramp exit area)
+  ];
+
+  for (const cp of cpData) {
+    const geo = new RingGeometry(0.008, 0.014, 8);
+    const mat = new MeshBasicMaterial({
+      color: new Color(cp.color),
+      transparent: true,
+      opacity: 0.1,
+      side: DoubleSide,
+      blending: AdditiveBlending,
+    });
+    const mesh = new Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(cp.x, 0.003, cp.z);
+    table.add(mesh);
+    checkpoints.push(mesh);
+  }
+
+  return checkpoints;
+}
+
+// Mission progress bar — visual bar showing current mission completion
+export function createMissionProgressBar(table: Group): Mesh {
+  const geo = new BoxGeometry(0.16, 0.003, 0.006);
+  const mat = new MeshBasicMaterial({
+    color: new Color(0xff00ff),
+    transparent: true,
+    opacity: 0,
+    blending: AdditiveBlending,
+  });
+  const mesh = new Mesh(geo, mat);
+  // Position below the target bank
+  mesh.position.set(0, 0.004, -0.42);
+  table.add(mesh);
+  return mesh;
+}
