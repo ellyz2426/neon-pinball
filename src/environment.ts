@@ -9,12 +9,17 @@ import {
 } from '@iwsdk/core';
 
 export interface EnvState {
-  decorations: { mesh: Mesh; baseY: number; rotSpeed: number; bobSpeed: number }[];
-  particles: { mesh: Mesh; vx: number; vy: number; vz: number }[];
+  decorations: { mesh: Mesh; baseY: number; rotSpeed: number; bobSpeed: number; baseColor: number }[];
+  particles: { mesh: Mesh; vx: number; vy: number; vz: number; baseColor: number }[];
+  gridLines: Mesh[];
+  floor: Mesh;
+  ceiling: Mesh;
+  ambientLight: AmbientLight;
+  currentThemeId: string;
 }
 
 export function createEnvironment(scene: any): EnvState {
-  const state: EnvState = { decorations: [], particles: [] };
+  const state: EnvState = { decorations: [], particles: [], gridLines: [], floor: null as any, ceiling: null as any, ambientLight: null as any, currentThemeId: 'neon-classic' };
 
   // Fog
   scene.fog = new Fog(new Color(0x000010), 3, 20);
@@ -22,6 +27,7 @@ export function createEnvironment(scene: any): EnvState {
   // Lighting
   const ambient = new AmbientLight(new Color(0x111133), 0.6);
   scene.add(ambient);
+  state.ambientLight = ambient;
 
   const dir = new DirectionalLight(new Color(0x4488ff), 0.4);
   dir.position.set(2, 5, 3);
@@ -51,6 +57,7 @@ export function createEnvironment(scene: any): EnvState {
   floor.rotation.x = -Math.PI / 2;
   floor.position.y = 0;
   scene.add(floor);
+  state.floor = floor;
 
   // Floor grid lines
   const gridMat = new MeshBasicMaterial({
@@ -61,16 +68,18 @@ export function createEnvironment(scene: any): EnvState {
   for (let i = -10; i <= 10; i++) {
     // X lines
     const xGeo = new PlaneGeometry(20, 0.005);
-    const xLine = new Mesh(xGeo, gridMat);
+    const xLine = new Mesh(xGeo, gridMat.clone());
     xLine.rotation.x = -Math.PI / 2;
     xLine.position.set(0, 0.001, i);
     scene.add(xLine);
+    state.gridLines.push(xLine);
     // Z lines
     const zGeo = new PlaneGeometry(0.005, 20);
-    const zLine = new Mesh(zGeo, gridMat);
+    const zLine = new Mesh(zGeo, gridMat.clone());
     zLine.rotation.x = -Math.PI / 2;
     zLine.position.set(i, 0.001, 0);
     scene.add(zLine);
+    state.gridLines.push(zLine);
   }
 
   // Ceiling grid
@@ -84,6 +93,7 @@ export function createEnvironment(scene: any): EnvState {
   ceiling.rotation.x = Math.PI / 2;
   ceiling.position.y = 3;
   scene.add(ceiling);
+  state.ceiling = ceiling;
 
   // Floating wireframe decorations
   const decoTypes = [
@@ -117,6 +127,7 @@ export function createEnvironment(scene: any): EnvState {
       baseY: y,
       rotSpeed: 0.3 + Math.random() * 0.5,
       bobSpeed: 0.5 + Math.random() * 0.5,
+      baseColor: color,
     });
   }
 
@@ -142,10 +153,90 @@ export function createEnvironment(scene: any): EnvState {
       vx: (Math.random() - 0.5) * 0.1,
       vy: (Math.random() - 0.5) * 0.05,
       vz: (Math.random() - 0.5) * 0.1,
+      baseColor: 0x00ffff,
     });
   }
 
   return state;
+}
+
+// Theme color mappings for environment
+interface EnvThemeColors {
+  fog: number;
+  grid: number;
+  ambient: number;
+  particleBase: number;
+  decoColors: number[];
+  floorTint: number;
+  ceilTint: number;
+}
+
+const ENV_THEME_MAP: Record<string, EnvThemeColors> = {
+  'neon-classic': {
+    fog: 0x000010, grid: 0x001133, ambient: 0x111133,
+    particleBase: 0x00ffff, decoColors: [0x00ffff, 0xff00ff, 0x00ff88, 0xff8800, 0x4488ff],
+    floorTint: 0x000008, ceilTint: 0x001122,
+  },
+  'cyber-red': {
+    fog: 0x100000, grid: 0x330808, ambient: 0x221111,
+    particleBase: 0xff4422, decoColors: [0xff2222, 0xff6600, 0xff0066, 0xffaa00, 0xff4400],
+    floorTint: 0x080000, ceilTint: 0x110808,
+  },
+  'ocean-blue': {
+    fog: 0x000510, grid: 0x001144, ambient: 0x111133,
+    particleBase: 0x0088ff, decoColors: [0x0088ff, 0x00aaff, 0x00ffaa, 0x0066ff, 0x44aaff],
+    floorTint: 0x000408, ceilTint: 0x001133,
+  },
+  'solar-flare': {
+    fog: 0x0a0400, grid: 0x331a00, ambient: 0x221811,
+    particleBase: 0xffaa00, decoColors: [0xffaa00, 0xff6600, 0xffcc00, 0xff4400, 0xff8800],
+    floorTint: 0x060300, ceilTint: 0x110a04,
+  },
+  'toxic-green': {
+    fog: 0x010500, grid: 0x003308, ambient: 0x112211,
+    particleBase: 0x00ff44, decoColors: [0x00ff44, 0x44ff00, 0x00ff88, 0xaaff00, 0x22ff66],
+    floorTint: 0x000800, ceilTint: 0x081108,
+  },
+};
+
+export function applyEnvironmentTheme(state: EnvState, scene: any, themeId: string): void {
+  if (state.currentThemeId === themeId) return;
+  state.currentThemeId = themeId;
+
+  const colors = ENV_THEME_MAP[themeId] || ENV_THEME_MAP['neon-classic'];
+
+  // Fog
+  if (scene.fog) {
+    (scene.fog as Fog).color.setHex(colors.fog);
+  }
+
+  // Ambient light
+  state.ambientLight.color.setHex(colors.ambient);
+
+  // Floor
+  (state.floor.material as MeshStandardMaterial).color.setHex(colors.floorTint);
+
+  // Ceiling
+  (state.ceiling.material as MeshBasicMaterial).color.setHex(colors.ceilTint);
+
+  // Grid lines
+  for (const gl of state.gridLines) {
+    (gl.material as MeshBasicMaterial).color.setHex(colors.grid);
+  }
+
+  // Decorations
+  for (let i = 0; i < state.decorations.length; i++) {
+    const d = state.decorations[i];
+    const newColor = colors.decoColors[i % colors.decoColors.length];
+    d.baseColor = newColor;
+    (d.mesh.material as LineBasicMaterial).color.setHex(newColor);
+  }
+
+  // Particles
+  for (const p of state.particles) {
+    p.baseColor = colors.particleBase;
+    (p.mesh.material as MeshBasicMaterial).color.setHex(colors.particleBase);
+  }
 }
 
 export function updateEnvironment(state: EnvState, time: number, dt: number, intensityMultiplier: number = 1.0): void {
@@ -184,6 +275,9 @@ export function updateEnvironment(state: EnvState, time: number, dt: number, int
     if (intensityMultiplier > 2.0) {
       const hue = (time * 0.3 + p.mesh.position.x * 0.2) % 1;
       mat.color.setHSL(hue, 1, 0.6);
+    } else {
+      // Restore base color when not in frenzy
+      mat.color.setHex(p.baseColor);
     }
   }
 }

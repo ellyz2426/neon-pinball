@@ -16,6 +16,11 @@ export class AudioManager {
   musicVolume = 0.3;
   masterVolume = 0.8;
   private currentIntensity: IntensityLevel = 'calm';
+  private currentThemeId = 'neon-classic';
+
+  // Per-theme SFX frequency multipliers
+  private themeFreqMul = 1.0;
+  private themeTimbreBright = false;
 
   init(): void {
     if (this.ctx) return;
@@ -31,6 +36,32 @@ export class AudioManager {
     this.musicGain = this.ctx.createGain();
     this.musicGain.gain.value = this.musicVolume;
     this.musicGain.connect(this.masterGain);
+  }
+
+  setTheme(themeId: string): void {
+    this.currentThemeId = themeId;
+    // Different themes shift SFX frequencies and timbre
+    switch (themeId) {
+      case 'cyber-red':
+        this.themeFreqMul = 0.85; // Deeper, grittier
+        this.themeTimbreBright = false;
+        break;
+      case 'ocean-blue':
+        this.themeFreqMul = 1.1; // Brighter, glassy
+        this.themeTimbreBright = true;
+        break;
+      case 'solar-flare':
+        this.themeFreqMul = 0.95; // Warm, slightly lower
+        this.themeTimbreBright = false;
+        break;
+      case 'toxic-green':
+        this.themeFreqMul = 1.05; // Sharp, punchy
+        this.themeTimbreBright = true;
+        break;
+      default:
+        this.themeFreqMul = 1.0;
+        this.themeTimbreBright = false;
+    }
   }
 
   resume(): void {
@@ -194,19 +225,20 @@ export class AudioManager {
   playBumperHit(bumperId?: string): void {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
+    const fm = this.themeFreqMul;
 
-    // Different pitch per bumper for variety
-    const baseFreq = bumperId === 'pop-center' ? 900 :
+    // Different pitch per bumper for variety, modified by theme
+    const baseFreq = (bumperId === 'pop-center' ? 900 :
                      bumperId === 'pop-left' ? 700 :
-                     bumperId === 'pop-right' ? 1100 : 800;
-    const bellFreq = bumperId === 'pop-center' ? 1400 :
+                     bumperId === 'pop-right' ? 1100 : 800) * fm;
+    const bellFreq = (bumperId === 'pop-center' ? 1400 :
                      bumperId === 'pop-left' ? 1000 :
-                     bumperId === 'pop-right' ? 1600 : 1200;
+                     bumperId === 'pop-right' ? 1600 : 1200) * fm;
 
     const osc = this.ctx.createOscillator();
-    osc.type = 'square';
+    osc.type = this.themeTimbreBright ? 'triangle' : 'square';
     osc.frequency.setValueAtTime(baseFreq, t);
-    osc.frequency.exponentialRampToValueAtTime(200, t + 0.15);
+    osc.frequency.exponentialRampToValueAtTime(200 * fm, t + 0.15);
 
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0.4, t);
@@ -449,11 +481,12 @@ export class AudioManager {
   playRampEnter(): void {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
+    const fm = this.themeFreqMul;
 
     const osc = this.ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(300, t);
-    osc.frequency.exponentialRampToValueAtTime(1500, t + 0.3);
+    osc.type = this.themeTimbreBright ? 'triangle' : 'sine';
+    osc.frequency.setValueAtTime(300 * fm, t);
+    osc.frequency.exponentialRampToValueAtTime(1500 * fm, t + 0.3);
 
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0.25, t);
@@ -466,8 +499,8 @@ export class AudioManager {
 
     const osc2 = this.ctx.createOscillator();
     osc2.type = 'triangle';
-    osc2.frequency.setValueAtTime(450, t);
-    osc2.frequency.exponentialRampToValueAtTime(2000, t + 0.25);
+    osc2.frequency.setValueAtTime(450 * fm, t);
+    osc2.frequency.exponentialRampToValueAtTime(2000 * fm, t + 0.25);
 
     const gain2 = this.ctx.createGain();
     gain2.gain.setValueAtTime(0.12, t);

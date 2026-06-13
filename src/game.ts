@@ -15,7 +15,7 @@ export interface TargetState {
   hitCount: number;
 }
 
-export type MissionType = 'ramp_combo' | 'bumper_frenzy' | 'target_blitz' | 'spinner_master' | 'multiball_madness';
+export type MissionType = 'ramp_combo' | 'bumper_frenzy' | 'target_blitz' | 'spinner_master' | 'multiball_madness' | 'orbit_run' | 'lane_sweep' | 'captive_master';
 
 export interface Mission {
   type: MissionType;
@@ -841,6 +841,9 @@ export class GameManager {
       { type: 'target_blitz', name: 'TARGET BLITZ', description: 'Hit 8 targets', target: 8, reward: 30000, color: '#00ff88' },
       { type: 'spinner_master', name: 'SPIN CITY', description: 'Hit spinners 10 times', target: 10, reward: 15000, color: '#ffff00' },
       { type: 'multiball_madness', name: 'MULTIBALL MADNESS', description: 'Trigger multiball', target: 1, reward: 50000, color: '#4488ff' },
+      { type: 'orbit_run', name: 'ORBIT RUNNER', description: 'Complete 2 orbits', target: 2, reward: 35000, color: '#00ccff' },
+      { type: 'lane_sweep', name: 'LANE SWEEP', description: 'Complete all lanes 2 times', target: 2, reward: 20000, color: '#88ff00' },
+      { type: 'captive_master', name: 'CAPTIVE MASTER', description: 'Hit captive ball 5 times', target: 5, reward: 22000, color: '#aa00ff' },
     ];
 
     // Prefer mission types not yet completed (for wizard mode progression)
@@ -953,6 +956,11 @@ export class GameManager {
       this.emitMessage(`LANES COMPLETE! +${bonus.toLocaleString()}`);
       this.bumpIntensity(12);
 
+      // Mission progress: lane_sweep
+      if (this.currentMission?.type === 'lane_sweep' && this.currentMission.active) {
+        this.advanceMission(1);
+      }
+
       // Reset lanes for next completion
       this.laneStates = [false, false, false];
       for (const cb of this.laneCallbacks) cb([...this.laneStates]);
@@ -1023,6 +1031,11 @@ export class GameManager {
       const megaBonus = Math.floor(10000 * eff);
       this.addScore(megaBonus, 'CAPTIVE FRENZY!', x, z);
       this.emitMessage(`CAPTIVE FRENZY x${this.captiveBallHits}! +${megaBonus.toLocaleString()}`);
+    }
+
+    // Mission progress: captive_master
+    if (this.currentMission?.type === 'captive_master' && this.currentMission.active) {
+      this.advanceMission(1);
     }
 
     for (const cb of this.captiveBallCallbacks) cb(this.captiveBallHits);
@@ -1325,6 +1338,11 @@ export class GameManager {
         // 3 consecutive orbits triggers frenzy
         if (this.orbitCombo >= 3 && !this.frenzyActive) {
           this.startFrenzy();
+        }
+
+        // Mission progress: orbit_run
+        if (this.currentMission?.type === 'orbit_run' && this.currentMission.active) {
+          this.advanceMission(1);
         }
 
         for (const cb of this.orbitCallbacks) cb(true, this.orbitCombo);

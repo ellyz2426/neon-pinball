@@ -21,7 +21,7 @@ import { EffectsManager } from './effects';
 import { UIManager } from './ui';
 import { XRInputHandler } from './xrinput';
 import { AchievementManager } from './achievements';
-import { EnvState, updateEnvironment } from './environment';
+import { EnvState, updateEnvironment, applyEnvironmentTheme } from './environment';
 import { getTheme } from './themes';
 
 export interface BallVisual {
@@ -102,6 +102,9 @@ export class PinballGameLoopSystem extends createSystem({}) {
   // Current theme trail color (updated on theme change)
   private trailColor = 0x00ffff;
 
+  // Flipper trail state
+  private flipperTrailTimer = 0;
+
   // Ball alive time tracking
   private ballAliveTimer = 0;
 
@@ -114,6 +117,9 @@ export class PinballGameLoopSystem extends createSystem({}) {
   // High score approaching indicator
   private highScoreFlashTimer = 0;
   private wasApproachingHighScore = false;
+
+  // Environment theme tracking
+  private lastEnvThemeId = '';
 
   setRefs(refs: GameLoopRefs): void {
     this.refs = refs;
@@ -451,6 +457,13 @@ export class PinballGameLoopSystem extends createSystem({}) {
                          game.intensity === 'normal' ? 1.3 : 1.0;
     updateEnvironment(this.refs.envState, this.gameTime, dt, intensityMul);
 
+    // Apply environment theme if it changed
+    if (game.currentThemeId !== this.lastEnvThemeId) {
+      this.lastEnvThemeId = game.currentThemeId;
+      applyEnvironmentTheme(this.refs.envState, this.refs.world.scene, game.currentThemeId);
+      audio.setTheme(game.currentThemeId);
+    }
+
     xrInput.update(dt);
     game.update(dt);
     ui.update(dt);
@@ -634,6 +647,25 @@ export class PinballGameLoopSystem extends createSystem({}) {
       const rightMat = flipperMeshes.right.material as MeshStandardMaterial;
       leftMat.emissiveIntensity = leftActive ? 1.5 : 0.4;
       rightMat.emissiveIntensity = rightActive ? 1.5 : 0.4;
+
+      // Flipper trails: spawn particles at flipper tips when active
+      this.flipperTrailTimer += dt;
+      if (this.flipperTrailTimer > 0.04) {
+        this.flipperTrailTimer = 0;
+        const theme = getTheme(game.currentThemeId);
+        if (leftActive) {
+          const lAngle = physics.leftFlipper.angle;
+          const tipX = physics.leftFlipper.pivotX + Math.cos(lAngle) * 0.08;
+          const tipZ = physics.leftFlipper.pivotZ - Math.sin(lAngle) * 0.08;
+          effects.addTrailPoint(tipX, 0.015, tipZ, theme.flipperEmissive);
+        }
+        if (rightActive) {
+          const rAngle = physics.rightFlipper.angle;
+          const tipX = physics.rightFlipper.pivotX + Math.cos(rAngle) * 0.08;
+          const tipZ = physics.rightFlipper.pivotZ - Math.sin(rAngle) * 0.08;
+          effects.addTrailPoint(tipX, 0.015, tipZ, theme.flipperEmissive);
+        }
+      }
 
       // Update spinner visuals
       for (const spinner of physics.spinners) {
@@ -1101,7 +1133,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
   }
 
   private handleCollisionEvents(events: CollisionEvent[]): void {
-    const { game, audio, effects, bumperMeshes, physics } = this.refs;
+    const { game, audio, effects, bumperMeshes, physics, achievements } = this.refs;
 
     for (const event of events) {
       switch (event.type) {
@@ -1156,6 +1188,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
             effects.spawnBumperHit(event.x, event.z, 0xffff00);
             this.spinnerCooldowns[sid] = 0.15;
             game.advanceOrbit(2, event.x, event.z);
+            achievements.checkSpinnerCount(game.totalSpinnerHits);
           }
           break;
         }

@@ -71,6 +71,15 @@ const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
   { id: 'difficulty_3', name: 'RISING STAR', description: 'Reach difficulty level 3', icon: 'A', color: '#ffaa00' },
   { id: 'orbit_5', name: 'ORBITAL MASTER', description: 'Complete 5 orbits in one game', icon: 'O', color: '#00ffaa' },
   { id: 'ramp_10', name: 'RAMP KING', description: 'Hit 10 ramp shots in one game', icon: 'R', color: '#ff00ff' },
+  // Round 20 achievements
+  { id: 'captive_20', name: 'CAGE BREAKER', description: 'Hit the captive ball 20 times in one game', icon: 'X', color: '#aa00ff' },
+  { id: 'score_10m', name: 'TEN MILLION', description: 'Score 10,000,000 points', icon: 'K', color: '#ffd700' },
+  { id: 'frenzy_3', name: 'FRENZY ADDICT', description: 'Trigger Frenzy 3 times in one game', icon: 'F', color: '#ff6600' },
+  { id: 'orbit_combo_5', name: 'ORBIT STREAK', description: 'Hit 5 consecutive orbits', icon: 'O', color: '#00ffee' },
+  { id: 'all_missions_8', name: 'COMPLETIONIST', description: 'Complete all 8 mission types', icon: 'W', color: '#ff44ff' },
+  { id: 'spinner_50', name: 'SPIN DOCTOR', description: 'Hit spinners 50 times in one game', icon: 'S', color: '#ffff00' },
+  { id: 'multiball_3', name: 'MULTI MASTER', description: 'Trigger multiball 3 times in one game', icon: 'M', color: '#4488ff' },
+  { id: 'games_100', name: 'PINBALL VETERAN', description: 'Play 100 games', icon: 'V', color: '#ffd700' },
 ];
 
 export class AchievementManager {
@@ -132,6 +141,8 @@ export class AchievementManager {
   checkMultiball(): void {
     this.stats.totalMultiballs++;
     this.unlock('first_multiball');
+    this.multiballTriggersThisGame++;
+    if (this.multiballTriggersThisGame >= 3) this.unlock('multiball_3');
   }
 
   checkMissionComplete(missionType: string): void {
@@ -140,6 +151,9 @@ export class AchievementManager {
     this.missionsCompletedTypes.add(missionType);
     if (this.missionsCompletedTypes.size >= 5) {
       this.unlock('all_missions');
+    }
+    if (this.missionsCompletedTypes.size >= 8) {
+      this.unlock('all_missions_8');
     }
   }
 
@@ -190,6 +204,7 @@ export class AchievementManager {
   checkCaptiveBall(totalHits: number): void {
     this.captiveBallHitsThisGame = totalHits;
     if (totalHits >= 10) this.unlock('captive_frenzy');
+    if (totalHits >= 20) this.unlock('captive_20');
   }
 
   checkComboTier(tier: string): void {
@@ -215,6 +230,7 @@ export class AchievementManager {
   checkGamesPlayed(): void {
     if (this.stats.totalGames >= 10) this.unlock('games_10');
     if (this.stats.totalGames >= 50) this.unlock('games_50');
+    if (this.stats.totalGames >= 100) this.unlock('games_100');
   }
 
   checkMagnaSave(): void {
@@ -246,10 +262,13 @@ export class AchievementManager {
   checkOrbitComplete(combo: number): void {
     this.unlock('orbit_complete');
     if (combo >= 3) this.unlock('orbit_3x');
+    if (combo >= 5) this.unlock('orbit_combo_5');
   }
 
   checkFrenzyTriggered(): void {
     this.unlock('frenzy_trigger');
+    this.frenzyTriggersThisGame++;
+    if (this.frenzyTriggersThisGame >= 3) this.unlock('frenzy_3');
   }
 
   checkMilestoneReached(milestone: number): void {
@@ -258,6 +277,7 @@ export class AchievementManager {
 
   checkScoreMilestones(score: number): void {
     if (score >= 5000000) this.unlock('score_5m');
+    if (score >= 10000000) this.unlock('score_10m');
   }
 
   // Round 11 achievement checks
@@ -265,6 +285,8 @@ export class AchievementManager {
   ballSavesThisGame = 0;
   tiltWarningsThisGame = 0;
   ballAliveTime = 0;
+  frenzyTriggersThisGame = 0;
+  multiballTriggersThisGame = 0;
 
   checkLaneComplete(): void {
     this.laneCompletions++;
@@ -296,6 +318,12 @@ export class AchievementManager {
     this.ballSavesThisGame = 0;
     this.tiltWarningsThisGame = 0;
     this.ballAliveTime = 0;
+    this.frenzyTriggersThisGame = 0;
+    this.multiballTriggersThisGame = 0;
+  }
+
+  checkSpinnerCount(count: number): void {
+    if (count >= 50) this.unlock('spinner_50');
   }
 
   private unlock(id: string): void {
