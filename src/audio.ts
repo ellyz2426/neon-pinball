@@ -264,11 +264,12 @@ export class AudioManager {
   playSlingshotHit(): void {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
+    const fm = this.themeFreqMul;
 
     const osc = this.ctx.createOscillator();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(400, t);
-    osc.frequency.exponentialRampToValueAtTime(100, t + 0.1);
+    osc.type = this.themeTimbreBright ? 'triangle' : 'sawtooth';
+    osc.frequency.setValueAtTime(400 * fm, t);
+    osc.frequency.exponentialRampToValueAtTime(100 * fm, t + 0.1);
 
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0.3, t);
@@ -276,13 +277,25 @@ export class AudioManager {
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.value = 600;
+    filter.frequency.value = 600 * fm;
 
     osc.connect(filter);
     filter.connect(gain);
     gain.connect(this.sfxGain);
     osc.start(t);
     osc.stop(t + 0.1);
+
+    // Snap accent
+    const snap = this.ctx.createOscillator();
+    snap.type = 'sine';
+    snap.frequency.value = 800 * fm;
+    const snapG = this.ctx.createGain();
+    snapG.gain.setValueAtTime(0.12, t);
+    snapG.gain.exponentialRampToValueAtTime(0.01, t + 0.06);
+    snap.connect(snapG);
+    snapG.connect(this.sfxGain);
+    snap.start(t);
+    snap.stop(t + 0.06);
   }
 
   playTargetHit(): void {
@@ -455,12 +468,13 @@ export class AudioManager {
   playSpinnerHit(): void {
     if (!this.ctx || !this.sfxGain) return;
     const t = this.ctx.currentTime;
+    const fm = this.themeFreqMul;
 
     const osc = this.ctx.createOscillator();
     osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(600, t);
-    osc.frequency.linearRampToValueAtTime(1800, t + 0.08);
-    osc.frequency.exponentialRampToValueAtTime(400, t + 0.25);
+    osc.frequency.setValueAtTime(600 * fm, t);
+    osc.frequency.linearRampToValueAtTime(1800 * fm, t + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(400 * fm, t + 0.25);
 
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0.15, t);
@@ -468,7 +482,7 @@ export class AudioManager {
 
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'bandpass';
-    filter.frequency.value = 1200;
+    filter.frequency.value = 1200 * fm;
     filter.Q.value = 4;
 
     osc.connect(filter);

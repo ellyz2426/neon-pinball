@@ -311,6 +311,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
       if (active) {
         audio.playMultiballStart();
         achievements.checkMultiball();
+        effects.spawnMultiballLaunch(0, -0.1);
         const positions = [
           { x: -0.15, z: -0.2, vx: 0.3, vz: 0.5 },
           { x: 0.15, z: -0.2, vx: -0.3, vz: 0.5 },
@@ -1152,7 +1153,8 @@ export class PinballGameLoopSystem extends createSystem({}) {
         case 'slingshot':
           game.handleSlingshotHit(event.id || '', event.x, event.z);
           audio.playSlingshotHit();
-          effects.spawnBumperHit(event.x, event.z, 0xffff00);
+          // Directional particle spray toward center
+          effects.spawnSlingshotHit(event.x, event.z, event.x < 0 ? 1 : -1);
           effects.flashBumper(bumperMeshes, event.id || '');
           break;
 

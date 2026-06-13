@@ -80,6 +80,8 @@ const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
   { id: 'spinner_50', name: 'SPIN DOCTOR', description: 'Hit spinners 50 times in one game', icon: 'S', color: '#ffff00' },
   { id: 'multiball_3', name: 'MULTI MASTER', description: 'Trigger multiball 3 times in one game', icon: 'M', color: '#4488ff' },
   { id: 'games_100', name: 'PINBALL VETERAN', description: 'Play 100 games', icon: 'V', color: '#ffd700' },
+  { id: 'difficulty_5', name: 'IRONMAN', description: 'Reach difficulty level 5', icon: '!', color: '#ff0044' },
+  { id: 'combo_godlike_2', name: 'DOUBLE GODLIKE', description: 'Reach GODLIKE combo twice in one game', icon: '!', color: '#ff00ff' },
 ];
 
 export class AchievementManager {
@@ -208,7 +210,11 @@ export class AchievementManager {
   }
 
   checkComboTier(tier: string): void {
-    if (tier === 'GODLIKE') this.unlock('godlike_combo');
+    if (tier === 'GODLIKE') {
+      this.unlock('godlike_combo');
+      this.godlikeComboCount++;
+      if (this.godlikeComboCount >= 2) this.unlock('combo_godlike_2');
+    }
   }
 
   checkBonusTotal(bonus: number): void {
@@ -217,6 +223,7 @@ export class AchievementManager {
 
   checkDifficultyLevel(level: number): void {
     if (level >= 3) this.unlock('difficulty_3');
+    if (level >= 5) this.unlock('difficulty_5');
   }
 
   checkOrbitCount(orbits: number): void {
@@ -287,6 +294,7 @@ export class AchievementManager {
   ballAliveTime = 0;
   frenzyTriggersThisGame = 0;
   multiballTriggersThisGame = 0;
+  godlikeComboCount = 0;
 
   checkLaneComplete(): void {
     this.laneCompletions++;
@@ -320,6 +328,7 @@ export class AchievementManager {
     this.ballAliveTime = 0;
     this.frenzyTriggersThisGame = 0;
     this.multiballTriggersThisGame = 0;
+    this.godlikeComboCount = 0;
   }
 
   checkSpinnerCount(count: number): void {

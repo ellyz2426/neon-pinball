@@ -218,11 +218,11 @@ export class GameManager {
 
   // Score milestones
   milestonesReached: number[] = [];
-  readonly MILESTONES = [100000, 250000, 500000, 1000000, 2500000, 5000000];
-  readonly MILESTONE_REWARDS = [5000, 15000, 50000, 100000, 250000, 500000];
+  readonly MILESTONES = [100000, 250000, 500000, 1000000, 2500000, 5000000, 7500000, 10000000];
+  readonly MILESTONE_REWARDS = [5000, 15000, 50000, 100000, 250000, 500000, 750000, 1000000];
 
   // Progressive difficulty: game gets harder as score increases
-  difficultyLevel = 1;         // 1-5, increases with milestones
+  difficultyLevel = 1;         // 1-8, increases with milestones
   gravityMultiplier = 1.0;     // Ball falls faster at higher difficulty
   drainSpeedBonus = 0;         // Extra drain speed at higher difficulty
 
@@ -1379,11 +1379,13 @@ export class GameManager {
         }
 
         // Progressive difficulty: increase difficulty level
-        this.difficultyLevel = Math.min(5, this.milestonesReached.length + 1);
-        this.gravityMultiplier = 1.0 + (this.difficultyLevel - 1) * 0.08;
-        this.drainSpeedBonus = (this.difficultyLevel - 1) * 0.05;
-        if (this.difficultyLevel >= 3) {
+        this.difficultyLevel = Math.min(8, this.milestonesReached.length + 1);
+        this.gravityMultiplier = 1.0 + (this.difficultyLevel - 1) * 0.06;
+        this.drainSpeedBonus = (this.difficultyLevel - 1) * 0.04;
+        if (this.difficultyLevel >= 3 && this.difficultyLevel < 6) {
           this.emitMessage('DIFFICULTY UP! Faster ball!');
+        } else if (this.difficultyLevel >= 6) {
+          this.emitMessage('EXTREME DIFFICULTY! Hold on!');
         }
 
         for (const cb of this.milestoneCallbacks) cb(milestone, reward);

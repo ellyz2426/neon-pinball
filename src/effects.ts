@@ -203,6 +203,53 @@ export class EffectsManager {
         maxLife: 1.0,
       });
     }
+    // Red shockwave ring on drain
+    this.spawnPulseRing(x, z, 0xff0022);
+  }
+
+  // Multiball launch celebration burst
+  spawnMultiballLaunch(x: number, z: number): void {
+    const colors = [0xff00ff, 0x00ffff, 0xff8800, 0x44ff00, 0x4488ff];
+    for (let i = 0; i < 20; i++) {
+      const color = colors[i % colors.length];
+      const mesh = this.acquireParticle(color, x, 0.04, z);
+      if (!mesh) break;
+
+      const angle = (i / 20) * Math.PI * 2;
+      const speed = 0.5 + Math.random() * 0.4;
+      this.particles.push({
+        mesh,
+        vx: Math.cos(angle) * speed,
+        vy: 0.6 + Math.random() * 0.6,
+        vz: Math.sin(angle) * speed,
+        life: 0.6 + Math.random() * 0.3,
+        maxLife: 0.9,
+      });
+    }
+    // Multiple expanding rings
+    this.spawnPulseRing(x, z, 0xff00ff);
+    setTimeout(() => this.spawnPulseRing(x, z, 0x00ffff), 150);
+  }
+
+  // Slingshot directional burst
+  spawnSlingshotHit(x: number, z: number, dirX: number): void {
+    const count = 8;
+    for (let i = 0; i < count; i++) {
+      const mesh = this.acquireParticle(0xffff00, x, 0.025, z);
+      if (!mesh) break;
+
+      // Directional spray toward table center
+      const angle = (i / count) * Math.PI - Math.PI / 2;
+      const speed = 0.3 + Math.random() * 0.3;
+      this.particles.push({
+        mesh,
+        vx: dirX * speed * 0.8 + Math.cos(angle) * speed * 0.3,
+        vy: 0.4 + Math.random() * 0.3,
+        vz: Math.sin(angle) * speed * 0.5,
+        life: 0.3 + Math.random() * 0.2,
+        maxLife: 0.5,
+      });
+    }
   }
 
   spawnRampTrail(x: number, z: number): void {
