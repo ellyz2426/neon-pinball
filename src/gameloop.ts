@@ -95,6 +95,9 @@ export class PinballGameLoopSystem extends createSystem({}) {
   // Current theme trail color (updated on theme change)
   private trailColor = 0x00ffff;
 
+  // Ball alive time tracking
+  private ballAliveTimer = 0;
+
   setRefs(refs: GameLoopRefs): void {
     this.refs = refs;
   }
@@ -222,6 +225,8 @@ export class PinballGameLoopSystem extends createSystem({}) {
         audio.playGameOver();
         audio.stopMultiballMusic();
         this.hideAllBalls();
+        achievements.checkNoTilt();
+        achievements.resetRoundStats();
       } else if (state === 'title') {
         this.hideAllBalls();
         audio.stopAmbient();
@@ -340,14 +345,16 @@ export class PinballGameLoopSystem extends createSystem({}) {
           this.laneFlashTimers[i] = 0.5;
         }
       }
-      // Play lane completion sound when all lanes are lit
+      // Play lane completion sound and check achievement when all lanes are lit
       if (lanes.every(l => l)) {
         audio.playLaneComplete();
+        achievements.checkLaneComplete();
       }
     });
 
     // Tilt warning visual + audio
     game.onTilt((tilted) => {
+      achievements.recordTiltWarning();
       if (tilted) {
         // Full tilt
         audio.playTiltFull();
@@ -617,6 +624,12 @@ export class PinballGameLoopSystem extends createSystem({}) {
 
       ui.updateHUD();
 
+      // Track ball alive time for achievements
+      if (game.state === 'playing' && physics.ball.active) {
+        this.ballAliveTimer += dt;
+        achievements.checkBallAliveTime(this.ballAliveTimer);
+      }
+
       // === Dynamic camera tracking ===
       // Subtly follow the primary ball's position for more engaging gameplay
       if (game.state === 'playing' && !this.refs.world.xr?.session) {
@@ -880,9 +893,12 @@ export class PinballGameLoopSystem extends createSystem({}) {
           const result = game.handleDrain();
           if (result.saved) {
             physics.resetBall();
+            this.refs.achievements.checkBallSaved();
           } else if (result.isMultiballDrain) {
             this.cleanupInactiveBalls();
           }
+          // Reset ball alive timer on drain (new ball)
+          this.ballAliveTimer = 0;
           break;
         }
 

@@ -62,6 +62,12 @@ const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
   { id: 'frenzy_trigger', name: 'FRENZY!', description: 'Trigger Frenzy bonus round', icon: '🔥', color: '#ff6600' },
   { id: 'milestone_1m', name: 'MILESTONE MASTER', description: 'Reach the 1M score milestone', icon: '⭐', color: '#ffd700' },
   { id: 'score_5m', name: 'FIVE MILLION', description: 'Score 5,000,000 points', icon: '🏆', color: '#ffd700' },
+  // Round 11 achievements
+  { id: 'lane_master', name: 'LANE MASTER', description: 'Complete all 3 lanes', icon: '🛣️', color: '#00ffff' },
+  { id: 'lane_perfectionist', name: 'LANE PERFECTIONIST', description: 'Complete all lanes 3 times in one game', icon: '✨', color: '#ffff00' },
+  { id: 'no_tilt', name: 'ZEN MASTER', description: 'Finish a game without any tilt warnings', icon: '🧘', color: '#00ff88' },
+  { id: 'ball_saved_3', name: 'GUARDIAN ANGEL', description: 'Ball saved 3 times in one game', icon: '😇', color: '#4488ff' },
+  { id: 'long_ball', name: 'MARATHON', description: 'Keep one ball alive for 60 seconds', icon: '⏳', color: '#ff8800' },
 ];
 
 export class AchievementManager {
@@ -237,6 +243,44 @@ export class AchievementManager {
 
   checkScoreMilestones(score: number): void {
     if (score >= 5000000) this.unlock('score_5m');
+  }
+
+  // Round 11 achievement checks
+  laneCompletions = 0;
+  ballSavesThisGame = 0;
+  tiltWarningsThisGame = 0;
+  ballAliveTime = 0;
+
+  checkLaneComplete(): void {
+    this.laneCompletions++;
+    this.unlock('lane_master');
+    if (this.laneCompletions >= 3) this.unlock('lane_perfectionist');
+  }
+
+  checkNoTilt(): void {
+    // Called at game over — if no tilt warnings were issued
+    if (this.tiltWarningsThisGame === 0) this.unlock('no_tilt');
+  }
+
+  recordTiltWarning(): void {
+    this.tiltWarningsThisGame++;
+  }
+
+  checkBallSaved(): void {
+    this.ballSavesThisGame++;
+    if (this.ballSavesThisGame >= 3) this.unlock('ball_saved_3');
+  }
+
+  checkBallAliveTime(elapsed: number): void {
+    this.ballAliveTime = elapsed;
+    if (elapsed >= 60) this.unlock('long_ball');
+  }
+
+  resetRoundStats(): void {
+    this.laneCompletions = 0;
+    this.ballSavesThisGame = 0;
+    this.tiltWarningsThisGame = 0;
+    this.ballAliveTime = 0;
   }
 
   private unlock(id: string): void {
