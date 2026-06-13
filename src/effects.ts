@@ -396,6 +396,9 @@ export class EffectsManager {
       sp.vy -= 0.3 * dt;
       const alpha = sp.life / 1.5;
       (sp.mesh.material as MeshBasicMaterial).opacity = alpha;
+      // Scale up slightly as they float
+      const s = 1.0 + (1.0 - alpha) * 0.3;
+      sp.mesh.scale.setScalar(s);
     }
   }
 

@@ -1107,8 +1107,7 @@ export class AudioManager {
     g.gain.setValueAtTime(0.2, t);
     g.gain.linearRampToValueAtTime(0, t + 0.3);
 
-    const distortion = this.ctx.createWaveshaper ? undefined : undefined;
-    // Simple distortion via clipping
+    // Simple distortion via clipping filter
     const filter = this.ctx.createBiquadFilter();
     filter.type = 'lowpass';
     filter.frequency.value = 600;

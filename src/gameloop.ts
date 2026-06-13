@@ -105,6 +105,13 @@ export class PinballGameLoopSystem extends createSystem({}) {
   // Jackpot flash state
   private jackpotFlashTimer = 0;
 
+  // Drain proximity warning
+  private drainWarningIntensity = 0;
+
+  // High score approaching indicator
+  private highScoreFlashTimer = 0;
+  private wasApproachingHighScore = false;
+
   setRefs(refs: GameLoopRefs): void {
     this.refs = refs;
   }
@@ -418,19 +425,19 @@ export class PinballGameLoopSystem extends createSystem({}) {
     const dt = Math.min(delta, 0.033);
     this.gameTime += dt;
 
+    const {
+      physics, game, audio, achievements, effects, ui, xrInput,
+      flipperMeshes, plungerMesh, springMesh,
+      targetMeshes, spinnerMeshes, outlaneMeshes,
+      captiveBallMeshes, vukMeshes, bumperMeshes,
+    } = this.refs;
+
     // Environment animation (inside ECS loop, not setInterval)
     // Environment animation with intensity-reactive speed
     const intensityMul = game.intensity === 'frenzy' ? 2.5 :
                          game.intensity === 'heated' ? 1.8 :
                          game.intensity === 'normal' ? 1.3 : 1.0;
     updateEnvironment(this.refs.envState, this.gameTime, dt, intensityMul);
-
-    const {
-      physics, game, audio, effects, ui, xrInput,
-      flipperMeshes, plungerMesh, springMesh,
-      targetMeshes, spinnerMeshes, outlaneMeshes,
-      captiveBallMeshes, vukMeshes, bumperMeshes,
-    } = this.refs;
 
     xrInput.update(dt);
     game.update(dt);
@@ -842,6 +849,80 @@ export class PinballGameLoopSystem extends createSystem({}) {
           const scale = 1.0 + Math.sin(phase) * 0.15;
           ring.scale.set(scale, 1, scale);
         }
+      }
+
+      // === Idle bumper pulse animation ===
+      // Bumpers gently pulse even when not being hit, inviting attention
+      for (const [id, entry] of bumperMeshes) {
+        if (id.startsWith('pop-')) {
+          const bMat = entry.mesh.material as MeshStandardMaterial;
+          const gMat = entry.glow.material as MeshBasicMaterial;
+          // Offset phase per bumper for organic feel
+          const offset = id === 'pop-center' ? 0 : id === 'pop-left' ? 2.1 : 4.2;
+          const pulse = 0.3 + Math.sin(this.gameTime * 1.5 + offset) * 0.1;
+          const glowPulse = 0.25 + Math.sin(this.gameTime * 1.5 + offset) * 0.08;
+          // Don't override if bumper was just hit (flash handles that)
+          if (bMat.emissiveIntensity < 1.0) {
+            bMat.emissiveIntensity = pulse;
+          }
+          if (gMat.opacity < 0.5) {
+            gMat.opacity = glowPulse;
+          }
+        }
+      }
+
+      // === Drain proximity warning ===
+      // When ball is in danger zone near drain, flash the table edges red
+      if (game.state === 'playing') {
+        let maxDrainProximity = 0;
+        for (const b of physics.getActiveBalls()) {
+          // Ball is in danger when Z > 0.35 and X is in drain lane
+          if (b.z > 0.35 && Math.abs(b.x) < 0.15) {
+            const prox = (b.z - 0.35) / 0.15; // 0 at z=0.35, 1 at z=0.50
+            maxDrainProximity = Math.max(maxDrainProximity, Math.min(1, prox));
+          }
+        }
+        this.drainWarningIntensity += (maxDrainProximity - this.drainWarningIntensity) * dt * 8;
+        if (this.drainWarningIntensity > 0.05) {
+          // Pulse the ball saver bar red if saver is inactive
+          if (!game.ballSaverActive && this.refs.ballSaverBar) {
+            const warnMat = this.refs.ballSaverBar.material as MeshBasicMaterial;
+            warnMat.color.setHex(0xff0022);
+            warnMat.opacity = this.drainWarningIntensity * 0.6 * (0.5 + Math.sin(this.gameTime * 12) * 0.5);
+          }
+        }
+      }
+
+      // === High score approach indicator ===
+      if (game.state === 'playing' && game.highScore > 0) {
+        const isApproaching = game.score > game.highScore * 0.8 && game.score < game.highScore;
+        const justBeat = game.score >= game.highScore && !this.wasApproachingHighScore;
+        if (justBeat) {
+          this.highScoreFlashTimer = 1.5;
+          this.wasApproachingHighScore = true;
+        }
+        if (this.highScoreFlashTimer > 0) {
+          this.highScoreFlashTimer -= dt;
+          // Golden flash on backglass when high score is beaten
+          if (this.refs.backglassScoreMesh) {
+            const bMat = this.refs.backglassScoreMesh.material as MeshBasicMaterial;
+            const flash = Math.sin(this.highScoreFlashTimer * 15) > 0;
+            bMat.color.setHex(flash ? 0xffdd00 : 0x00ffff);
+            bMat.opacity = 0.8 + Math.sin(this.highScoreFlashTimer * 8) * 0.2;
+          }
+        } else if (isApproaching) {
+          // Subtle golden tint when approaching high score
+          if (this.refs.backglassScoreMesh) {
+            const bMat = this.refs.backglassScoreMesh.material as MeshBasicMaterial;
+            const mix = (game.score - game.highScore * 0.8) / (game.highScore * 0.2);
+            const r = mix;
+            const g = 0.8 + mix * 0.2;
+            const b = 1.0 - mix * 0.8;
+            bMat.color.setRGB(r, g, b);
+          }
+        }
+      } else {
+        this.wasApproachingHighScore = false;
       }
     }
 
