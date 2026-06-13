@@ -148,19 +148,21 @@ export function createEnvironment(scene: any): EnvState {
   return state;
 }
 
-export function updateEnvironment(state: EnvState, time: number, dt: number): void {
-  // Animate decorations
+export function updateEnvironment(state: EnvState, time: number, dt: number, intensityMultiplier: number = 1.0): void {
+  // Animate decorations — spin faster at higher intensity
+  const rotMul = intensityMultiplier;
   for (const d of state.decorations) {
-    d.mesh.rotation.x += d.rotSpeed * dt;
-    d.mesh.rotation.y += d.rotSpeed * 0.7 * dt;
-    d.mesh.position.y = d.baseY + Math.sin(time * d.bobSpeed) * 0.1;
+    d.mesh.rotation.x += d.rotSpeed * rotMul * dt;
+    d.mesh.rotation.y += d.rotSpeed * 0.7 * rotMul * dt;
+    d.mesh.position.y = d.baseY + Math.sin(time * d.bobSpeed * rotMul) * 0.1;
   }
 
-  // Animate particles
+  // Animate particles — move faster at higher intensity
+  const speedMul = intensityMultiplier;
   for (const p of state.particles) {
-    p.mesh.position.x += p.vx * dt;
-    p.mesh.position.y += p.vy * dt;
-    p.mesh.position.z += p.vz * dt;
+    p.mesh.position.x += p.vx * speedMul * dt;
+    p.mesh.position.y += p.vy * speedMul * dt;
+    p.mesh.position.z += p.vz * speedMul * dt;
 
     // Bounds wrap
     if (p.mesh.position.x > 3) p.mesh.position.x = -3;

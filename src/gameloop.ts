@@ -59,6 +59,7 @@ export interface GameLoopRefs {
   ballLockIndicators: Mesh[];
   skillShotZones: Mesh[];
   backglassScoreMesh: Mesh | null;
+  legRings: Mesh[];
 }
 
 export class PinballGameLoopSystem extends createSystem({}) {
@@ -376,7 +377,11 @@ export class PinballGameLoopSystem extends createSystem({}) {
     this.gameTime += dt;
 
     // Environment animation (inside ECS loop, not setInterval)
-    updateEnvironment(this.refs.envState, this.gameTime, dt);
+    // Environment animation with intensity-reactive speed
+    const intensityMul = game.intensity === 'frenzy' ? 2.5 :
+                         game.intensity === 'heated' ? 1.8 :
+                         game.intensity === 'normal' ? 1.3 : 1.0;
+    updateEnvironment(this.refs.envState, this.gameTime, dt, intensityMul);
 
     const {
       physics, game, audio, effects, ui, xrInput,
@@ -386,7 +391,6 @@ export class PinballGameLoopSystem extends createSystem({}) {
     } = this.refs;
 
     xrInput.update(dt);
-    // updateEnvironment is called from index.ts if needed, or we do it here
     game.update(dt);
     ui.update(dt);
     this.updateIntensityVisuals(dt);
@@ -538,7 +542,9 @@ export class PinballGameLoopSystem extends createSystem({}) {
           if (!game.wizardModeActive && b !== physics.ball && game.multiballActive) {
             (bv.mesh.material as MeshStandardMaterial).emissive.setHex(0xff00ff);
           } else if (!game.wizardModeActive) {
-            (bv.mesh.material as MeshStandardMaterial).emissive.setHex(0x00ffff);
+            const theme = getTheme(game.currentThemeId);
+            (bv.mesh.material as MeshStandardMaterial).emissive.setHex(theme.ballEmissive);
+            (bv.glow.material as MeshBasicMaterial).color.setHex(theme.ballGlow);
           }
         } else {
           bv.mesh.visible = false;
@@ -709,6 +715,31 @@ export class PinballGameLoopSystem extends createSystem({}) {
           mat.opacity = baseBright + Math.sin(this.gameTime * 2) * 0.1;
         } else {
           mat.opacity = 0.3 + Math.sin(this.gameTime) * 0.1;
+        }
+      }
+
+      // === Table leg neon ring animation ===
+      const { legRings } = this.refs;
+      if (legRings && legRings.length > 0) {
+        const pulseSpeed = game.intensity === 'frenzy' ? 8 :
+                           game.intensity === 'heated' ? 5 :
+                           game.intensity === 'normal' ? 3 : 1.5;
+        const baseOpacity = game.intensity === 'frenzy' ? 0.8 :
+                            game.intensity === 'heated' ? 0.6 :
+                            game.intensity === 'normal' ? 0.5 : 0.35;
+        const theme = getTheme(game.currentThemeId);
+        for (let i = 0; i < legRings.length; i++) {
+          const ring = legRings[i];
+          const mat = ring.material as MeshBasicMaterial;
+          // Stagger phase per ring for traveling wave
+          const phase = this.gameTime * pulseSpeed + i * 1.5;
+          mat.opacity = baseOpacity + Math.sin(phase) * 0.25;
+          mat.color.setHex(game.wizardModeActive
+            ? new Color().setHSL((this.gameTime * 0.5 + i * 0.25) % 1, 1, 0.5).getHex()
+            : theme.accentPrimary);
+          // Subtle scale pulse
+          const scale = 1.0 + Math.sin(phase) * 0.15;
+          ring.scale.set(scale, 1, scale);
         }
       }
     }

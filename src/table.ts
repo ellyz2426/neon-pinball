@@ -793,3 +793,33 @@ export function createBackglassScore(table: Group): Mesh {
 
   return mesh;
 }
+
+
+// Animated neon rings on table legs — returns references for game loop animation
+export function createLegNeonRings(table: Group): Mesh[] {
+  const rings: Mesh[] = [];
+  const legPositions = [
+    [-HALF_W + 0.03, -HALF_L + 0.03],
+    [HALF_W - 0.03, -HALF_L + 0.03],
+    [-HALF_W + 0.03, HALF_L - 0.03],
+    [HALF_W - 0.03, HALF_L - 0.03],
+  ];
+
+  for (const [lx, lz] of legPositions) {
+    // Lower ring — animated
+    const ringGeo = new TorusGeometry(0.022, 0.004, 8, 16);
+    const ringMat = new MeshBasicMaterial({
+      color: new Color(0x00ffff),
+      transparent: true,
+      opacity: 0.6,
+      blending: AdditiveBlending,
+    });
+    const ring = new Mesh(ringGeo, ringMat);
+    ring.position.set(lx, -0.15, lz);
+    ring.rotation.x = Math.PI / 2;
+    table.add(ring);
+    rings.push(ring);
+  }
+
+  return rings;
+}
