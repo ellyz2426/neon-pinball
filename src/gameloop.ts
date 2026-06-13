@@ -240,7 +240,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
   private wireGameEvents(): void {
     if (this.eventsWired) return;
     this.eventsWired = true;
-    const { game, audio, physics, effects, achievements } = this.refs;
+    const { game, audio, physics, effects, achievements, xrInput } = this.refs;
 
     game.onStateChange((state: GameState) => {
       this.refs.ui.showState(state);
