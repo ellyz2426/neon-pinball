@@ -1,5 +1,5 @@
 // Neon Pinball VR - Main Entry Point
-// Round 7: Fixed ECS game loop, relative UI paths, deploy-ready
+// Round 8: Dynamic camera, lane indicators, ball lock indicators, backglass score
 
 import {
   World,
@@ -41,6 +41,7 @@ import {
   createTable, createBumperMeshes, createFlipperMeshes, createPlunger,
   createTargetBank, createSpinnerMeshes, createRampMeshes, createOutlaneMeshes,
   createCaptiveBallMesh, createSkillShotIndicator, createVUKMesh,
+  createLaneIndicators, createBallLockIndicators, createBackglassScore,
   TABLE_Y, TABLE_TILT,
 } from './table';
 import { GameManager } from './game';
@@ -90,6 +91,11 @@ async function main() {
   const captiveBallMeshes = createCaptiveBallMesh(tableGroup);
   const skillShotIndicator = createSkillShotIndicator(tableGroup);
   const vukMeshes = createVUKMesh(tableGroup);
+
+  // New visual elements (Round 8)
+  const laneIndicators = createLaneIndicators(tableGroup);
+  const ballLockIndicators = createBallLockIndicators(tableGroup);
+  const backglassScoreMesh = createBackglassScore(tableGroup);
 
   // Initialize systems
   const physics = new PinballPhysics();
@@ -151,6 +157,7 @@ async function main() {
     effects,
     ui,
     xrInput,
+    world,
     tableGroup,
     bumperMeshes,
     flipperMeshes,
@@ -163,6 +170,10 @@ async function main() {
     vukMeshes,
     tableLights,
     envState,
+    laneIndicators,
+    ballLockIndicators,
+    skillShotZones: skillShotIndicator.zones,
+    backglassScoreMesh,
   });
 }
 

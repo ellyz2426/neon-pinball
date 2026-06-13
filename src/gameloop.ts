@@ -1,5 +1,5 @@
 // Neon Pinball VR - Proper ECS Game Loop System
-// Fixes the dead-loop anti-pattern: (world as any).createSystem({...}) returns undefined
+// Round 8: Dynamic camera tracking, lane indicators, skill shot animation, ball lock visuals
 
 import {
   createSystem,
@@ -37,6 +37,7 @@ export interface GameLoopRefs {
   effects: EffectsManager;
   ui: UIManager;
   xrInput: XRInputHandler;
+  world: any;
   tableGroup: Group;
   bumperMeshes: Map<string, { mesh: Mesh; glow: Mesh }>;
   flipperMeshes: { left: Mesh; right: Mesh };
@@ -53,6 +54,10 @@ export interface GameLoopRefs {
     right: PointLight | undefined;
   };
   envState: EnvState;
+  laneIndicators: Mesh[];
+  ballLockIndicators: Mesh[];
+  skillShotZones: Mesh[];
+  backglassScoreMesh: Mesh | null;
 }
 
 export class PinballGameLoopSystem extends createSystem({}) {
@@ -67,6 +72,18 @@ export class PinballGameLoopSystem extends createSystem({}) {
   private spinnerCooldowns: Record<string, number> = {};
   private eventsWired = false;
   private initialized = false;
+
+  // Camera tracking
+  private cameraBaseY = 0;
+  private cameraBaseZ = 0;
+  private cameraSmoothX = 0;
+  private cameraSmoothZ = 0;
+
+  // Lane indicator animation
+  private laneFlashTimers = [0, 0, 0];
+
+  // Ball lock indicator animation
+  private lockPulsePhase = 0;
 
   setRefs(refs: GameLoopRefs): void {
     this.refs = refs;
@@ -280,6 +297,15 @@ export class PinballGameLoopSystem extends createSystem({}) {
       if (tier) achievements.checkComboTier(tier);
     });
 
+    game.onLaneComplete((lanes) => {
+      // Flash lane indicators when a lane is hit
+      for (let i = 0; i < lanes.length; i++) {
+        if (lanes[i]) {
+          this.laneFlashTimers[i] = 0.5;
+        }
+      }
+    });
+
     game.onCaptiveBall((hits) => {
       achievements.checkCaptiveBall(hits);
     });
@@ -298,6 +324,13 @@ export class PinballGameLoopSystem extends createSystem({}) {
       this.initialized = true;
       this.ballVisuals.push(this.createBallVisual(0));
       this.wireGameEvents();
+
+      // Store initial camera position for tracking
+      const cam = this.refs.world.camera;
+      this.cameraBaseY = cam.position.y;
+      this.cameraBaseZ = cam.position.z;
+      this.cameraSmoothX = 0;
+      this.cameraSmoothZ = 0;
     }
 
     const dt = Math.min(delta, 0.033);
@@ -518,6 +551,104 @@ export class PinballGameLoopSystem extends createSystem({}) {
       }
 
       ui.updateHUD();
+
+      // === Dynamic camera tracking ===
+      // Subtly follow the primary ball's position for more engaging gameplay
+      if (game.state === 'playing' && !this.refs.world.xr?.session) {
+        const cam = this.refs.world.camera;
+        const ball = physics.ball;
+        if (ball.active) {
+          // Target: shift camera slightly toward ball X, and adjust Z based on ball depth
+          const targetX = ball.x * 0.15; // subtle X tracking
+          const targetZ = ball.z * 0.08; // subtle Z tracking
+          this.cameraSmoothX += (targetX - this.cameraSmoothX) * dt * 2;
+          this.cameraSmoothZ += (targetZ - this.cameraSmoothZ) * dt * 2;
+          cam.position.x = this.cameraSmoothX;
+          cam.position.z = this.cameraBaseZ + this.cameraSmoothZ;
+        } else {
+          // Return to center when ball is inactive
+          this.cameraSmoothX += (0 - this.cameraSmoothX) * dt * 3;
+          this.cameraSmoothZ += (0 - this.cameraSmoothZ) * dt * 3;
+          cam.position.x = this.cameraSmoothX;
+          cam.position.z = this.cameraBaseZ + this.cameraSmoothZ;
+        }
+      }
+
+      // === Lane completion indicators ===
+      const { laneIndicators } = this.refs;
+      if (laneIndicators && laneIndicators.length === 3) {
+        for (let i = 0; i < 3; i++) {
+          const lit = game.laneStates[i];
+          const indicator = laneIndicators[i];
+          const mat = indicator.material as MeshBasicMaterial;
+
+          if (this.laneFlashTimers[i] > 0) {
+            this.laneFlashTimers[i] -= dt;
+            mat.opacity = 0.6 + Math.sin(this.laneFlashTimers[i] * 20) * 0.3;
+          } else if (lit) {
+            mat.opacity = 0.7 + Math.sin(this.gameTime * 3 + i) * 0.2;
+          } else {
+            mat.opacity = 0.15;
+          }
+        }
+      }
+
+      // === Ball lock indicators ===
+      const { ballLockIndicators } = this.refs;
+      if (ballLockIndicators && ballLockIndicators.length > 0) {
+        this.lockPulsePhase += dt;
+        for (let i = 0; i < ballLockIndicators.length; i++) {
+          const ind = ballLockIndicators[i];
+          const mat = ind.material as MeshBasicMaterial;
+          if (i < game.ballsLocked) {
+            // Locked: bright steady glow
+            mat.opacity = 0.8;
+            mat.color.setHex(0x00ff88);
+          } else if (i === game.ballsLocked && game.ballsLocked < game.maxLockBalls && !game.multiballActive) {
+            // Next to lock: pulsing
+            mat.opacity = 0.3 + Math.sin(this.lockPulsePhase * 4) * 0.3;
+            mat.color.setHex(0xffff00);
+          } else {
+            // Empty: dim
+            mat.opacity = 0.1;
+            mat.color.setHex(0x444466);
+          }
+        }
+      }
+
+      // === Skill shot zone animation ===
+      const { skillShotZones } = this.refs;
+      if (skillShotZones && skillShotZones.length > 0) {
+        const inPlunger = game.state === 'plunger';
+        for (let i = 0; i < skillShotZones.length; i++) {
+          const zone = skillShotZones[i];
+          const mat = zone.material as MeshBasicMaterial;
+          if (inPlunger) {
+            // Animate zones during plunger phase - wave pattern
+            const wave = Math.sin(this.gameTime * 3 - i * 0.8);
+            mat.opacity = 0.4 + wave * 0.3;
+            const scale = 1.0 + wave * 0.15;
+            zone.scale.set(scale, 1, scale);
+          } else {
+            mat.opacity = 0.2;
+            zone.scale.set(1, 1, 1);
+          }
+        }
+      }
+
+      // === Backglass score display ===
+      if (this.refs.backglassScoreMesh) {
+        const mat = this.refs.backglassScoreMesh.material as MeshBasicMaterial;
+        if (game.state === 'playing' || game.state === 'plunger') {
+          // Pulse brightness based on intensity
+          const baseBright = game.intensity === 'frenzy' ? 1.0 :
+                             game.intensity === 'heated' ? 0.8 :
+                             game.intensity === 'normal' ? 0.6 : 0.4;
+          mat.opacity = baseBright + Math.sin(this.gameTime * 2) * 0.1;
+        } else {
+          mat.opacity = 0.3 + Math.sin(this.gameTime) * 0.1;
+        }
+      }
     }
 
     // Pause input

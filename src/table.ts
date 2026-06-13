@@ -1,5 +1,5 @@
 // Neon Pinball VR - Table Geometry
-// Round 2: Spinners, ramps, outlanes, lane arrows, backbox
+// Round 8: Lane completion indicators, ball lock lights, improved backbox
 
 import {
   Group, Mesh, BoxGeometry, CylinderGeometry, PlaneGeometry, SphereGeometry,
@@ -683,4 +683,113 @@ export function createVUKMesh(table: Group): Map<string, { scoop: Mesh; glow: Me
 
   meshes.set('vuk-left', { scoop, glow });
   return meshes;
+}
+
+
+// Lane completion indicators — 3 glowing bars in the lane area
+export function createLaneIndicators(table: Group): Mesh[] {
+  const indicators: Mesh[] = [];
+  const laneData = [
+    { x: -0.125, z: 0.22, color: 0xff00ff },
+    { x: 0, z: 0.20, color: 0xffff00 },
+    { x: 0.125, z: 0.22, color: 0x00ff88 },
+  ];
+
+  for (const ld of laneData) {
+    const geo = new PlaneGeometry(0.04, 0.008);
+    const mat = new MeshBasicMaterial({
+      color: new Color(ld.color),
+      transparent: true,
+      opacity: 0.15,
+      side: DoubleSide,
+      blending: AdditiveBlending,
+    });
+    const mesh = new Mesh(geo, mat);
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.position.set(ld.x, 0.003, ld.z);
+    table.add(mesh);
+    indicators.push(mesh);
+  }
+
+  return indicators;
+}
+
+// Ball lock indicators — 3 glowing dots near the target bank
+export function createBallLockIndicators(table: Group): Mesh[] {
+  const indicators: Mesh[] = [];
+
+  for (let i = 0; i < 3; i++) {
+    const x = -0.06 + i * 0.06;
+    const geo = new SphereGeometry(0.008, 8, 6);
+    const mat = new MeshBasicMaterial({
+      color: new Color(0x444466),
+      transparent: true,
+      opacity: 0.1,
+      blending: AdditiveBlending,
+    });
+    const mesh = new Mesh(geo, mat);
+    mesh.position.set(x, 0.015, -0.50);
+    table.add(mesh);
+    indicators.push(mesh);
+
+    // Base ring around each indicator
+    const ringGeo = new RingGeometry(0.009, 0.012, 8);
+    const ringMat = new MeshBasicMaterial({
+      color: new Color(0x222244),
+      transparent: true,
+      opacity: 0.3,
+      side: DoubleSide,
+    });
+    const ring = new Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(x, 0.002, -0.50);
+    table.add(ring);
+  }
+
+  return indicators;
+}
+
+// Backglass score area — a glowing panel on the backbox
+export function createBackglassScore(table: Group): Mesh {
+  const geo = new PlaneGeometry(0.18, 0.06);
+  const mat = new MeshBasicMaterial({
+    color: new Color(0x00ffff),
+    transparent: true,
+    opacity: 0.3,
+    blending: AdditiveBlending,
+    side: DoubleSide,
+  });
+  const mesh = new Mesh(geo, mat);
+  mesh.position.set(0, 0.20, -HALF_L - 0.005);
+  table.add(mesh);
+
+  // Border frame around score area
+  const frameGeo = new EdgesGeometry(new BoxGeometry(0.19, 0.065, 0.001));
+  const frameMat = new LineBasicMaterial({
+    color: new Color(0x00ffff),
+    transparent: true,
+    opacity: 0.5,
+  });
+  const frame = new LineSegments(frameGeo, frameMat);
+  frame.position.set(0, 0.20, -HALF_L - 0.005);
+  table.add(frame);
+
+  // Decorative dots flanking the score area
+  const dotGeo = new SphereGeometry(0.005, 6, 4);
+  const dotColors = [0xff00ff, 0x00ffff, 0xffff00, 0x00ff88];
+  for (let i = 0; i < 4; i++) {
+    const side = i < 2 ? -1 : 1;
+    const row = i % 2;
+    const dotMat = new MeshBasicMaterial({
+      color: new Color(dotColors[i]),
+      transparent: true,
+      opacity: 0.6,
+      blending: AdditiveBlending,
+    });
+    const dot = new Mesh(dotGeo, dotMat);
+    dot.position.set(side * 0.11, 0.18 + row * 0.04, -HALF_L - 0.004);
+    table.add(dot);
+  }
+
+  return mesh;
 }
