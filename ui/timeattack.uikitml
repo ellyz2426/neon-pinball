@@ -52,7 +52,7 @@
   }
 </style>
 <div class="ta-panel">
-  <span class="ta-title">⏱️ TIME ATTACK</span>
+  <span class="ta-title"> TIME ATTACK</span>
   <span class="ta-subtitle">Score as much as you can before time runs out!</span>
   <div id="ta-60-btn" class="ta-btn" cursor="pointer">
     <span class="ta-btn-text">60 SECONDS</span>

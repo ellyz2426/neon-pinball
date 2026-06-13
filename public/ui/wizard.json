@@ -7,7 +7,7 @@
         "sourceTag": "span",
         "type": "custom",
         "children": [
-          "⚡ WIZARD MODE ⚡"
+          "! WIZARD MODE !"
         ],
         "properties": {
           "class": "wizard-title"

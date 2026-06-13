@@ -25,7 +25,7 @@
   }
 </style>
 <div class="frenzy-panel">
-  <span class="frenzy-title">🔥 FRENZY 🔥</span>
+  <span class="frenzy-title">~ FRENZY ~</span>
   <span id="frenzy-mult" class="frenzy-mult">x5 SCORING</span>
   <span id="frenzy-timer" class="frenzy-timer">15s</span>
 </div>

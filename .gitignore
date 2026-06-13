@@ -1,2 +1,6 @@
 node_modules/
 dist/
+public/ui/*.json
+.iwsdk/
+neon-pinball-tmp/
+.mcp.json

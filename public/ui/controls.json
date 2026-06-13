@@ -22,7 +22,7 @@
             "sourceTag": "text",
             "type": "custom",
             "children": [
-              "🎮 VR CONTROLS"
+              "> VR CONTROLS"
             ],
             "properties": {
               "class": "section-title"
@@ -229,7 +229,7 @@
                 "sourceTag": "text",
                 "type": "custom",
                 "children": [
-                  "⌨️ KEYBOARD"
+                  "KEYBOARD"
                 ],
                 "properties": {
                   "class": "section-title"
@@ -244,7 +244,7 @@
                     "sourceTag": "text",
                     "type": "custom",
                     "children": [
-                      "A / ←"
+                      "A / <-"
                     ],
                     "properties": {
                       "class": "key"
@@ -276,7 +276,7 @@
                     "sourceTag": "text",
                     "type": "custom",
                     "children": [
-                      "D / →"
+                      "D / ->"
                     ],
                     "properties": {
                       "class": "key"
@@ -436,7 +436,7 @@
                     "sourceTag": "text",
                     "type": "custom",
                     "children": [
-                      "🧲 MAGNA-SAVE"
+                      "+ MAGNA-SAVE"
                     ],
                     "properties": {
                       "class": "section-title"
@@ -447,7 +447,7 @@
                     "sourceTag": "text",
                     "type": "custom",
                     "children": [
-                      "Press Z/C (keyboard) or flick thumbstick (VR) to activate a magnetic save near the outlanes. One use per side per ball — pulls the ball back toward center!"
+                      "Press Z/C (keyboard) or flick thumbstick (VR) to activate a magnetic save near the outlanes. One use per side per ball - pulls the ball back toward center!"
                     ],
                     "properties": {
                       "class": "tip"
@@ -462,7 +462,7 @@
                         "sourceTag": "text",
                         "type": "custom",
                         "children": [
-                          "🎯 SCORING"
+                          "> SCORING"
                         ],
                         "properties": {
                           "class": "section-title"
@@ -680,7 +680,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "5,000 – 25,000"
+                              "5,000 - 25,000"
                             ],
                             "properties": {
                               "class": "score-val"
@@ -701,7 +701,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "💡 TIPS"
+                              "* TIPS"
                             ],
                             "properties": {
                               "class": "section-title"
@@ -712,7 +712,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "🎯 Aim plunger power in the green zone for a Skill Shot bonus!"
+                              "> Aim plunger power in the green zone for a Skill Shot bonus!"
                             ],
                             "properties": {
                               "class": "tip"
@@ -723,7 +723,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "🔒 Clear all targets to lock balls — 3 locks = MULTIBALL!"
+                              "# Clear all targets to lock balls - 3 locks = MULTIBALL!"
                             ],
                             "properties": {
                               "class": "tip"
@@ -734,7 +734,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "⚡ Complete all 5 mission types to trigger WIZARD MODE!"
+                              "! Complete all 5 mission types to trigger WIZARD MODE!"
                             ],
                             "properties": {
                               "class": "tip"
@@ -745,7 +745,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "🌟 Build combos fast — multiplier decays after 2 seconds!"
+                              "* Build combos fast - multiplier decays after 2 seconds!"
                             ],
                             "properties": {
                               "class": "tip"
@@ -756,7 +756,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "⚠️ Nudge carefully — 3 warnings = TILT!"
+                              "! Nudge carefully - 3 warnings = TILT!"
                             ],
                             "properties": {
                               "class": "tip"
@@ -767,7 +767,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "🧲 Save Magna-Save for desperate moments near the outlanes!"
+                              "+ Save Magna-Save for desperate moments near the outlanes!"
                             ],
                             "properties": {
                               "class": "tip"
@@ -778,7 +778,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "🌀 Complete a full orbit (Left Ramp → Spinner → Right Ramp) for big points!"
+                              "@ Complete a full orbit (Left Ramp -> Spinner -> Right Ramp) for big points!"
                             ],
                             "properties": {
                               "class": "tip"
@@ -789,7 +789,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "🔥 3 consecutive orbits triggers FRENZY MODE — all scoring x5!"
+                              "~ 3 consecutive orbits triggers FRENZY MODE - all scoring x5!"
                             ],
                             "properties": {
                               "class": "tip"
@@ -800,7 +800,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "⏱️ Try TIME ATTACK mode — unlimited balls, race the clock!"
+                              "Try TIME ATTACK mode - unlimited balls, race the clock!"
                             ],
                             "properties": {
                               "class": "tip"
@@ -811,7 +811,7 @@
                             "sourceTag": "text",
                             "type": "custom",
                             "children": [
-                              "⭐ Hit score milestones for bonus awards (100K, 250K, 500K, 1M+)!"
+                              "* Hit score milestones for bonus awards (100K, 250K, 500K, 1M+)!"
                             ],
                             "properties": {
                               "class": "tip"
@@ -1147,7 +1147,7 @@
       },
       "end": {
         "line": 20,
-        "column": 53
+        "column": 52
       }
     },
     "uid-5": {
@@ -1347,7 +1347,7 @@
       },
       "end": {
         "line": 30,
-        "column": 50
+        "column": 48
       }
     },
     "uid-25": {
@@ -1357,7 +1357,7 @@
       },
       "end": {
         "line": 31,
-        "column": 99
+        "column": 100
       }
     },
     "uid-26": {
@@ -1367,17 +1367,17 @@
       },
       "end": {
         "line": 31,
-        "column": 52
+        "column": 53
       }
     },
     "uid-27": {
       "start": {
         "line": 31,
-        "column": 52
+        "column": 53
       },
       "end": {
         "line": 31,
-        "column": 92
+        "column": 93
       }
     },
     "uid-28": {
@@ -1387,7 +1387,7 @@
       },
       "end": {
         "line": 32,
-        "column": 100
+        "column": 101
       }
     },
     "uid-29": {
@@ -1397,17 +1397,17 @@
       },
       "end": {
         "line": 32,
-        "column": 52
+        "column": 53
       }
     },
     "uid-30": {
       "start": {
         "line": 32,
-        "column": 52
+        "column": 53
       },
       "end": {
         "line": 32,
-        "column": 93
+        "column": 94
       }
     },
     "uid-31": {
@@ -1547,7 +1547,7 @@
       },
       "end": {
         "line": 40,
-        "column": 52
+        "column": 51
       }
     },
     "uid-45": {
@@ -1577,7 +1577,7 @@
       },
       "end": {
         "line": 45,
-        "column": 49
+        "column": 48
       }
     },
     "uid-48": {
@@ -1807,7 +1807,7 @@
       },
       "end": {
         "line": 56,
-        "column": 46
+        "column": 45
       }
     },
     "uid-71": {
@@ -1817,7 +1817,7 @@
       },
       "end": {
         "line": 57,
-        "column": 91
+        "column": 90
       }
     },
     "uid-72": {
@@ -1827,7 +1827,7 @@
       },
       "end": {
         "line": 58,
-        "column": 86
+        "column": 85
       }
     },
     "uid-73": {
@@ -1847,7 +1847,7 @@
       },
       "end": {
         "line": 60,
-        "column": 86
+        "column": 85
       }
     },
     "uid-75": {
@@ -1857,7 +1857,7 @@
       },
       "end": {
         "line": 61,
-        "column": 68
+        "column": 67
       }
     },
     "uid-76": {
@@ -1867,7 +1867,7 @@
       },
       "end": {
         "line": 62,
-        "column": 88
+        "column": 87
       }
     },
     "uid-77": {
@@ -1877,7 +1877,7 @@
       },
       "end": {
         "line": 63,
-        "column": 104
+        "column": 105
       }
     },
     "uid-78": {
@@ -1887,7 +1887,7 @@
       },
       "end": {
         "line": 64,
-        "column": 91
+        "column": 90
       }
     },
     "uid-79": {
@@ -1897,7 +1897,7 @@
       },
       "end": {
         "line": 65,
-        "column": 87
+        "column": 85
       }
     },
     "uid-80": {

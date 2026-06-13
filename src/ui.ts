@@ -71,67 +71,67 @@ export class UIManager {
 
   async init(): Promise<void> {
     // Title screen
-    this.titlePanel = await this.createWorldPanel('/ui/title.json', 0.9, 1.2, [0, 1.3, -0.8], 0.8);
+    this.titlePanel = await this.createWorldPanel('./ui/title.json', 0.9, 1.2, [0, 1.3, -0.8], 0.8);
 
     // HUD (head-following)
-    this.hudPanel = await this.createFollowerPanel('/ui/hud.json', 0.55, 0.08);
+    this.hudPanel = await this.createFollowerPanel('./ui/hud.json', 0.55, 0.08);
 
     // Game Over
-    this.gameoverPanel = await this.createWorldPanel('/ui/gameover.json', 0.8, 1.0, [0, 1.3, -0.8]);
+    this.gameoverPanel = await this.createWorldPanel('./ui/gameover.json', 0.8, 1.0, [0, 1.3, -0.8]);
 
     // Pause
-    this.pausePanel = await this.createWorldPanel('/ui/pause.json', 0.6, 0.6, [0, 1.3, -0.8]);
+    this.pausePanel = await this.createWorldPanel('./ui/pause.json', 0.6, 0.6, [0, 1.3, -0.8]);
 
     // Leaderboard
-    this.leaderboardPanel = await this.createWorldPanel('/ui/leaderboard.json', 0.7, 1.0, [0, 1.3, -0.8]);
+    this.leaderboardPanel = await this.createWorldPanel('./ui/leaderboard.json', 0.7, 1.0, [0, 1.3, -0.8]);
 
     // Settings
-    this.settingsPanel = await this.createWorldPanel('/ui/settings.json', 0.7, 0.9, [0, 1.3, -0.8]);
+    this.settingsPanel = await this.createWorldPanel('./ui/settings.json', 0.7, 0.9, [0, 1.3, -0.8]);
 
     // Achievements
-    this.achievementsPanel = await this.createWorldPanel('/ui/achievements.json', 0.8, 1.2, [0, 1.3, -0.8]);
+    this.achievementsPanel = await this.createWorldPanel('./ui/achievements.json', 0.8, 1.2, [0, 1.3, -0.8]);
 
     // Stats
-    this.statsPanel = await this.createWorldPanel('/ui/stats.json', 0.7, 1.1, [0, 1.3, -0.8]);
+    this.statsPanel = await this.createWorldPanel('./ui/stats.json', 0.7, 1.1, [0, 1.3, -0.8]);
 
     // Message toast
-    this.messagePanel = await this.createFollowerPanel('/ui/message.json', 0.35, 0.06, [0, -0.22, -0.5]);
+    this.messagePanel = await this.createFollowerPanel('./ui/message.json', 0.35, 0.06, [0, -0.22, -0.5]);
 
     // Plunger power
-    this.plungerPanel = await this.createFollowerPanel('/ui/plunger.json', 0.25, 0.08, [0.2, -0.1, -0.5]);
+    this.plungerPanel = await this.createFollowerPanel('./ui/plunger.json', 0.25, 0.08, [0.2, -0.1, -0.5]);
 
     // Mission panel (head-following, left side)
-    this.missionPanel = await this.createFollowerPanel('/ui/mission.json', 0.25, 0.1, [-0.22, -0.1, -0.5]);
+    this.missionPanel = await this.createFollowerPanel('./ui/mission.json', 0.25, 0.1, [-0.22, -0.1, -0.5]);
 
     // Wizard mode HUD (head-following, right side)
-    this.wizardPanel = await this.createFollowerPanel('/ui/wizard.json', 0.2, 0.08, [0.22, -0.05, -0.5]);
+    this.wizardPanel = await this.createFollowerPanel('./ui/wizard.json', 0.2, 0.08, [0.22, -0.05, -0.5]);
 
     // Achievement toast (head-following, bottom-right)
-    this.achToastPanel = await this.createFollowerPanel('/ui/achtoast.json', 0.35, 0.07, [0.15, -0.25, -0.5]);
+    this.achToastPanel = await this.createFollowerPanel('./ui/achtoast.json', 0.35, 0.07, [0.15, -0.25, -0.5]);
 
     // Controls/Help panel
-    this.controlsPanel = await this.createWorldPanel('/ui/controls.json', 0.8, 1.3, [0, 1.3, -0.8], 0.8);
+    this.controlsPanel = await this.createWorldPanel('./ui/controls.json', 0.8, 1.3, [0, 1.3, -0.8], 0.8);
 
     // Bonus countdown panel (head-following)
-    this.bonusPanel = await this.createFollowerPanel('/ui/bonus.json', 0.3, 0.15, [0, -0.1, -0.5]);
+    this.bonusPanel = await this.createFollowerPanel('./ui/bonus.json', 0.3, 0.15, [0, -0.1, -0.5]);
 
     // Daily challenge panel
-    this.dailyPanel = await this.createWorldPanel('/ui/daily.json', 0.7, 1.0, [0, 1.3, -0.8], 0.8);
+    this.dailyPanel = await this.createWorldPanel('./ui/daily.json', 0.7, 1.0, [0, 1.3, -0.8], 0.8);
 
     // Theme selection panel
-    this.themesPanel = await this.createWorldPanel('/ui/themes.json', 0.6, 0.9, [0, 1.3, -0.8], 0.8);
+    this.themesPanel = await this.createWorldPanel('./ui/themes.json', 0.6, 0.9, [0, 1.3, -0.8], 0.8);
 
     // Time Attack selection panel
-    this.timeattackPanel = await this.createWorldPanel('/ui/timeattack.json', 0.7, 1.0, [0, 1.3, -0.8], 0.8);
+    this.timeattackPanel = await this.createWorldPanel('./ui/timeattack.json', 0.7, 1.0, [0, 1.3, -0.8], 0.8);
 
     // Frenzy bonus indicator (head-following, top center)
-    this.frenzyPanel = await this.createFollowerPanel('/ui/frenzy.json', 0.2, 0.08, [0, 0.08, -0.5]);
+    this.frenzyPanel = await this.createFollowerPanel('./ui/frenzy.json', 0.2, 0.08, [0, 0.08, -0.5]);
 
     // Orbit progress indicator (head-following, upper right)
-    this.orbitPanel = await this.createFollowerPanel('/ui/orbit.json', 0.25, 0.05, [0.2, 0.02, -0.5]);
+    this.orbitPanel = await this.createFollowerPanel('./ui/orbit.json', 0.25, 0.05, [0.2, 0.02, -0.5]);
 
     // Milestone notification (head-following, center)
-    this.milestonePanel = await this.createFollowerPanel('/ui/milestone.json', 0.3, 0.1, [0, 0, -0.5]);
+    this.milestonePanel = await this.createFollowerPanel('./ui/milestone.json', 0.3, 0.1, [0, 0, -0.5]);
 
     // Initial state
     this.showState('title');

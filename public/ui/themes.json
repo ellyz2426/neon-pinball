@@ -41,7 +41,7 @@
                     "sourceTag": "text",
                     "type": "custom",
                     "children": [
-                      "✓"
+                      "OK"
                     ],
                     "properties": {
                       "id": "theme-neon-check",
@@ -769,7 +769,7 @@
       },
       "end": {
         "line": 34,
-        "column": 64
+        "column": 65
       }
     },
     "uid-8": {

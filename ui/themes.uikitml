@@ -32,7 +32,7 @@
     <view id="theme-neon-btn" class="theme-btn theme-neon">
       <view class="theme-row">
         <text class="theme-name name-neon">NEON CLASSIC</text>
-        <text id="theme-neon-check" class="theme-check">✓</text>
+        <text id="theme-neon-check" class="theme-check">OK</text>
       </view>
       <view class="preview-bar bar-neon" />
     </view>

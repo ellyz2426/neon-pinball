@@ -56,7 +56,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "🎉 PARTY MODE"
+              "! PARTY MODE"
             ],
             "properties": {
               "class": "btn-text-party"
@@ -79,7 +79,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "⏱️ TIME ATTACK"
+              "TIME ATTACK"
             ],
             "properties": {
               "class": "btn-text-gold"
@@ -102,7 +102,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "📅 DAILY CHALLENGE"
+              "DAILY CHALLENGE"
             ],
             "properties": {
               "class": "btn-text-gold"
@@ -770,7 +770,7 @@
       },
       "end": {
         "line": 153,
-        "column": 53
+        "column": 52
       }
     },
     "uid-8": {
@@ -790,7 +790,7 @@
       },
       "end": {
         "line": 156,
-        "column": 53
+        "column": 51
       }
     },
     "uid-10": {
@@ -810,7 +810,7 @@
       },
       "end": {
         "line": 159,
-        "column": 57
+        "column": 55
       }
     },
     "uid-12": {

@@ -104,14 +104,14 @@
     <span id="ach-count" class="ach-count">0 / 16</span>
   </div>
   <div class="ach-list">
-    <div class="ach-row"><span class="ach-icon" id="ach-icon-0">🎮</span><div class="ach-info"><span id="ach-name-0" class="ach-name">FIRST TILT</span><span id="ach-desc-0" class="ach-desc">Play your first game</span></div></div>
-    <div class="ach-row"><span class="ach-icon" id="ach-icon-1">💯</span><div class="ach-info"><span id="ach-name-1" class="ach-name">SIX FIGURES</span><span id="ach-desc-1" class="ach-desc">Score 100,000 points</span></div></div>
-    <div class="ach-row"><span class="ach-icon" id="ach-icon-2">💎</span><div class="ach-info"><span id="ach-name-2" class="ach-name">HALF MILLION</span><span id="ach-desc-2" class="ach-desc">Score 500,000 points</span></div></div>
-    <div class="ach-row"><span class="ach-icon" id="ach-icon-3">👑</span><div class="ach-info"><span id="ach-name-3" class="ach-name">MILLIONAIRE</span><span id="ach-desc-3" class="ach-desc">Score 1,000,000 points</span></div></div>
-    <div class="ach-row"><span class="ach-icon" id="ach-icon-4">⚡</span><div class="ach-info"><span id="ach-name-4" class="ach-name">COMBO STARTER</span><span id="ach-desc-4" class="ach-desc">Reach a 5x combo</span></div></div>
-    <div class="ach-row"><span class="ach-icon" id="ach-icon-5">🔥</span><div class="ach-info"><span id="ach-name-5" class="ach-name">COMBO KING</span><span id="ach-desc-5" class="ach-desc">Reach the max multiplier</span></div></div>
-    <div class="ach-row"><span class="ach-icon" id="ach-icon-6">🎱</span><div class="ach-info"><span id="ach-name-6" class="ach-name">MULTI MAYHEM</span><span id="ach-desc-6" class="ach-desc">Trigger multiball</span></div></div>
-    <div class="ach-row"><span class="ach-icon" id="ach-icon-7">🧙</span><div class="ach-info"><span id="ach-name-7" class="ach-name">WIZARD!</span><span id="ach-desc-7" class="ach-desc">Activate Wizard Mode</span></div></div>
+    <div class="ach-row"><span class="ach-icon" id="ach-icon-0">></span><div class="ach-info"><span id="ach-name-0" class="ach-name">FIRST TILT</span><span id="ach-desc-0" class="ach-desc">Play your first game</span></div></div>
+    <div class="ach-row"><span class="ach-icon" id="ach-icon-1">#</span><div class="ach-info"><span id="ach-name-1" class="ach-name">SIX FIGURES</span><span id="ach-desc-1" class="ach-desc">Score 100,000 points</span></div></div>
+    <div class="ach-row"><span class="ach-icon" id="ach-icon-2">*</span><div class="ach-info"><span id="ach-name-2" class="ach-name">HALF MILLION</span><span id="ach-desc-2" class="ach-desc">Score 500,000 points</span></div></div>
+    <div class="ach-row"><span class="ach-icon" id="ach-icon-3">^</span><div class="ach-info"><span id="ach-name-3" class="ach-name">MILLIONAIRE</span><span id="ach-desc-3" class="ach-desc">Score 1,000,000 points</span></div></div>
+    <div class="ach-row"><span class="ach-icon" id="ach-icon-4">!</span><div class="ach-info"><span id="ach-name-4" class="ach-name">COMBO STARTER</span><span id="ach-desc-4" class="ach-desc">Reach a 5x combo</span></div></div>
+    <div class="ach-row"><span class="ach-icon" id="ach-icon-5">~</span><div class="ach-info"><span id="ach-name-5" class="ach-name">COMBO KING</span><span id="ach-desc-5" class="ach-desc">Reach the max multiplier</span></div></div>
+    <div class="ach-row"><span class="ach-icon" id="ach-icon-6">@</span><div class="ach-info"><span id="ach-name-6" class="ach-name">MULTI MAYHEM</span><span id="ach-desc-6" class="ach-desc">Trigger multiball</span></div></div>
+    <div class="ach-row"><span class="ach-icon" id="ach-icon-7">*</span><div class="ach-info"><span id="ach-name-7" class="ach-name">WIZARD!</span><span id="ach-desc-7" class="ach-desc">Activate Wizard Mode</span></div></div>
   </div>
   <div id="ach-back-btn" class="ach-back-btn" cursor="pointer">
     <span class="ach-back-text">BACK</span>

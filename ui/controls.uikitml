@@ -18,7 +18,7 @@
   <view class="root">
     <text class="title">HOW TO PLAY</text>
 
-    <text class="section-title">🎮 VR CONTROLS</text>
+    <text class="section-title">> VR CONTROLS</text>
     <view class="row"><text class="key">Left Trigger</text><text class="action">Left Flipper</text></view>
     <view class="row"><text class="key">Right Trigger</text><text class="action">Right Flipper</text></view>
     <view class="row"><text class="key">A Button</text><text class="action">Launch Ball</text></view>
@@ -28,9 +28,9 @@
 
     <view class="divider" />
 
-    <text class="section-title">⌨️ KEYBOARD</text>
-    <view class="row"><text class="key">A / ←</text><text class="action">Left Flipper</text></view>
-    <view class="row"><text class="key">D / →</text><text class="action">Right Flipper</text></view>
+    <text class="section-title"> KEYBOARD</text>
+    <view class="row"><text class="key">A / <-</text><text class="action">Left Flipper</text></view>
+    <view class="row"><text class="key">D / -></text><text class="action">Right Flipper</text></view>
     <view class="row"><text class="key">Space (hold)</text><text class="action">Charge + Launch</text></view>
     <view class="row"><text class="key">Escape</text><text class="action">Pause</text></view>
     <view class="row"><text class="key">Q / E</text><text class="action">Nudge Left / Right</text></view>
@@ -38,33 +38,33 @@
 
     <view class="divider" />
 
-    <text class="section-title">🧲 MAGNA-SAVE</text>
-    <text class="tip">Press Z/C (keyboard) or flick thumbstick (VR) to activate a magnetic save near the outlanes. One use per side per ball — pulls the ball back toward center!</text>
+    <text class="section-title">+ MAGNA-SAVE</text>
+    <text class="tip">Press Z/C (keyboard) or flick thumbstick (VR) to activate a magnetic save near the outlanes. One use per side per ball - pulls the ball back toward center!</text>
 
     <view class="divider" />
 
-    <text class="section-title">🎯 SCORING</text>
+    <text class="section-title">> SCORING</text>
     <view class="score-row"><text class="score-item">Pop Bumpers</text><text class="score-val">100</text></view>
     <view class="score-row"><text class="score-item">Slingshots</text><text class="score-val">50</text></view>
     <view class="score-row"><text class="score-item">Drop Targets</text><text class="score-val">500</text></view>
     <view class="score-row"><text class="score-item">Spinners</text><text class="score-val">75</text></view>
     <view class="score-row"><text class="score-item">Ramp Shots</text><text class="score-val">1,000</text></view>
     <view class="score-row"><text class="score-item">All Targets Bonus</text><text class="score-val">5,000</text></view>
-    <view class="score-row"><text class="score-item">Skill Shot</text><text class="score-val">5,000 – 25,000</text></view>
+    <view class="score-row"><text class="score-item">Skill Shot</text><text class="score-val">5,000 - 25,000</text></view>
 
     <view class="divider" />
 
-    <text class="section-title">💡 TIPS</text>
-    <text class="tip">🎯 Aim plunger power in the green zone for a Skill Shot bonus!</text>
-    <text class="tip">🔒 Clear all targets to lock balls — 3 locks = MULTIBALL!</text>
-    <text class="tip">⚡ Complete all 5 mission types to trigger WIZARD MODE!</text>
-    <text class="tip">🌟 Build combos fast — multiplier decays after 2 seconds!</text>
-    <text class="tip">⚠️ Nudge carefully — 3 warnings = TILT!</text>
-    <text class="tip">🧲 Save Magna-Save for desperate moments near the outlanes!</text>
-    <text class="tip">🌀 Complete a full orbit (Left Ramp → Spinner → Right Ramp) for big points!</text>
-    <text class="tip">🔥 3 consecutive orbits triggers FRENZY MODE — all scoring x5!</text>
-    <text class="tip">⏱️ Try TIME ATTACK mode — unlimited balls, race the clock!</text>
-    <text class="tip">⭐ Hit score milestones for bonus awards (100K, 250K, 500K, 1M+)!</text>
+    <text class="section-title">* TIPS</text>
+    <text class="tip">> Aim plunger power in the green zone for a Skill Shot bonus!</text>
+    <text class="tip"># Clear all targets to lock balls - 3 locks = MULTIBALL!</text>
+    <text class="tip">! Complete all 5 mission types to trigger WIZARD MODE!</text>
+    <text class="tip">* Build combos fast - multiplier decays after 2 seconds!</text>
+    <text class="tip">! Nudge carefully - 3 warnings = TILT!</text>
+    <text class="tip">+ Save Magna-Save for desperate moments near the outlanes!</text>
+    <text class="tip">@ Complete a full orbit (Left Ramp -> Spinner -> Right Ramp) for big points!</text>
+    <text class="tip">~ 3 consecutive orbits triggers FRENZY MODE - all scoring x5!</text>
+    <text class="tip"> Try TIME ATTACK mode - unlimited balls, race the clock!</text>
+    <text class="tip">* Hit score milestones for bonus awards (100K, 250K, 500K, 1M+)!</text>
 
     <view id="controls-back-btn" class="btn"><text class="btn-text">BACK</text></view>
   </view>

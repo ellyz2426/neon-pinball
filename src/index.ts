@@ -1,5 +1,5 @@
 // Neon Pinball VR - Main Entry Point
-// Round 3: Wizard Mode, achievements, extra ball, dynamic intensity, enhanced visuals
+// Round 7: Fixed ECS game loop, relative UI paths, deploy-ready
 
 import {
   World,
@@ -36,14 +36,14 @@ import {
   ConeGeometry,
 } from '@iwsdk/core';
 
-import { PinballPhysics, BALL_RADIUS, HALF_W, HALF_L, TILT_ANGLE, CollisionEvent, BallState } from './physics';
+import { PinballPhysics, BALL_RADIUS, HALF_W, HALF_L, TILT_ANGLE } from './physics';
 import {
   createTable, createBumperMeshes, createFlipperMeshes, createPlunger,
   createTargetBank, createSpinnerMeshes, createRampMeshes, createOutlaneMeshes,
   createCaptiveBallMesh, createSkillShotIndicator, createVUKMesh,
   TABLE_Y, TABLE_TILT,
 } from './table';
-import { GameManager, GameState, IntensityLevel } from './game';
+import { GameManager } from './game';
 import { AudioManager } from './audio';
 import { createEnvironment, updateEnvironment, EnvState } from './environment';
 import { EffectsManager } from './effects';
@@ -51,19 +51,14 @@ import { UIManager } from './ui';
 import { XRInputHandler } from './xrinput';
 import { AchievementManager } from './achievements';
 import { getTheme, TableTheme, THEMES } from './themes';
-
-interface BallVisual {
-  mesh: Mesh;
-  glow: Mesh;
-  ballId: number;
-}
+import { PinballGameLoopSystem } from './gameloop';
 
 async function main() {
   const container = document.getElementById('scene-container') as HTMLDivElement;
 
   const world = await World.create(container, {
     xr: { offer: 'once' },
-    ...({ input: { canvasPointerEvents: true } } as any),
+    input: { canvasPointerEvents: true },
     features: {
       grabbing: false,
       locomotion: false,
@@ -73,14 +68,12 @@ async function main() {
     render: {
       near: 0.01,
       far: 200,
-      ...({
-        camera: {
-          position: [0, TABLE_Y + 0.7, HALF_L + 0.5],
-          lookAt: [0, TABLE_Y, -0.1],
-        },
-      } as any),
     },
   });
+
+  // Set initial camera position
+  world.camera.position.set(0, TABLE_Y + 0.7, HALF_L + 0.5);
+  world.camera.lookAt(new Vector3(0, TABLE_Y, -0.1));
 
   // Create environment and table
   const envState = createEnvironment(world.scene);
@@ -97,39 +90,6 @@ async function main() {
   const captiveBallMeshes = createCaptiveBallMesh(tableGroup);
   const skillShotIndicator = createSkillShotIndicator(tableGroup);
   const vukMeshes = createVUKMesh(tableGroup);
-
-  // Ball pool (multiball support)
-  const ballVisuals: BallVisual[] = [];
-
-  function createBallVisual(id: number): BallVisual {
-    const ballGeo = new SphereGeometry(BALL_RADIUS, 16, 12);
-    const ballMat = new MeshStandardMaterial({
-      color: new Color(0xffffff),
-      emissive: new Color(0x00ffff),
-      emissiveIntensity: 0.8,
-      metalness: 0.9,
-      roughness: 0.1,
-    });
-    const mesh = new Mesh(ballGeo, ballMat);
-    mesh.visible = false;
-    tableGroup.add(mesh);
-
-    const glowGeo = new SphereGeometry(BALL_RADIUS * 2, 8, 6);
-    const glowMat = new MeshBasicMaterial({
-      color: new Color(0x00ffff),
-      transparent: true,
-      opacity: 0.3,
-      blending: AdditiveBlending,
-    });
-    const glow = new Mesh(glowGeo, glowMat);
-    glow.visible = false;
-    tableGroup.add(glow);
-
-    return { mesh, glow, ballId: id };
-  }
-
-  // Create initial ball visual
-  ballVisuals.push(createBallVisual(0));
 
   // Initialize systems
   const physics = new PinballPhysics();
@@ -148,9 +108,15 @@ async function main() {
     if (savedTheme) game.currentThemeId = savedTheme;
   } catch {}
 
-  // Theme change handler: apply theme colors to table elements
+  // Dynamic lighting references
+  const tableLights = {
+    main: world.scene.children.find((c: any) => c instanceof PointLight && Math.abs(c.position.x) < 0.01) as PointLight | undefined,
+    left: world.scene.children.find((c: any) => c instanceof PointLight && c.position.x < -0.1) as PointLight | undefined,
+    right: world.scene.children.find((c: any) => c instanceof PointLight && c.position.x > 0.1) as PointLight | undefined,
+  };
+
+  // Theme change handler
   function applyTheme(theme: TableTheme): void {
-    // Update bumper colors
     const bumperIds = ['pop-center', 'pop-left', 'pop-right'];
     for (let i = 0; i < bumperIds.length; i++) {
       const meshSet = bumperMeshes.get(bumperIds[i]);
@@ -162,640 +128,42 @@ async function main() {
         }
       }
     }
-
-    // Update flipper colors
     (flipperMeshes.left.material as MeshStandardMaterial).color.setHex(theme.flipperColor);
     (flipperMeshes.left.material as MeshStandardMaterial).emissive.setHex(theme.flipperEmissive);
     (flipperMeshes.right.material as MeshStandardMaterial).color.setHex(theme.flipperColor);
     (flipperMeshes.right.material as MeshStandardMaterial).emissive.setHex(theme.flipperEmissive);
-
-    // Update table lights
     if (tableLights.main) tableLights.main.color.setHex(theme.mainLightColor);
     if (tableLights.left) tableLights.left.color.setHex(theme.leftLightColor);
     if (tableLights.right) tableLights.right.color.setHex(theme.rightLightColor);
   }
 
-  ui.onThemeChange((theme) => {
-    applyTheme(theme);
-  });
-
-  // Apply initial theme
+  ui.onThemeChange((theme) => applyTheme(theme));
   applyTheme(getTheme(game.currentThemeId));
 
-  // Dynamic lighting references for intensity-reactive effects
-  const tableLights = {
-    main: world.scene.children.find((c: any) => c instanceof PointLight && Math.abs(c.position.x) < 0.01) as PointLight | undefined,
-    left: world.scene.children.find((c: any) => c instanceof PointLight && c.position.x < -0.1) as PointLight | undefined,
-    right: world.scene.children.find((c: any) => c instanceof PointLight && c.position.x > 0.1) as PointLight | undefined,
-  };
-
-  // Wizard mode visual state
-  let wizardPulseTime = 0;
-
-  // Keyboard state
-  const keys: Record<string, boolean> = {};
-  let plungerPower = 0;
-  let plungerCharging = false;
-
-  document.addEventListener('keydown', (e) => {
-    keys[e.code] = true;
-    if (e.code === 'Escape') {
-      if (game.state === 'playing' || game.state === 'plunger') {
-        game.setState('paused');
-      } else if (game.state === 'paused') {
-        game.setState('playing');
-      }
-    }
-    if (e.code === 'Space' && (game.state === 'plunger')) {
-      plungerCharging = true;
-    }
-    if (e.code === 'Space' && game.state === 'title') {
-      audio.init();
-      audio.resume();
-      audio.startAmbient();
-      game.startGame();
-      achievements.startGame();
-    }
-    // Magna-Save: Z = left, C = right
-    if (e.code === 'KeyZ' && game.state === 'playing') {
-      game.activateMagnaSave('left');
-    }
-    if (e.code === 'KeyC' && game.state === 'playing') {
-      game.activateMagnaSave('right');
-    }
+  // Register the proper ECS game loop system
+  world.registerSystem(PinballGameLoopSystem);
+  const gameLoop = world.getSystem(PinballGameLoopSystem)!;
+  gameLoop.setRefs({
+    physics,
+    game,
+    audio,
+    achievements,
+    effects,
+    ui,
+    xrInput,
+    tableGroup,
+    bumperMeshes,
+    flipperMeshes,
+    plungerMesh,
+    springMesh,
+    targetMeshes,
+    spinnerMeshes,
+    outlaneMeshes,
+    captiveBallMeshes,
+    vukMeshes,
+    tableLights,
+    envState,
   });
-
-  document.addEventListener('keyup', (e) => {
-    keys[e.code] = false;
-    if (e.code === 'Space' && plungerCharging) {
-      plungerCharging = false;
-      if (plungerPower > 0.05) {
-        const launchPower = plungerPower;
-        physics.launchBall(plungerPower);
-        audio.playLaunch();
-        game.setState('playing');
-        // Check skill shot
-        game.handleSkillShot(launchPower, physics.ball.x, physics.ball.z);
-      }
-      plungerPower = 0;
-    }
-  });
-
-  // Wire game events
-  game.onStateChange((state: GameState) => {
-    ui.showState(state);
-
-    if (state === 'plunger') {
-      physics.resetBall();
-      ensureBallVisual(physics.ball.id);
-      plungerPower = 0;
-      plungerCharging = false;
-    } else if (state === 'gameover') {
-      audio.playGameOver();
-      audio.stopMultiballMusic();
-      hideAllBalls();
-    } else if (state === 'title') {
-      hideAllBalls();
-      audio.stopAmbient();
-      physics.resetAllBalls();
-    }
-  });
-
-  game.onScore((_points: number, label: string, _x: number, _z: number) => {
-    if (label.includes('JACKPOT')) {
-      audio.playJackpot();
-      achievements.checkJackpot();
-    } else if (label.includes('BONUS')) {
-      audio.playCombo();
-    } else if (label.includes('LOCKED')) {
-      audio.playBallLock();
-    }
-    if (label.includes('SUPER JACKPOT')) {
-      audio.playSuperJackpot();
-      achievements.checkSuperJackpot();
-    }
-  });
-
-  game.onMessage((msg: string) => {
-    ui.showMessage(msg);
-    if (msg.includes('SAVED')) audio.playBallSaved();
-    if (msg.includes('MISSION COMPLETE')) {
-      audio.playMissionComplete();
-      // Find the completed mission type from the game
-      if (game.completedMissionTypes.size > 0) {
-        const lastType = Array.from(game.completedMissionTypes).pop();
-        if (lastType) achievements.checkMissionComplete(lastType);
-      }
-    }
-    if (msg.includes('SUPER RAMP')) achievements.checkSuperRamp();
-    if (msg.includes('EXTRA BALL')) achievements.checkExtraBall();
-  });
-
-  game.onMultiball((active: boolean, count: number) => {
-    if (active) {
-      audio.playMultiballStart();
-      achievements.checkMultiball();
-      // Spawn extra balls
-      const positions = [
-        { x: -0.15, z: -0.2, vx: 0.3, vz: 0.5 },
-        { x: 0.15, z: -0.2, vx: -0.3, vz: 0.5 },
-        { x: 0, z: -0.3, vx: 0.1, vz: 0.8 },
-      ];
-      for (let i = 0; i < count - 1 && i < positions.length; i++) {
-        const p = positions[i];
-        const b = physics.spawnExtraBall(p.x, p.z, p.vx, p.vz);
-        ensureBallVisual(b.id);
-      }
-    } else {
-      audio.stopMultiballMusic();
-      cleanupInactiveBalls();
-    }
-  });
-
-  game.onWizardMode((active: boolean) => {
-    if (active) {
-      achievements.checkWizardMode();
-      effects.spawnWizardBurst(0, 0); // Burst at center of table
-    }
-  });
-
-  game.onExtraBall(() => {
-    // Visual feedback handled by UI
-  });
-
-  // Wire magna-save
-  game.onMagnaSave((_side, active, _available) => {
-    if (active) {
-      audio.playMagnaSave();
-      achievements.checkMagnaSave();
-    }
-  });
-  game.onSkillShot((zone) => {
-    if (zone) {
-      audio.playSkillShot(zone.name as 'GOOD' | 'GREAT' | 'PERFECT');
-      achievements.checkSkillShot(zone.name);
-    }
-  });
-
-  // Wire match sequence
-  game.onMatch((_number, matched) => {
-    if (matched) {
-      audio.playMatchWin();
-    }
-  });
-
-  // Wire combo tier for achievements
-  game.onComboTier((tier) => {
-    if (tier) achievements.checkComboTier(tier);
-  });
-
-  // Wire captive ball for achievements
-  game.onCaptiveBall((hits) => {
-    achievements.checkCaptiveBall(hits);
-  });
-
-  // Wire bonus for achievements
-  game.onBonus((data) => {
-    achievements.checkBonusTotal(data.totalBonus);
-  });
-
-  // Target collision handling
-  const targetPositions = [-0.16, -0.08, 0, 0.08, 0.16];
-  const targetZ = -0.45;
-
-  // Spinner cooldown to prevent rapid-fire scoring
-  const spinnerCooldowns: Record<string, number> = {};
-
-  // Frame timer
-  let trailCounter = 0;
-  let time = 0;
-
-  function ensureBallVisual(ballId: number): BallVisual {
-    let bv = ballVisuals.find(v => v.ballId === ballId);
-    if (!bv) {
-      bv = createBallVisual(ballId);
-      ballVisuals.push(bv);
-    }
-    return bv;
-  }
-
-  function hideAllBalls(): void {
-    for (const bv of ballVisuals) {
-      bv.mesh.visible = false;
-      bv.glow.visible = false;
-    }
-  }
-
-  function cleanupInactiveBalls(): void {
-    const activeBallIds = new Set(physics.getActiveBalls().map(b => b.id));
-    for (const bv of ballVisuals) {
-      if (!activeBallIds.has(bv.ballId)) {
-        bv.mesh.visible = false;
-        bv.glow.visible = false;
-      }
-    }
-  }
-
-  // Dynamic intensity visual effects
-  function updateIntensityVisuals(dt: number): void {
-    const intensity = game.intensity;
-
-    // Adjust table light intensities based on game intensity
-    if (tableLights.main) {
-      const targetIntensity = intensity === 'frenzy' ? 2.5 : intensity === 'heated' ? 1.8 : intensity === 'normal' ? 1.4 : 1.2;
-      tableLights.main.intensity += (targetIntensity - tableLights.main.intensity) * dt * 3;
-    }
-
-    // Wizard mode visual pulse
-    if (game.wizardModeActive) {
-      wizardPulseTime += dt * 4;
-      const pulse = 0.5 + Math.sin(wizardPulseTime) * 0.5;
-
-      // Cycle rail colors during wizard mode
-      // This creates a visual "rainbow" effect on the playfield
-      if (tableLights.left) {
-        tableLights.left.color.setHSL((time * 0.3) % 1, 1, 0.5);
-        tableLights.left.intensity = 1.0 + pulse * 0.5;
-      }
-      if (tableLights.right) {
-        tableLights.right.color.setHSL(((time * 0.3) + 0.33) % 1, 1, 0.5);
-        tableLights.right.intensity = 0.8 + pulse * 0.4;
-      }
-    } else {
-      wizardPulseTime = 0;
-      // Reset to default colors
-      if (tableLights.left) {
-        tableLights.left.color.lerp(new Color(0xff00ff), dt * 2);
-        tableLights.left.intensity += (0.6 - tableLights.left.intensity) * dt * 2;
-      }
-      if (tableLights.right) {
-        tableLights.right.color.lerp(new Color(0x00ff88), dt * 2);
-        tableLights.right.intensity += (0.4 - tableLights.right.intensity) * dt * 2;
-      }
-    }
-
-    // Ball color changes during wizard mode
-    if (game.wizardModeActive) {
-      for (const bv of ballVisuals) {
-        if (bv.mesh.visible) {
-          const hue = (time * 0.5 + bv.ballId * 0.25) % 1;
-          (bv.mesh.material as MeshStandardMaterial).emissive.setHSL(hue, 1, 0.5);
-          (bv.glow.material as MeshBasicMaterial).color.setHSL(hue, 1, 0.5);
-        }
-      }
-    }
-  }
-
-  // Game loop
-  const gameLoop = (world as any).createSystem({
-    name: 'PinballGameLoop',
-    update: (_ecs: any, delta: number) => {
-      const dt = Math.min(delta, 0.033);
-      time += dt;
-
-      xrInput.update(dt);
-      updateEnvironment(envState, time, dt);
-      game.update(dt);
-      ui.update(dt);
-      updateIntensityVisuals(dt);
-
-      // Update spinner cooldowns
-      for (const key of Object.keys(spinnerCooldowns)) {
-        spinnerCooldowns[key] -= dt;
-        if (spinnerCooldowns[key] <= 0) delete spinnerCooldowns[key];
-      }
-
-      if (game.state === 'playing' || game.state === 'plunger') {
-        // Flipper input
-        const leftFlip = keys['KeyA'] || keys['ArrowLeft'] || xrInput.leftFlipperPressed;
-        const rightFlip = keys['KeyD'] || keys['ArrowRight'] || xrInput.rightFlipperPressed;
-        physics.setFlipperActive('left', leftFlip);
-        physics.setFlipperActive('right', rightFlip);
-
-        // Plunger input
-        if (game.state === 'plunger') {
-          if (plungerCharging) {
-            plungerPower = Math.min(1, plungerPower + dt * 1.2);
-          }
-
-          if (xrInput.launchHeld) {
-            plungerPower = Math.min(1, plungerPower + dt * 1.2);
-          } else if (xrInput.launchPressed && plungerPower > 0.05) {
-            const launchPower = plungerPower;
-            physics.launchBall(plungerPower);
-            audio.playLaunch();
-            game.setState('playing');
-            game.handleSkillShot(launchPower, physics.ball.x, physics.ball.z);
-            plungerPower = 0;
-          }
-
-          plungerMesh.position.z = 0.47 + plungerPower * 0.03;
-          springMesh.scale.z = 1 - plungerPower * 0.5;
-          ui.updatePlungerPower(plungerPower);
-        }
-
-        // Nudge (with tilt mechanic)
-        const nudgeL = keys['KeyQ'] || xrInput.nudgeLeft;
-        const nudgeR = keys['KeyE'] || xrInput.nudgeRight;
-        if ((nudgeL || nudgeR) && !game.tilted) {
-          const allowed = game.handleNudge();
-          if (allowed) {
-            for (const b of physics.getActiveBalls()) {
-              if (nudgeL) b.vx -= 0.3 * dt;
-              if (nudgeR) b.vx += 0.3 * dt;
-            }
-          }
-        }
-
-        // Tilted = flippers disabled
-        if (game.tilted) {
-          physics.setFlipperActive('left', false);
-          physics.setFlipperActive('right', false);
-        }
-
-        // Magna-Save magnetic force on balls
-        const magnaSaveForce = game.getMagnaSaveForce();
-        if (magnaSaveForce && game.state === 'playing') {
-          for (const b of physics.getActiveBalls()) {
-            b.vx += magnaSaveForce.fx * dt;
-            b.vz += magnaSaveForce.fz * dt;
-          }
-        }
-
-        // Physics update (all balls)
-        if (game.state === 'playing') {
-          const events = physics.update(dt);
-          handleCollisionEvents(events);
-        }
-
-        // Check target collisions for all active balls
-        if (game.state === 'playing') {
-          for (const b of physics.getActiveBalls()) {
-            for (let i = 0; i < 5; i++) {
-              const tx = targetPositions[i];
-              const dx = b.x - tx;
-              const dz = b.z - targetZ;
-              const dist = Math.sqrt(dx * dx + dz * dz);
-              if (dist < BALL_RADIUS + 0.015 && game.targets[i].active) {
-                game.handleTargetHit(`target-${i}`, tx, targetZ);
-                audio.playTargetHit();
-                effects.spawnTargetHit(tx, targetZ, [0xff0044, 0xff8800, 0xffff00, 0x00ff88, 0x0088ff][i]);
-                b.vz = Math.abs(b.vz) * 0.8;
-
-                const mesh = targetMeshes.get(`target-${i}`);
-                if (mesh) {
-                  mesh.visible = false;
-                  const idx = i;
-                  const checkReset = () => {
-                    if (game.targets[idx].active) {
-                      const m = targetMeshes.get(`target-${idx}`);
-                      if (m) m.visible = true;
-                    } else {
-                      setTimeout(checkReset, 500);
-                    }
-                  };
-                  setTimeout(checkReset, 500);
-                }
-              }
-            }
-
-            // Ramp combo achievement tracking
-            if (game.rampCombo >= 5) {
-              achievements.checkRampCombo(game.rampCombo);
-            }
-
-            // Lane completion detection (ball passes through lane arrow zones)
-            if (b.x < -0.10 && b.x > -0.15 && b.z > 0.04 && b.z < 0.20 && b.vz < -0.3) {
-              game.handleLaneHit(0, b.x, b.z); // left lane
-            }
-            if (b.x > -0.02 && b.x < 0.02 && b.z > 0.06 && b.z < 0.17 && b.vz < -0.3) {
-              game.handleLaneHit(1, b.x, b.z); // center lane
-            }
-            if (b.x > 0.10 && b.x < 0.15 && b.z > 0.04 && b.z < 0.20 && b.vz < -0.3) {
-              game.handleLaneHit(2, b.x, b.z); // right lane
-            }
-          }
-        }
-
-        // Update all ball visuals
-        for (const b of physics.balls) {
-          const bv = ballVisuals.find(v => v.ballId === b.id);
-          if (!bv) continue;
-
-          if (b.active) {
-            bv.mesh.position.set(
-              b.x,
-              physics.getBallY(b, 0) - TABLE_Y,
-              b.z,
-            );
-            bv.mesh.visible = true;
-            bv.glow.position.copy(bv.mesh.position);
-            bv.glow.visible = true;
-
-            // Ball trail (primary ball only)
-            if (b === physics.ball) {
-              trailCounter += dt;
-              if (trailCounter > 0.03) {
-                trailCounter = 0;
-                const speed = Math.sqrt(b.vx ** 2 + b.vz ** 2);
-                if (speed > 0.3) {
-                  effects.addTrailPoint(b.x, physics.getBallY(b, 0) - TABLE_Y, b.z);
-                }
-              }
-            }
-
-            // Ball glow intensity
-            const speed = Math.sqrt(b.vx ** 2 + b.vz ** 2);
-            (bv.glow.material as MeshBasicMaterial).opacity = 0.2 + Math.min(0.5, speed * 0.15);
-
-            // Multiball: tint extra balls differently (unless wizard mode overrides)
-            if (!game.wizardModeActive && b !== physics.ball && game.multiballActive) {
-              (bv.mesh.material as MeshStandardMaterial).emissive.setHex(0xff00ff);
-            } else if (!game.wizardModeActive) {
-              (bv.mesh.material as MeshStandardMaterial).emissive.setHex(0x00ffff);
-            }
-          } else {
-            bv.mesh.visible = false;
-            bv.glow.visible = false;
-          }
-        }
-
-        // Update flipper visuals
-        flipperMeshes.left.rotation.y = -physics.leftFlipper.angle;
-        flipperMeshes.right.rotation.y = -(physics.rightFlipper.angle - Math.PI);
-
-        // Update spinner visuals
-        for (const spinner of physics.spinners) {
-          const sm = spinnerMeshes.get(spinner.id);
-          if (sm) {
-            sm.gate.rotation.y = spinner.spinAngle;
-            const intensity = Math.min(1, Math.abs(spinner.spinVel) / 20);
-            (sm.gate.material as MeshStandardMaterial).emissiveIntensity = 0.3 + intensity * 0.7;
-          }
-        }
-
-        // Update outlane kickback indicators
-        for (const outlane of physics.outlanes) {
-          const om = outlaneMeshes.get(outlane.id);
-          if (om) {
-            const color = outlane.kickbackActive ? 0x00ff88 : 0x440000;
-            (om.indicator.material as MeshBasicMaterial).color.setHex(color);
-            (om.indicator.material as MeshBasicMaterial).opacity = outlane.kickbackActive ? 0.7 : 0.2;
-          }
-        }
-
-        // Update captive ball visual positions
-        for (const cap of physics.captiveBalls) {
-          const cm = captiveBallMeshes.get(cap.id);
-          if (cm) {
-            cm.ball.position.set(cap.currentX, 0.013 + 0.003, cap.currentZ);
-          }
-        }
-
-        // Update VUK visuals
-        for (const vuk of physics.vuks) {
-          const vm = vukMeshes.get(vuk.id);
-          if (vm) {
-            // Pulse glow when cooldown is active (ball inside)
-            if (vuk.captured) {
-              (vm.glow.material as MeshBasicMaterial).opacity = 0.5 + Math.sin(time * 15) * 0.3;
-              (vm.scoop.material as MeshStandardMaterial).emissiveIntensity = 0.5 + Math.sin(time * 15) * 0.3;
-            } else {
-              (vm.glow.material as MeshBasicMaterial).opacity = 0.3 + Math.sin(time * 2) * 0.1;
-              (vm.scoop.material as MeshStandardMaterial).emissiveIntensity = 0.3;
-            }
-          }
-        }
-
-        // Update HUD
-        ui.updateHUD();
-      }
-
-      // Pause input
-      if (xrInput.pausePressed) {
-        if (game.state === 'playing' || game.state === 'plunger') {
-          game.setState('paused');
-        } else if (game.state === 'paused') {
-          game.setState('playing');
-        }
-      }
-
-      // VR magna-save input
-      if (xrInput.magnaSaveLeftPressed && game.state === 'playing') {
-        game.activateMagnaSave('left');
-      }
-      if (xrInput.magnaSaveRightPressed && game.state === 'playing') {
-        game.activateMagnaSave('right');
-      }
-
-      effects.update(dt);
-    },
-  });
-  world.registerSystem(gameLoop);
-
-  function handleCollisionEvents(events: CollisionEvent[]): void {
-    for (const event of events) {
-      switch (event.type) {
-        case 'bumper':
-          game.handleBumperHit(event.id || '', event.x, event.z);
-          audio.playBumperHit();
-          effects.spawnBumperHit(event.x, event.z, getBumperColor(event.id));
-          effects.flashBumper(bumperMeshes, event.id || '');
-          break;
-
-        case 'slingshot':
-          game.handleSlingshotHit(event.id || '', event.x, event.z);
-          audio.playSlingshotHit();
-          effects.spawnBumperHit(event.x, event.z, 0xffff00);
-          effects.flashBumper(bumperMeshes, event.id || '');
-          break;
-
-        case 'flipper':
-          game.handleFlipperHit(event.x, event.z);
-          audio.playFlipperClick();
-          break;
-
-        case 'wall':
-          if (event.force > 0.3) {
-            audio.playWallBounce();
-          }
-          break;
-
-        case 'drain': {
-          audio.playDrain();
-          effects.spawnDrain(event.x, event.z);
-          const result = game.handleDrain();
-          if (result.saved) {
-            physics.resetBall();
-          } else if (result.isMultiballDrain) {
-            cleanupInactiveBalls();
-          }
-          break;
-        }
-
-        case 'spinner': {
-          const sid = event.id || '';
-          if (!spinnerCooldowns[sid]) {
-            game.handleSpinnerHit(sid, event.x, event.z);
-            audio.playSpinnerHit();
-            effects.spawnBumperHit(event.x, event.z, 0xffff00);
-            spinnerCooldowns[sid] = 0.15;
-            // Orbit checkpoint 2: spinner acts as middle checkpoint
-            game.advanceOrbit(2, event.x, event.z);
-          }
-          break;
-        }
-
-        case 'ramp_enter':
-          audio.playRampEnter();
-          effects.spawnRampTrail(event.x, event.z);
-          break;
-
-        case 'ramp_exit': {
-          audio.playRampExit();
-          const triggeredMultiball = game.handleRampShot(event.id || '', event.x, event.z);
-          effects.spawnBumperHit(event.x, event.z, event.id === 'ramp-left' ? 0xff00ff : 0x00ff88);
-          // Orbit checkpoint: left ramp exit = checkpoint 1, right ramp exit = checkpoint 3
-          if (event.id === 'ramp-left') {
-            game.advanceOrbit(1, event.x, event.z);
-          } else if (event.id === 'ramp-right') {
-            game.advanceOrbit(3, event.x, event.z);
-          }
-          break;
-        }
-
-        case 'kickback':
-          game.handleKickback(event.id || '', event.x, event.z);
-          audio.playKickback();
-          effects.spawnBumperHit(event.x, event.z, 0x00ff88);
-          break;
-
-        case 'captive_ball':
-          game.handleCaptiveBallHit(event.x, event.z);
-          audio.playCaptiveBall();
-          effects.spawnBumperHit(event.x, event.z, 0x4400ff);
-          break;
-
-        case 'vuk':
-          game.handleVUKHit(event.x, event.z);
-          audio.playRampEnter();  // Reuse ramp enter sound for VUK capture
-          effects.spawnBumperHit(event.x, event.z, 0xff8800);
-          break;
-
-        case 'outlane':
-          break;
-      }
-    }
-  }
-
-  function getBumperColor(id?: string): number {
-    switch (id) {
-      case 'pop-center': return 0xff00ff;
-      case 'pop-left': return 0xff8800;
-      case 'pop-right': return 0x00ff88;
-      default: return 0x00ffff;
-    }
-  }
 }
 
 main().catch(console.error);

@@ -30,7 +30,7 @@
   }
 </style>
 <div class="ach-toast">
-  <span id="ach-toast-icon" class="ach-toast-icon">🏆</span>
+  <span id="ach-toast-icon" class="ach-toast-icon">*</span>
   <div class="ach-toast-info">
     <span class="ach-toast-label">ACHIEVEMENT UNLOCKED!</span>
     <span id="ach-toast-name" class="ach-toast-name">---</span>
