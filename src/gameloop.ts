@@ -92,11 +92,18 @@ export class PinballGameLoopSystem extends createSystem({}) {
   private tiltFlashTimer = 0;
   private tiltShakeIntensity = 0;
 
+  // Table shake state (separate from tilt shake)
+  private tableShakeTimer = 0;
+  private tableShakeIntensity = 0;
+
   // Current theme trail color (updated on theme change)
   private trailColor = 0x00ffff;
 
   // Ball alive time tracking
   private ballAliveTimer = 0;
+
+  // Jackpot flash state
+  private jackpotFlashTimer = 0;
 
   setRefs(refs: GameLoopRefs): void {
     this.refs = refs;
@@ -256,6 +263,17 @@ export class PinballGameLoopSystem extends createSystem({}) {
                       _points >= 5000 ? theme.accentPrimary :
                       theme.ballGlow;
         effects.spawnScorePopup(x, z, _points, color);
+      }
+
+      // Table shake on big scores
+      if (_points >= 10000) {
+        this.tableShakeTimer = 0.2;
+        this.tableShakeIntensity = Math.min(0.003, _points / 5000000);
+      }
+
+      // Jackpot flash
+      if (label.includes('JACKPOT')) {
+        this.jackpotFlashTimer = 0.4;
       }
     });
 
@@ -638,6 +656,27 @@ export class PinballGameLoopSystem extends createSystem({}) {
         achievements.checkBallAliveTime(this.ballAliveTimer);
       }
 
+      // === Table shake on big hits ===
+      if (this.tableShakeTimer > 0) {
+        this.tableShakeTimer -= dt;
+        const shake = this.tableShakeIntensity * (this.tableShakeTimer / 0.2);
+        this.refs.tableGroup.position.x = (Math.random() - 0.5) * shake * 2;
+        this.refs.tableGroup.position.z += (Math.random() - 0.5) * shake;
+      } else {
+        // Restore table position (Y stays at TABLE_Y)
+        this.refs.tableGroup.position.x = 0;
+      }
+
+      // === Jackpot flash — briefly boost all table lights ===
+      if (this.jackpotFlashTimer > 0) {
+        this.jackpotFlashTimer -= dt;
+        const flash = Math.sin(this.jackpotFlashTimer * 25) > 0;
+        const tl = this.refs.tableLights;
+        if (tl.main) tl.main.intensity = flash ? 3.0 : 1.0;
+        if (tl.left) tl.left.intensity = flash ? 2.0 : 0.6;
+        if (tl.right) tl.right.intensity = flash ? 2.0 : 0.4;
+      }
+
       // === Dynamic camera tracking ===
       // Subtly follow the primary ball's position for more engaging gameplay
       if (game.state === 'playing' && !this.refs.world.xr?.session) {
@@ -877,6 +916,11 @@ export class PinballGameLoopSystem extends createSystem({}) {
           audio.playBumperHit(event.id);
           effects.spawnBumperHit(event.x, event.z, this.getBumperColor(event.id));
           effects.flashBumper(bumperMeshes, event.id || '');
+          // Micro table shake on bumper hits
+          if (this.tableShakeTimer <= 0) {
+            this.tableShakeTimer = 0.08;
+            this.tableShakeIntensity = 0.001;
+          }
           break;
 
         case 'slingshot':
