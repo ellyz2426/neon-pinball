@@ -121,6 +121,9 @@ export class PinballGameLoopSystem extends createSystem({}) {
   // Environment theme tracking
   private lastEnvThemeId = '';
 
+  // Ball speed glow tracking
+  private ballSpeedGlowIntensity = 0;
+
   setRefs(refs: GameLoopRefs): void {
     this.refs = refs;
   }
@@ -620,6 +623,10 @@ export class PinballGameLoopSystem extends createSystem({}) {
           const speed = Math.sqrt(b.vx ** 2 + b.vz ** 2);
           (bv.glow.material as MeshBasicMaterial).opacity = 0.2 + Math.min(0.5, speed * 0.15);
 
+          // Ball glows bigger and brighter at high speed
+          const speedGlowScale = 1.0 + Math.min(0.4, speed * 0.1);
+          bv.glow.scale.setScalar(speedGlowScale * 2);
+
           if (!game.wizardModeActive && b !== physics.ball && game.multiballActive) {
             // Multiball differentiation: each extra ball gets a unique color
             const multiballColors = [0xff00ff, 0xff8800, 0x44ff00, 0x4488ff];
@@ -721,6 +728,16 @@ export class PinballGameLoopSystem extends createSystem({}) {
       if (game.state === 'playing' && physics.ball.active) {
         this.ballAliveTimer += dt;
         achievements.checkBallAliveTime(this.ballAliveTimer);
+      }
+
+      // === Combo timer visual warning ===
+      // When combo is active and timer is low, pulse the table lights as warning
+      if (game.comboCount >= 3 && game.comboTimer > 0 && game.comboTimer < 0.8) {
+        const urgency = 1.0 - (game.comboTimer / 0.8);
+        const flash = Math.sin(this.gameTime * (15 + urgency * 15)) > 0 ? 1 : 0;
+        const tl = this.refs.tableLights;
+        if (tl.left) tl.left.intensity += flash * urgency * 0.5;
+        if (tl.right) tl.right.intensity += flash * urgency * 0.5;
       }
 
       // === Table shake on big hits ===
@@ -913,20 +930,27 @@ export class PinballGameLoopSystem extends createSystem({}) {
 
       // === Idle bumper pulse animation ===
       // Bumpers gently pulse even when not being hit, inviting attention
+      // At higher difficulty, bumpers pulse faster and with a red tinge
+      const diffPulseSpeed = 1.5 + (game.difficultyLevel - 1) * 0.3;
+      const diffRedShift = Math.min(1, (game.difficultyLevel - 1) * 0.15);
       for (const [id, entry] of bumperMeshes) {
         if (id.startsWith('pop-')) {
           const bMat = entry.mesh.material as MeshStandardMaterial;
           const gMat = entry.glow.material as MeshBasicMaterial;
           // Offset phase per bumper for organic feel
           const offset = id === 'pop-center' ? 0 : id === 'pop-left' ? 2.1 : 4.2;
-          const pulse = 0.3 + Math.sin(this.gameTime * 1.5 + offset) * 0.1;
-          const glowPulse = 0.25 + Math.sin(this.gameTime * 1.5 + offset) * 0.08;
+          const pulse = 0.3 + Math.sin(this.gameTime * diffPulseSpeed + offset) * 0.1;
+          const glowPulse = 0.25 + Math.sin(this.gameTime * diffPulseSpeed + offset) * 0.08;
           // Don't override if bumper was just hit (flash handles that)
           if (bMat.emissiveIntensity < 1.0) {
             bMat.emissiveIntensity = pulse;
           }
           if (gMat.opacity < 0.5) {
             gMat.opacity = glowPulse;
+          }
+          // Shift glow color toward red at high difficulty
+          if (diffRedShift > 0 && gMat.opacity < 0.5) {
+            gMat.color.lerp(new Color(0xff2200), diffRedShift * dt * 2);
           }
         }
       }
@@ -1231,6 +1255,14 @@ export class PinballGameLoopSystem extends createSystem({}) {
           game.handleVUKHit(event.x, event.z);
           audio.playRampEnter();
           effects.spawnBumperHit(event.x, event.z, 0xff8800);
+          // VUK capture celebration — extra particles
+          for (let vi = 0; vi < 6; vi++) {
+            effects.spawnBumperHit(
+              event.x + (Math.random() - 0.5) * 0.02,
+              event.z + (Math.random() - 0.5) * 0.02,
+              [0xff8800, 0xffcc00, 0xff4400][vi % 3]
+            );
+          }
           break;
 
         case 'outlane':
