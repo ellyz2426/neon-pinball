@@ -1,5 +1,5 @@
 // Neon Pinball VR - Proper ECS Game Loop System
-// Round 8: Dynamic camera tracking, lane indicators, skill shot animation, ball lock visuals
+// Round 9: Score popups, theme-reactive trails, tilt warnings, lane SFX, intensity edge glow
 
 import {
   createSystem,
@@ -22,6 +22,7 @@ import { UIManager } from './ui';
 import { XRInputHandler } from './xrinput';
 import { AchievementManager } from './achievements';
 import { EnvState, updateEnvironment } from './environment';
+import { getTheme } from './themes';
 
 export interface BallVisual {
   mesh: Mesh;
@@ -84,6 +85,13 @@ export class PinballGameLoopSystem extends createSystem({}) {
 
   // Ball lock indicator animation
   private lockPulsePhase = 0;
+
+  // Tilt visual warning state
+  private tiltFlashTimer = 0;
+  private tiltShakeIntensity = 0;
+
+  // Current theme trail color (updated on theme change)
+  private trailColor = 0x00ffff;
 
   setRefs(refs: GameLoopRefs): void {
     this.refs = refs;
@@ -219,7 +227,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
       }
     });
 
-    game.onScore((_points: number, label: string) => {
+    game.onScore((_points: number, label: string, x: number, z: number) => {
       if (label.includes('JACKPOT')) {
         audio.playJackpot();
         achievements.checkJackpot();
@@ -231,6 +239,16 @@ export class PinballGameLoopSystem extends createSystem({}) {
       if (label.includes('SUPER JACKPOT')) {
         audio.playSuperJackpot();
         achievements.checkSuperJackpot();
+      }
+
+      // Score popup at hit location
+      if (_points >= 500 && (x !== 0 || z !== 0)) {
+        const theme = getTheme(game.currentThemeId);
+        const color = _points >= 50000 ? 0xffff00 :
+                      _points >= 10000 ? 0xff00ff :
+                      _points >= 5000 ? theme.accentPrimary :
+                      theme.ballGlow;
+        effects.spawnScorePopup(x, z, _points, color);
       }
     });
 
@@ -303,6 +321,27 @@ export class PinballGameLoopSystem extends createSystem({}) {
         if (lanes[i]) {
           this.laneFlashTimers[i] = 0.5;
         }
+      }
+      // Play lane completion sound when all lanes are lit
+      if (lanes.every(l => l)) {
+        audio.playLaneComplete();
+      }
+    });
+
+    // Tilt warning visual + audio
+    game.onTilt((tilted) => {
+      if (tilted) {
+        // Full tilt
+        audio.playTiltFull();
+        effects.spawnTiltWarning();
+        this.tiltFlashTimer = 0.8;
+        this.tiltShakeIntensity = 0.006;
+      } else {
+        // Warning
+        audio.playTiltWarning();
+        effects.spawnTiltWarning();
+        this.tiltFlashTimer = 0.3;
+        this.tiltShakeIntensity = 0.003;
       }
     });
 
@@ -485,7 +524,10 @@ export class PinballGameLoopSystem extends createSystem({}) {
               this.trailCounter = 0;
               const speed = Math.sqrt(b.vx ** 2 + b.vz ** 2);
               if (speed > 0.3) {
-                effects.addTrailPoint(b.x, physics.getBallY(b, 0) - TABLE_Y, b.z);
+                // Use theme-reactive trail color
+                const theme = getTheme(game.currentThemeId);
+                this.trailColor = theme.ballGlow;
+                effects.addTrailPoint(b.x, physics.getBallY(b, 0) - TABLE_Y, b.z, this.trailColor);
               }
             }
           }
@@ -571,6 +613,26 @@ export class PinballGameLoopSystem extends createSystem({}) {
           this.cameraSmoothZ += (0 - this.cameraSmoothZ) * dt * 3;
           cam.position.x = this.cameraSmoothX;
           cam.position.z = this.cameraBaseZ + this.cameraSmoothZ;
+        }
+
+        // === Tilt visual shake ===
+        if (this.tiltFlashTimer > 0) {
+          this.tiltFlashTimer -= dt;
+          const shake = this.tiltShakeIntensity * (this.tiltFlashTimer / 0.8);
+          cam.position.x += (Math.random() - 0.5) * shake * 2;
+          cam.position.y = this.cameraBaseY + (Math.random() - 0.5) * shake;
+
+          // Flash table lights red during tilt warning
+          const tl = this.refs.tableLights;
+          if (tl.main) {
+            const flash = Math.sin(this.tiltFlashTimer * 30) > 0 ? 2.5 : 0.5;
+            tl.main.intensity = flash;
+            tl.main.color.setHex(0xff2200);
+          }
+        } else {
+          this.tiltShakeIntensity = 0;
+          // Restore normal camera Y
+          cam.position.y = this.cameraBaseY;
         }
       }
 

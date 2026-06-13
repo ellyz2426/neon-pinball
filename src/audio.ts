@@ -1063,4 +1063,95 @@ export class AudioManager {
     osc.start(t);
     osc.stop(t + 0.2);
   }
+
+  // Lane completion: ascending 3-note arpeggio
+  playLaneComplete(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+
+    for (let i = 0; i < notes.length; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'triangle';
+      osc.frequency.value = notes[i];
+      const g = this.ctx.createGain();
+      const start = t + i * 0.06;
+      g.gain.setValueAtTime(0, start);
+      g.gain.linearRampToValueAtTime(0.12, start + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, start + 0.15);
+      osc.connect(g);
+      g.connect(this.sfxGain);
+      osc.start(start);
+      osc.stop(start + 0.15);
+    }
+  }
+
+  // Tilt warning: harsh buzzer descending
+  playTiltWarning(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(400, t);
+    osc.frequency.linearRampToValueAtTime(100, t + 0.3);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(0.2, t);
+    g.gain.linearRampToValueAtTime(0, t + 0.3);
+
+    const distortion = this.ctx.createWaveshaper ? undefined : undefined;
+    // Simple distortion via clipping
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = 600;
+    osc.connect(filter);
+    filter.connect(g);
+    g.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.3);
+  }
+
+  // Full tilt: longer, more aggressive
+  playTiltFull(): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    for (let i = 0; i < 3; i++) {
+      const osc = this.ctx.createOscillator();
+      osc.type = 'sawtooth';
+      const start = t + i * 0.15;
+      osc.frequency.setValueAtTime(300 - i * 80, start);
+      osc.frequency.linearRampToValueAtTime(60, start + 0.12);
+      const g = this.ctx.createGain();
+      g.gain.setValueAtTime(0.18, start);
+      g.gain.linearRampToValueAtTime(0, start + 0.12);
+      osc.connect(g);
+      g.connect(this.sfxGain);
+      osc.start(start);
+      osc.stop(start + 0.12);
+    }
+  }
+
+  // Score popup chime: quick tone scaled by score magnitude
+  playScoreChime(score: number): void {
+    if (!this.ctx || !this.sfxGain) return;
+    const t = this.ctx.currentTime;
+
+    // Higher pitch for bigger scores
+    const magnitude = Math.log10(Math.max(100, score));
+    const freq = 400 + magnitude * 150;
+    const vol = Math.min(0.12, 0.04 + magnitude * 0.02);
+
+    const osc = this.ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, t);
+    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, t + 0.08);
+    const g = this.ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+    osc.connect(g);
+    g.connect(this.sfxGain);
+    osc.start(t);
+    osc.stop(t + 0.15);
+  }
 }

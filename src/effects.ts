@@ -161,14 +161,14 @@ export class EffectsManager {
     }
   }
 
-  addTrailPoint(x: number, y: number, z: number): void {
+  addTrailPoint(x: number, y: number, z: number, color: number = 0x00ffff): void {
     if (this.trail.length >= this.maxTrail) {
       const old = this.trail.shift()!;
       this.tableGroup.remove(old.mesh);
     }
 
     const mat = new MeshBasicMaterial({
-      color: new Color(0x00ffff),
+      color: new Color(color),
       transparent: true,
       opacity: 0.6,
       blending: AdditiveBlending,
@@ -177,6 +177,100 @@ export class EffectsManager {
     mesh.position.set(x, y, z);
     this.tableGroup.add(mesh);
     this.trail.push({ mesh, life: 0.5 });
+  }
+
+  // Score popup: glowing orb sized by score value, floats up and fades
+  spawnScorePopup(x: number, z: number, score: number, color: number = 0x00ffff): void {
+    // Size based on score magnitude
+    const magnitude = Math.log10(Math.max(100, score)) - 1; // 2 for 100, 3 for 1000, etc
+    const radius = 0.006 + magnitude * 0.004;
+    const geo = new SphereGeometry(radius, 8, 6);
+
+    const mat = new MeshBasicMaterial({
+      color: new Color(color),
+      transparent: true,
+      opacity: 1.0,
+      blending: AdditiveBlending,
+    });
+    const mesh = new Mesh(geo, mat);
+    mesh.position.set(x, 0.04, z);
+    this.tableGroup.add(mesh);
+
+    const speed = 0.1 + magnitude * 0.03;
+    this.scorePopups.push({ mesh, vy: speed, life: 1.0 + magnitude * 0.2 });
+
+    // For big scores (jackpots, etc), spawn a pulse ring too
+    if (score >= 10000) {
+      this.spawnPulseRing(x, z, color);
+    }
+    // For mega scores spawn extra particles
+    if (score >= 50000) {
+      for (let i = 0; i < 6; i++) {
+        if (this.particles.length >= this.maxParticles) break;
+        const pmat = new MeshBasicMaterial({
+          color: new Color(color),
+          transparent: true,
+          opacity: 1,
+          blending: AdditiveBlending,
+        });
+        const pmesh = new Mesh(this.particleGeo, pmat);
+        pmesh.position.set(x, 0.04, z);
+        this.tableGroup.add(pmesh);
+        const angle = (i / 6) * Math.PI * 2;
+        this.particles.push({
+          mesh: pmesh,
+          vx: Math.cos(angle) * 0.2,
+          vy: 0.6 + Math.random() * 0.3,
+          vz: Math.sin(angle) * 0.2,
+          life: 0.6,
+          maxLife: 0.6,
+        });
+      }
+    }
+  }
+
+  // Tilt warning: brief red flash ring expanding from center
+  spawnTiltWarning(): void {
+    const geo = new CylinderGeometry(0.01, 0.01, 0.003, 16, 1, true);
+    const mat = new MeshBasicMaterial({
+      color: new Color(0xff0000),
+      transparent: true,
+      opacity: 1.0,
+      blending: AdditiveBlending,
+      side: DoubleSide,
+    });
+    const mesh = new Mesh(geo, mat);
+    mesh.position.set(0, 0.01, 0);
+    this.tableGroup.add(mesh);
+    this.pulseRings.push({
+      mesh,
+      life: 0.4,
+      maxLife: 0.4,
+      speed: 0.6,
+    });
+
+    // Red particle burst from center
+    for (let i = 0; i < 8; i++) {
+      if (this.particles.length >= this.maxParticles) break;
+      const pmat = new MeshBasicMaterial({
+        color: new Color(0xff0022),
+        transparent: true,
+        opacity: 1,
+        blending: AdditiveBlending,
+      });
+      const pmesh = new Mesh(this.particleGeo, pmat);
+      pmesh.position.set(0, 0.02, 0);
+      this.tableGroup.add(pmesh);
+      const angle = (i / 8) * Math.PI * 2;
+      this.particles.push({
+        mesh: pmesh,
+        vx: Math.cos(angle) * 0.5,
+        vy: 0.3,
+        vz: Math.sin(angle) * 0.5,
+        life: 0.3,
+        maxLife: 0.3,
+      });
+    }
   }
 
   setIntensity(level: IntensityLevel): void {

@@ -924,6 +924,9 @@ export class GameManager {
 
     if (this.tiltWarnings === this.tiltMaxWarnings - 1) {
       this.emitMessage('DANGER! One more nudge = TILT!');
+      for (const cb of this.tiltCallbacks) cb(false); // warning, not full tilt
+    } else if (this.tiltWarnings > 0) {
+      for (const cb of this.tiltCallbacks) cb(false); // early warning
     }
 
     return true; // nudge allowed
