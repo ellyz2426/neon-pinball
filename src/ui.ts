@@ -202,7 +202,7 @@ export class UIManager {
         const doc = this.getDoc(this.orbitPanel);
         if (doc) {
           const p = this.game.orbitProgress;
-          const dots = [p >= 1 ? '●' : '○', p >= 2 ? '●' : '○', p >= 3 ? '●' : '○'].join(' ');
+          const dots = [p >= 1 ? '*' : '-', p >= 2 ? '*' : '-', p >= 3 ? '*' : '-'].join(' ');
           setText(doc.getElementById('orbit-dots'), dots);
           setText(doc.getElementById('orbit-combo'), combo > 1 ? `x${combo}` : '');
         }
@@ -285,7 +285,7 @@ export class UIManager {
 
     for (let i = 0; i < 3; i++) {
       const modEl = doc.getElementById(`daily-mod-${i}`);
-      if (modEl) setText(modEl, i < challenge.modifiers.length ? `• ${challenge.modifiers[i]}` : '');
+      if (modEl) setText(modEl, i < challenge.modifiers.length ? `* ${challenge.modifiers[i]}` : '');
     }
 
     const bestEl = doc.getElementById('daily-best');
@@ -318,7 +318,7 @@ export class UIManager {
     };
     for (const [elId, themeId] of Object.entries(checks)) {
       const el = doc.getElementById(elId);
-      if (el) setText(el, current === themeId ? '✓' : '');
+      if (el) setText(el, current === themeId ? 'v' : '');
     }
   }
 
@@ -606,7 +606,7 @@ export class UIManager {
                 setText(dailyEl, beat ? 'DAILY CHALLENGE BEATEN!' : `Daily target: ${challenge.targetScore.toLocaleString()}`);
                 if (beat) this.achievements.checkDailyBeat();
               } else if (this.game.isTimeAttack) {
-                setText(dailyEl, `⏱️ TIME ATTACK ${this.game.timeAttackDuration}s`);
+                setText(dailyEl, `>> TIME ATTACK ${this.game.timeAttackDuration}s`);
               } else {
                 setText(dailyEl, '');
               }
@@ -730,7 +730,7 @@ export class UIManager {
 
       if (nameEl) setText(nameEl, ach.unlocked ? ach.name : '???');
       if (descEl) setText(descEl, ach.unlocked ? ach.description : 'Locked');
-      if (iconEl) setText(iconEl, ach.unlocked ? ach.icon : '🔒');
+      if (iconEl) setText(iconEl, ach.unlocked ? ach.icon : '?');
     }
   }
 
@@ -825,12 +825,12 @@ export class UIManager {
       if (el) setText(el, val);
     };
 
-    setEl('bonus-bumpers', `${data.bumperHits} × 50 = ${(data.bumperHits * 50).toLocaleString()}`);
-    setEl('bonus-ramps', `${data.rampShots} × 300 = ${(data.rampShots * 300).toLocaleString()}`);
-    setEl('bonus-spinners', `${data.spinnerHits} × 25 = ${(data.spinnerHits * 25).toLocaleString()}`);
-    setEl('bonus-missions', `${data.missions} × 5,000 = ${(data.missions * 5000).toLocaleString()}`);
+    setEl('bonus-bumpers', `${data.bumperHits} x 50 = ${(data.bumperHits * 50).toLocaleString()}`);
+    setEl('bonus-ramps', `${data.rampShots} x 300 = ${(data.rampShots * 300).toLocaleString()}`);
+    setEl('bonus-spinners', `${data.spinnerHits} x 25 = ${(data.spinnerHits * 25).toLocaleString()}`);
+    setEl('bonus-missions', `${data.missions} x 5,000 = ${(data.missions * 5000).toLocaleString()}`);
     setEl('bonus-combo', `x${data.maxCombo} = ${(data.maxCombo * 500).toLocaleString()}`);
-    setEl('bonus-jackpots', `${data.jackpots} × 2,000 = ${(data.jackpots * 2000).toLocaleString()}`);
+    setEl('bonus-jackpots', `${data.jackpots} x 2,000 = ${(data.jackpots * 2000).toLocaleString()}`);
     setEl('bonus-total', data.totalBonus.toLocaleString());
     setEl('bonus-tick', 'BONUS AWARDED');
 
@@ -916,8 +916,8 @@ export class UIManager {
       if (this.game.magnaSaveActive) {
         parts.push(`MAG ${this.game.magnaSaveSide?.toUpperCase()}`);
       } else {
-        if (this.game.magnaSaveLeft) parts.push('◀MAG');
-        if (this.game.magnaSaveRight) parts.push('MAG▶');
+        if (this.game.magnaSaveLeft) parts.push('<MAG');
+        if (this.game.magnaSaveRight) parts.push('MAG>');
       }
       setText(magEl, parts.join(' '));
     }
@@ -980,7 +980,7 @@ export class UIManager {
     if (!doc) return;
     const taEl = doc.getElementById('hud-multiball');
     if (taEl) {
-      setText(taEl, `⏱️ ${Math.ceil(this.game.timeAttackTimer)}s`);
+      setText(taEl, `>> ${Math.ceil(this.game.timeAttackTimer)}s`);
     }
   }
 

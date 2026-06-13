@@ -149,7 +149,7 @@ export function createEnvironment(scene: any): EnvState {
 }
 
 export function updateEnvironment(state: EnvState, time: number, dt: number, intensityMultiplier: number = 1.0): void {
-  // Animate decorations — spin faster at higher intensity
+  // Animate decorations -- spin faster at higher intensity
   const rotMul = intensityMultiplier;
   for (const d of state.decorations) {
     d.mesh.rotation.x += d.rotSpeed * rotMul * dt;
@@ -160,7 +160,7 @@ export function updateEnvironment(state: EnvState, time: number, dt: number, int
     dMat.opacity = 0.3 + (intensityMultiplier - 1) * 0.15;
   }
 
-  // Animate particles — move faster at higher intensity
+  // Animate particles -- move faster at higher intensity
   const speedMul = intensityMultiplier;
   for (const p of state.particles) {
     p.mesh.position.x += p.vx * speedMul * dt;
@@ -175,7 +175,7 @@ export function updateEnvironment(state: EnvState, time: number, dt: number, int
     if (p.mesh.position.z > 3) p.mesh.position.z = -3;
     if (p.mesh.position.z < -3) p.mesh.position.z = 3;
 
-    // Pulse opacity — brighter at higher intensity
+    // Pulse opacity -- brighter at higher intensity
     const mat = p.mesh.material as MeshBasicMaterial;
     const baseOpacity = 0.3 + (intensityMultiplier - 1) * 0.1;
     mat.opacity = baseOpacity + Math.sin(time * 2 + p.mesh.position.x * 5) * 0.2;

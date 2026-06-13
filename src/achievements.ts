@@ -26,48 +26,51 @@ export interface GameStats {
 }
 
 const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
-  { id: 'first_game', name: 'FIRST TILT', description: 'Play your first game', icon: '🎮', color: '#00ffff' },
-  { id: 'score_100k', name: 'SIX FIGURES', description: 'Score 100,000 points', icon: '💯', color: '#ffff00' },
-  { id: 'score_500k', name: 'HALF MILLION', description: 'Score 500,000 points', icon: '💎', color: '#ff00ff' },
-  { id: 'score_1m', name: 'MILLIONAIRE', description: 'Score 1,000,000 points', icon: '👑', color: '#ff8800' },
-  { id: 'combo_5x', name: 'COMBO STARTER', description: 'Reach a 5x combo', icon: '⚡', color: '#00ff88' },
-  { id: 'combo_10x', name: 'COMBO KING', description: 'Reach the max 10x multiplier', icon: '🔥', color: '#ff4400' },
-  { id: 'first_multiball', name: 'MULTI MAYHEM', description: 'Trigger multiball', icon: '🎱', color: '#4488ff' },
-  { id: 'first_mission', name: 'MISSION ACCEPTED', description: 'Complete a mission', icon: '🎯', color: '#00ff88' },
-  { id: 'all_missions', name: 'MISSION MASTER', description: 'Complete all 5 mission types', icon: '🏆', color: '#ffff00' },
-  { id: 'wizard_mode', name: 'WIZARD!', description: 'Activate Wizard Mode', icon: '🧙', color: '#ff00ff' },
-  { id: 'ramp_combo_5', name: 'RAMP RUNNER', description: 'Hit 5 ramp combos in a row', icon: '🎢', color: '#ff00ff' },
-  { id: 'super_ramp', name: 'SUPER RAMP', description: 'Trigger a Super Ramp bonus', icon: '🚀', color: '#00ffff' },
-  { id: 'jackpot_3', name: 'JACKPOT HUNTER', description: 'Hit 3 jackpots in one game', icon: '💰', color: '#ffff00' },
-  { id: 'no_drain', name: 'STEEL NERVES', description: 'Score 50,000 on ball 1', icon: '🛡️', color: '#00ff88' },
-  { id: 'extra_ball', name: 'EXTRA! EXTRA!', description: 'Earn your first extra ball', icon: '🌟', color: '#ff8800' },
-  { id: 'bumper_100', name: 'BUMPER BASH', description: 'Hit bumpers 100 times in one game', icon: '💥', color: '#ff4400' },
+  { id: 'first_game', name: 'FIRST TILT', description: 'Play your first game', icon: '*', color: '#00ffff' },
+  { id: 'score_100k', name: 'SIX FIGURES', description: 'Score 100,000 points', icon: '#', color: '#ffff00' },
+  { id: 'score_500k', name: 'HALF MILLION', description: 'Score 500,000 points', icon: 'D', color: '#ff00ff' },
+  { id: 'score_1m', name: 'MILLIONAIRE', description: 'Score 1,000,000 points', icon: 'K', color: '#ff8800' },
+  { id: 'combo_5x', name: 'COMBO STARTER', description: 'Reach a 5x combo', icon: '!', color: '#00ff88' },
+  { id: 'combo_10x', name: 'COMBO KING', description: 'Reach the max 10x multiplier', icon: 'F', color: '#ff4400' },
+  { id: 'first_multiball', name: 'MULTI MAYHEM', description: 'Trigger multiball', icon: 'M', color: '#4488ff' },
+  { id: 'first_mission', name: 'MISSION ACCEPTED', description: 'Complete a mission', icon: 'T', color: '#00ff88' },
+  { id: 'all_missions', name: 'MISSION MASTER', description: 'Complete all 5 mission types', icon: 'W', color: '#ffff00' },
+  { id: 'wizard_mode', name: 'WIZARD!', description: 'Activate Wizard Mode', icon: 'W', color: '#ff00ff' },
+  { id: 'ramp_combo_5', name: 'RAMP RUNNER', description: 'Hit 5 ramp combos in a row', icon: 'R', color: '#ff00ff' },
+  { id: 'super_ramp', name: 'SUPER RAMP', description: 'Trigger a Super Ramp bonus', icon: '^', color: '#00ffff' },
+  { id: 'jackpot_3', name: 'JACKPOT HUNTER', description: 'Hit 3 jackpots in one game', icon: 'J', color: '#ffff00' },
+  { id: 'no_drain', name: 'STEEL NERVES', description: 'Score 50,000 on ball 1', icon: 'S', color: '#00ff88' },
+  { id: 'extra_ball', name: 'EXTRA! EXTRA!', description: 'Earn your first extra ball', icon: 'E', color: '#ff8800' },
+  { id: 'bumper_100', name: 'BUMPER BASH', description: 'Hit bumpers 100 times in one game', icon: 'B', color: '#ff4400' },
   // Round 4 achievements
-  { id: 'skill_shot_perfect', name: 'SHARP SHOOTER', description: 'Land a Perfect skill shot', icon: '🎯', color: '#ff00ff' },
-  { id: 'skill_shot_3', name: 'SKILL MASTER', description: 'Land 3 skill shots in one game', icon: '🎪', color: '#ffff00' },
-  { id: 'super_jackpot', name: 'SUPER JACKPOT!', description: 'Hit the Super Jackpot', icon: '💎', color: '#ff00ff' },
-  { id: 'captive_frenzy', name: 'CAPTIVE MANIAC', description: 'Hit the captive ball 10 times', icon: '🔮', color: '#4400ff' },
-  { id: 'godlike_combo', name: 'GODLIKE', description: 'Reach GODLIKE combo tier', icon: '⚡', color: '#ff00ff' },
-  { id: 'bonus_50k', name: 'BONUS BONANZA', description: 'Earn 50,000+ end-of-ball bonus', icon: '🎰', color: '#ffff00' },
-  { id: 'games_10', name: 'REGULAR', description: 'Play 10 games', icon: '🏠', color: '#00ffff' },
-  { id: 'games_50', name: 'ADDICT', description: 'Play 50 games', icon: '🔥', color: '#ff4400' },
+  { id: 'skill_shot_perfect', name: 'SHARP SHOOTER', description: 'Land a Perfect skill shot', icon: 'T', color: '#ff00ff' },
+  { id: 'skill_shot_3', name: 'SKILL MASTER', description: 'Land 3 skill shots in one game', icon: '3', color: '#ffff00' },
+  { id: 'super_jackpot', name: 'SUPER JACKPOT!', description: 'Hit the Super Jackpot', icon: 'D', color: '#ff00ff' },
+  { id: 'captive_frenzy', name: 'CAPTIVE MANIAC', description: 'Hit the captive ball 10 times', icon: 'C', color: '#4400ff' },
+  { id: 'godlike_combo', name: 'GODLIKE', description: 'Reach GODLIKE combo tier', icon: '!', color: '#ff00ff' },
+  { id: 'bonus_50k', name: 'BONUS BONANZA', description: 'Earn 50,000+ end-of-ball bonus', icon: '$', color: '#ffff00' },
+  { id: 'games_10', name: 'REGULAR', description: 'Play 10 games', icon: 'H', color: '#00ffff' },
+  { id: 'games_50', name: 'ADDICT', description: 'Play 50 games', icon: 'F', color: '#ff4400' },
   // Round 5 achievements
-  { id: 'magna_save', name: 'MAGNETIC PULL', description: 'Use Magna-Save to save the ball', icon: '🧲', color: '#4488ff' },
-  { id: 'all_themes', name: 'FASHIONISTA', description: 'Try all 5 table themes', icon: '🎨', color: '#ff00ff' },
-  { id: 'daily_beat', name: 'DAILY CHAMPION', description: 'Beat a daily challenge target', icon: '📅', color: '#ffff00' },
-  { id: 'score_2m', name: 'DOUBLE MILLIONAIRE', description: 'Score 2,000,000 points', icon: '💰', color: '#ff8800' },
-  { id: 'time_attack_100k', name: 'SPEED DEMON', description: 'Score 100K in Time Attack', icon: '⏱️', color: '#ff4400' },
-  { id: 'orbit_complete', name: 'ORBIT KING', description: 'Complete a full orbit shot', icon: '🌀', color: '#00ccff' },
-  { id: 'orbit_3x', name: 'ORBITAL MADNESS', description: 'Hit 3 consecutive orbits', icon: '🌀', color: '#00ffff' },
-  { id: 'frenzy_trigger', name: 'FRENZY!', description: 'Trigger Frenzy bonus round', icon: '🔥', color: '#ff6600' },
-  { id: 'milestone_1m', name: 'MILESTONE MASTER', description: 'Reach the 1M score milestone', icon: '⭐', color: '#ffd700' },
-  { id: 'score_5m', name: 'FIVE MILLION', description: 'Score 5,000,000 points', icon: '🏆', color: '#ffd700' },
+  { id: 'magna_save', name: 'MAGNETIC PULL', description: 'Use Magna-Save to save the ball', icon: 'M', color: '#4488ff' },
+  { id: 'all_themes', name: 'FASHIONISTA', description: 'Try all 5 table themes', icon: 'P', color: '#ff00ff' },
+  { id: 'daily_beat', name: 'DAILY CHAMPION', description: 'Beat a daily challenge target', icon: 'D', color: '#ffff00' },
+  { id: 'score_2m', name: 'DOUBLE MILLIONAIRE', description: 'Score 2,000,000 points', icon: 'J', color: '#ff8800' },
+  { id: 'time_attack_100k', name: 'SPEED DEMON', description: 'Score 100K in Time Attack', icon: 'T', color: '#ff4400' },
+  { id: 'orbit_complete', name: 'ORBIT KING', description: 'Complete a full orbit shot', icon: 'O', color: '#00ccff' },
+  { id: 'orbit_3x', name: 'ORBITAL MADNESS', description: 'Hit 3 consecutive orbits', icon: 'O', color: '#00ffff' },
+  { id: 'frenzy_trigger', name: 'FRENZY!', description: 'Trigger Frenzy bonus round', icon: 'F', color: '#ff6600' },
+  { id: 'milestone_1m', name: 'MILESTONE MASTER', description: 'Reach the 1M score milestone', icon: '*', color: '#ffd700' },
+  { id: 'score_5m', name: 'FIVE MILLION', description: 'Score 5,000,000 points', icon: 'W', color: '#ffd700' },
   // Round 11 achievements
-  { id: 'lane_master', name: 'LANE MASTER', description: 'Complete all 3 lanes', icon: '🛣️', color: '#00ffff' },
-  { id: 'lane_perfectionist', name: 'LANE PERFECTIONIST', description: 'Complete all lanes 3 times in one game', icon: '✨', color: '#ffff00' },
-  { id: 'no_tilt', name: 'ZEN MASTER', description: 'Finish a game without any tilt warnings', icon: '🧘', color: '#00ff88' },
-  { id: 'ball_saved_3', name: 'GUARDIAN ANGEL', description: 'Ball saved 3 times in one game', icon: '😇', color: '#4488ff' },
-  { id: 'long_ball', name: 'MARATHON', description: 'Keep one ball alive for 60 seconds', icon: '⏳', color: '#ff8800' },
+  { id: 'lane_master', name: 'LANE MASTER', description: 'Complete all 3 lanes', icon: 'L', color: '#00ffff' },
+  { id: 'lane_perfectionist', name: 'LANE PERFECTIONIST', description: 'Complete all lanes 3 times in one game', icon: '!', color: '#ffff00' },
+  { id: 'no_tilt', name: 'ZEN MASTER', description: 'Finish a game without any tilt warnings', icon: 'Z', color: '#00ff88' },
+  { id: 'ball_saved_3', name: 'GUARDIAN ANGEL', description: 'Ball saved 3 times in one game', icon: 'G', color: '#4488ff' },
+  { id: 'long_ball', name: 'MARATHON', description: 'Keep one ball alive for 60 seconds', icon: 'H', color: '#ff8800' },
+  { id: 'difficulty_3', name: 'RISING STAR', description: 'Reach difficulty level 3', icon: 'A', color: '#ffaa00' },
+  { id: 'orbit_5', name: 'ORBITAL MASTER', description: 'Complete 5 orbits in one game', icon: 'O', color: '#00ffaa' },
+  { id: 'ramp_10', name: 'RAMP KING', description: 'Hit 10 ramp shots in one game', icon: 'R', color: '#ff00ff' },
 ];
 
 export class AchievementManager {
@@ -195,6 +198,18 @@ export class AchievementManager {
 
   checkBonusTotal(bonus: number): void {
     if (bonus >= 50000) this.unlock('bonus_50k');
+  }
+
+  checkDifficultyLevel(level: number): void {
+    if (level >= 3) this.unlock('difficulty_3');
+  }
+
+  checkOrbitCount(orbits: number): void {
+    if (orbits >= 5) this.unlock('orbit_5');
+  }
+
+  checkRampCount(ramps: number): void {
+    if (ramps >= 10) this.unlock('ramp_10');
   }
 
   checkGamesPlayed(): void {

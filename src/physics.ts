@@ -141,6 +141,9 @@ export class PinballPhysics {
   rightFlipper: FlipperState;
   collisionEvents: CollisionEvent[] = [];
 
+  // Progressive difficulty: adjustable gravity multiplier
+  gravityMultiplier = 1.0;
+
   // Plunger lane bounds
   readonly plungerLaneLeft = 0.20;
   readonly plungerLaneRight = HALF_W;
@@ -212,7 +215,7 @@ export class PinballPhysics {
     // Right wall (plunger lane outer, full height)
     this.walls.push({ x1: W, z1: -L, x2: W, z2: L, id: 'wall-right' });
 
-    // Bottom-left wall (angled toward drain) — with outlane gap
+    // Bottom-left wall (angled toward drain) -- with outlane gap
     this.walls.push({ x1: -W, z1: L, x2: -W + 0.02, z2: 0.50, id: 'wall-bl-outer' });
     // Left outlane wall (gap between outer wall and guide)
     this.walls.push({ x1: -W + 0.05, z1: 0.48, x2: -0.14, z2: 0.45, id: 'wall-bl-inner' });
@@ -265,7 +268,7 @@ export class PinballPhysics {
   }
 
   private initSpinners(): void {
-    // Center spinner — ball passes through and spins the gate
+    // Center spinner -- ball passes through and spins the gate
     this.spinners.push({
       x: 0, z: -0.06, id: 'spinner-center',
       width: 0.04, spinAngle: 0, spinVel: 0,
@@ -446,7 +449,7 @@ export class PinballPhysics {
 
   private updateBallPhysics(b: BallState, dt: number): void {
     if (!b.inPlunger) {
-      b.vz += GRAVITY * dt;
+      b.vz += GRAVITY * this.gravityMultiplier * dt;
     }
 
     const frictionFactor = 1 - FRICTION * dt;

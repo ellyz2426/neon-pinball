@@ -686,7 +686,7 @@ export function createVUKMesh(table: Group): Map<string, { scoop: Mesh; glow: Me
 }
 
 
-// Lane completion indicators — 3 glowing bars in the lane area
+// Lane completion indicators -- 3 glowing bars in the lane area
 export function createLaneIndicators(table: Group): Mesh[] {
   const indicators: Mesh[] = [];
   const laneData = [
@@ -714,7 +714,7 @@ export function createLaneIndicators(table: Group): Mesh[] {
   return indicators;
 }
 
-// Ball lock indicators — 3 glowing dots near the target bank
+// Ball lock indicators -- 3 glowing dots near the target bank
 export function createBallLockIndicators(table: Group): Mesh[] {
   const indicators: Mesh[] = [];
 
@@ -749,7 +749,7 @@ export function createBallLockIndicators(table: Group): Mesh[] {
   return indicators;
 }
 
-// Backglass score area — a glowing panel on the backbox
+// Backglass score area -- a glowing panel on the backbox
 export function createBackglassScore(table: Group): Mesh {
   const geo = new PlaneGeometry(0.18, 0.06);
   const mat = new MeshBasicMaterial({
@@ -795,7 +795,7 @@ export function createBackglassScore(table: Group): Mesh {
 }
 
 
-// Animated neon rings on table legs — returns references for game loop animation
+// Animated neon rings on table legs -- returns references for game loop animation
 export function createLegNeonRings(table: Group): Mesh[] {
   const rings: Mesh[] = [];
   const legPositions = [
@@ -806,7 +806,7 @@ export function createLegNeonRings(table: Group): Mesh[] {
   ];
 
   for (const [lx, lz] of legPositions) {
-    // Lower ring — animated
+    // Lower ring -- animated
     const ringGeo = new TorusGeometry(0.022, 0.004, 8, 16);
     const ringMat = new MeshBasicMaterial({
       color: new Color(0x00ffff),
@@ -825,7 +825,7 @@ export function createLegNeonRings(table: Group): Mesh[] {
 }
 
 
-// Ball saver indicator — glowing bar above the drain area
+// Ball saver indicator -- glowing bar above the drain area
 export function createBallSaverBar(table: Group): Mesh {
   const geo = new BoxGeometry(0.20, 0.003, 0.008);
   const mat = new MeshBasicMaterial({
@@ -842,7 +842,7 @@ export function createBallSaverBar(table: Group): Mesh {
 }
 
 
-// Ramp entry glow indicators — animated glow arches at ramp entrances
+// Ramp entry glow indicators -- animated glow arches at ramp entrances
 export function createRampEntryGlows(table: Group): Mesh[] {
   const glows: Mesh[] = [];
   const rampEntries = [
@@ -870,10 +870,10 @@ export function createRampEntryGlows(table: Group): Mesh[] {
   return glows;
 }
 
-// Orbit progress checkpoint indicators — 3 markers showing orbit shot progress
+// Orbit progress checkpoint indicators -- 3 markers showing orbit shot progress
 export function createOrbitCheckpoints(table: Group): Mesh[] {
   const checkpoints: Mesh[] = [];
-  // Orbit path: left ramp exit → upper lane → right ramp exit
+  // Orbit path: left ramp exit -> upper lane -> right ramp exit
   const cpData = [
     { x: -0.20, z: -0.38, color: 0xff00ff },   // checkpoint 1 (left ramp exit area)
     { x: 0, z: -0.06, color: 0xffff00 },        // checkpoint 2 (spinner/upper lane area)
@@ -899,7 +899,7 @@ export function createOrbitCheckpoints(table: Group): Mesh[] {
   return checkpoints;
 }
 
-// Mission progress bar — visual bar showing current mission completion
+// Mission progress bar -- visual bar showing current mission completion
 export function createMissionProgressBar(table: Group): Mesh {
   const geo = new BoxGeometry(0.16, 0.003, 0.006);
   const mat = new MeshBasicMaterial({

@@ -120,7 +120,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
   }
 
   init(): void {
-    // Keyboard listeners — refs accessed inside callbacks only (fired after setRefs)
+    // Keyboard listeners -- refs accessed inside callbacks only (fired after setRefs)
     document.addEventListener('keydown', (e) => {
       if (!this.refs) return;
       this.keys[e.code] = true;
@@ -139,7 +139,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
       if (e.code === 'Space' && game.state === 'title') {
         audio.init();
         audio.resume();
-        audio.startAmbient();
+        audio.startAmbient(game.currentThemeId);
         game.startGame();
         achievements.startGame();
       }
@@ -405,9 +405,18 @@ export class PinballGameLoopSystem extends createSystem({}) {
     game.onBonus((data) => {
       achievements.checkBonusTotal(data.totalBonus);
     });
+
+    game.onMilestone((_milestone, _reward) => {
+      // Big visual celebration: wizard burst + pulse ring
+      effects.spawnWizardBurst(0, -0.15);
+      this.tableShakeTimer = 0.3;
+      this.tableShakeIntensity = 0.004;
+      // Check difficulty achievement
+      achievements.checkDifficultyLevel(game.difficultyLevel);
+    });
   }
 
-  // The per-frame tick — called by IWSDK's ECS loop
+  // The per-frame tick -- called by IWSDK's ECS loop
   update(delta: number, time: number): void {
     if (!this.refs) return;
 
@@ -507,8 +516,9 @@ export class PinballGameLoopSystem extends createSystem({}) {
         }
       }
 
-      // Physics update
+      // Physics update (with progressive difficulty gravity)
       if (game.state === 'playing') {
+        physics.gravityMultiplier = game.gravityMultiplier;
         const events = physics.update(dt);
         this.handleCollisionEvents(events);
       }
@@ -686,7 +696,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
         this.refs.tableGroup.position.x = 0;
       }
 
-      // === Jackpot flash — briefly boost all table lights ===
+      // === Jackpot flash -- briefly boost all table lights ===
       if (this.jackpotFlashTimer > 0) {
         this.jackpotFlashTimer -= dt;
         const flash = Math.sin(this.jackpotFlashTimer * 25) > 0;
@@ -938,16 +948,16 @@ export class PinballGameLoopSystem extends createSystem({}) {
           const cp = orbitCheckpoints[i];
           const cMat = cp.material as MeshBasicMaterial;
           if (i < game.orbitProgress) {
-            // Lit checkpoint — bright pulsing glow
+            // Lit checkpoint -- bright pulsing glow
             cMat.opacity = 0.6 + Math.sin(this.gameTime * 5 + i * 2) * 0.2;
             const scale = 1.2 + Math.sin(this.gameTime * 5 + i * 2) * 0.15;
             cp.scale.set(scale, 1, scale);
           } else if (i === game.orbitProgress && game.orbitProgress > 0) {
-            // Next checkpoint — subtle beckoning pulse
+            // Next checkpoint -- subtle beckoning pulse
             cMat.opacity = 0.25 + Math.sin(this.gameTime * 3) * 0.15;
             cp.scale.set(1.1, 1, 1.1);
           } else {
-            // Unlit — dim
+            // Unlit -- dim
             cMat.opacity = 0.08;
             cp.scale.set(1, 1, 1);
           }
@@ -1161,6 +1171,8 @@ export class PinballGameLoopSystem extends createSystem({}) {
           effects.spawnBumperHit(event.x, event.z, event.id === 'ramp-left' ? 0xff00ff : 0x00ff88);
           if (event.id === 'ramp-left') game.advanceOrbit(1, event.x, event.z);
           else if (event.id === 'ramp-right') game.advanceOrbit(3, event.x, event.z);
+          this.refs.achievements.checkRampCount(game.totalRampShots);
+          this.refs.achievements.checkOrbitCount(game.totalOrbits);
           break;
 
         case 'kickback':

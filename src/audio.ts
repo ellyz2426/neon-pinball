@@ -37,9 +37,19 @@ export class AudioManager {
     if (this.ctx?.state === 'suspended') this.ctx.resume();
   }
 
-  startAmbient(): void {
+  startAmbient(themeId?: string): void {
     if (!this.ctx || !this.musicGain) return;
     this.stopAmbient();
+
+    // Theme-reactive base frequencies
+    const themeFreqs: Record<string, { bass: number; pad: number; padType: OscillatorType }> = {
+      'neon-classic': { bass: 55, pad: 82.5, padType: 'triangle' },
+      'cyber-red': { bass: 65.41, pad: 98, padType: 'sawtooth' },
+      'ocean-blue': { bass: 49, pad: 73.5, padType: 'sine' },
+      'solar-flare': { bass: 61.74, pad: 92.5, padType: 'square' },
+      'toxic-green': { bass: 51.91, pad: 77.78, padType: 'triangle' },
+    };
+    const tf = themeFreqs[themeId || 'neon-classic'] || themeFreqs['neon-classic'];
 
     this.ambientGain = this.ctx.createGain();
     this.ambientGain.gain.value = 0.15;
@@ -47,7 +57,7 @@ export class AudioManager {
 
     this.ambientOsc = this.ctx.createOscillator();
     this.ambientOsc.type = 'sine';
-    this.ambientOsc.frequency.value = 55;
+    this.ambientOsc.frequency.value = tf.bass;
 
     const lfo = this.ctx.createOscillator();
     lfo.type = 'sine';
@@ -59,8 +69,8 @@ export class AudioManager {
     lfo.start();
 
     const pad = this.ctx.createOscillator();
-    pad.type = 'triangle';
-    pad.frequency.value = 82.5;
+    pad.type = tf.padType;
+    pad.frequency.value = tf.pad;
     const padGain = this.ctx.createGain();
     padGain.gain.value = 0.08;
     const padFilter = this.ctx.createBiquadFilter();
@@ -70,6 +80,16 @@ export class AudioManager {
     padFilter.connect(padGain);
     padGain.connect(this.musicGain);
     pad.start();
+
+    // Secondary harmony note for richer theme sound
+    const harmony = this.ctx.createOscillator();
+    harmony.type = 'sine';
+    harmony.frequency.value = tf.bass * 1.5; // fifth above
+    const harmGain = this.ctx.createGain();
+    harmGain.gain.value = 0.04;
+    harmony.connect(harmGain);
+    harmGain.connect(this.musicGain);
+    harmony.start();
 
     this.ambientOsc.connect(this.ambientGain);
     this.ambientOsc.start();

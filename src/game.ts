@@ -221,6 +221,11 @@ export class GameManager {
   readonly MILESTONES = [100000, 250000, 500000, 1000000, 2500000, 5000000];
   readonly MILESTONE_REWARDS = [5000, 15000, 50000, 100000, 250000, 500000];
 
+  // Progressive difficulty: game gets harder as score increases
+  difficultyLevel = 1;         // 1-5, increases with milestones
+  gravityMultiplier = 1.0;     // Ball falls faster at higher difficulty
+  drainSpeedBonus = 0;         // Extra drain speed at higher difficulty
+
   // Score values
   readonly BUMPER_SCORE = 100;
   readonly SLINGSHOT_SCORE = 50;
@@ -590,7 +595,7 @@ export class GameManager {
       // Charge super jackpot after 3 jackpots
       if (this.jackpotsHit >= 3 && !this.superJackpotCharged) {
         this.superJackpotCharged = true;
-        this.emitMessage('💥 SUPER JACKPOT CHARGED! Hit the ramp! 💥');
+        this.emitMessage('>> SUPER JACKPOT CHARGED! Hit the ramp! >>');
       }
     }
   }
@@ -714,7 +719,7 @@ export class GameManager {
       this.magnaSaveActive = false;
       this.magnaSaveSide = null;
       this.setState('plunger');
-      this.emitMessage(`⏱️ ${Math.ceil(this.timeAttackTimer)}s - KEEP GOING!`);
+      this.emitMessage(`>> ${Math.ceil(this.timeAttackTimer)}s - KEEP GOING!`);
       return { saved: true, isMultiballDrain: false };
     }
 
@@ -802,7 +807,7 @@ export class GameManager {
 
     // Grant wizard mode bonus
     this.score += this.WIZARD_MODE_BONUS;
-    this.emitMessage(`⚡ WIZARD MODE! ⚡ ALL SCORES x${this.wizardModeMultiplier}!`);
+    this.emitMessage(`>> WIZARD MODE! >> ALL SCORES x${this.wizardModeMultiplier}!`);
     this.emitMessage(`+${this.WIZARD_MODE_BONUS.toLocaleString()} WIZARD BONUS!`);
 
     for (const cb of this.wizardModeCallbacks) cb(true);
@@ -823,7 +828,7 @@ export class GameManager {
     if (this.extraBallAwarded) return; // Only one extra ball per game
     this.extraBallAwarded = true;
     this.extraBallPending = true;
-    this.emitMessage('🌟 EXTRA BALL EARNED! 🌟');
+    this.emitMessage('** EXTRA BALL EARNED! **');
     for (const cb of this.extraBallCallbacks) cb();
   }
 
@@ -994,7 +999,7 @@ export class GameManager {
     if (tierName !== this.currentComboTier) {
       this.currentComboTier = tierName;
       if (tierName) {
-        this.emitMessage(`🔥 ${tierName}!`);
+        this.emitMessage(`>> ${tierName}!`);
       }
       for (const cb of this.comboTierCallbacks) cb(tierName);
     }
@@ -1070,7 +1075,7 @@ export class GameManager {
     this.isPartyMode = true;
     this.maxBalls = 1;
     this.startGame();
-    this.emitMessage('🎉 PARTY MODE! 1 BALL, 2x SCORING! 🎉');
+    this.emitMessage('** PARTY MODE! 1 BALL, 2x SCORING! **');
   }
 
   // === Bonus Countdown ===
@@ -1127,7 +1132,7 @@ export class GameManager {
     const eff = this.getEffectiveMultiplier();
     const points = Math.floor(this.superJackpotValue * eff);
     this.addScore(points, 'SUPER JACKPOT!', x, z);
-    this.emitMessage(`💥 SUPER JACKPOT! +${points.toLocaleString()} 💥`);
+    this.emitMessage(`>> SUPER JACKPOT! +${points.toLocaleString()} >>`);
     this.superJackpotValue += 25000; // Progressive
     this.bumpIntensity(40);
     return true;
@@ -1250,7 +1255,7 @@ export class GameManager {
     this.isTimeAttack = true;  // Re-set after startGame resets it
     this.timeAttackActive = true;
     this.timeAttackTimer = duration;
-    this.emitMessage(`⏱️ TIME ATTACK! ${duration}s GO! ⏱️`);
+    this.emitMessage(`>> TIME ATTACK! ${duration}s GO! >>`);
   }
 
   getTimeAttackLeaderboard(): ScoreEntry[] {
@@ -1282,7 +1287,7 @@ export class GameManager {
     this.frenzyActive = true;
     this.frenzyTimer = this.frenzyDuration;
     this.bumpIntensity(40);
-    this.emitMessage('🔥 FRENZY MODE! ALL SCORES x5! 🔥');
+    this.emitMessage('>> FRENZY MODE! ALL SCORES x5! >>');
     for (const cb of this.frenzyCallbacks) cb(true, this.frenzyTimer);
   }
 
@@ -1294,7 +1299,7 @@ export class GameManager {
   }
 
   // === Orbit Shots ===
-  // Orbit = ball travels through 3 checkpoints in sequence (left ramp exit → upper lane → right ramp exit)
+  // Orbit = ball travels through 3 checkpoints in sequence (left ramp exit -> upper lane -> right ramp exit)
 
   advanceOrbit(checkpoint: number, x: number, z: number): void {
     if (checkpoint === this.orbitProgress + 1) {
@@ -1314,7 +1319,7 @@ export class GameManager {
         const points = Math.floor(baseOrbitScore * comboMultiplier * eff);
 
         this.addScore(points, `ORBIT x${comboMultiplier}!`, x, z);
-        this.emitMessage(`🌀 ORBIT COMPLETE x${comboMultiplier}! +${points.toLocaleString()} 🌀`);
+        this.emitMessage(`>> ORBIT COMPLETE x${comboMultiplier}! +${points.toLocaleString()} >>`);
         this.bumpIntensity(25);
 
         // 3 consecutive orbits triggers frenzy
@@ -1344,7 +1349,7 @@ export class GameManager {
           ? `${(milestone / 1000000).toFixed(0)}M`
           : `${(milestone / 1000).toFixed(0)}K`;
 
-        this.emitMessage(`⭐ ${milestoneStr} MILESTONE! +${reward.toLocaleString()} ⭐`);
+        this.emitMessage(`${milestoneStr} MILESTONE! +${reward.toLocaleString()}`);
         this.bumpIntensity(15);
 
         // Grant special rewards at certain milestones
@@ -1353,6 +1358,14 @@ export class GameManager {
         }
         if (milestone === 1000000 && !this.frenzyActive) {
           this.startFrenzy();
+        }
+
+        // Progressive difficulty: increase difficulty level
+        this.difficultyLevel = Math.min(5, this.milestonesReached.length + 1);
+        this.gravityMultiplier = 1.0 + (this.difficultyLevel - 1) * 0.08;
+        this.drainSpeedBonus = (this.difficultyLevel - 1) * 0.05;
+        if (this.difficultyLevel >= 3) {
+          this.emitMessage('DIFFICULTY UP! Faster ball!');
         }
 
         for (const cb of this.milestoneCallbacks) cb(milestone, reward);
