@@ -1,0 +1,164 @@
+{
+  "element": {
+    "type": "container",
+    "sourceTag": "div",
+    "children": [
+      {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [
+          "* MILESTONE *"
+        ],
+        "properties": {
+          "id": "ms-title",
+          "class": "ms-title"
+        },
+        "dataUid": "uid-2"
+      },
+      {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [
+          "100,000"
+        ],
+        "properties": {
+          "id": "ms-score",
+          "class": "ms-score"
+        },
+        "dataUid": "uid-3"
+      },
+      {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [
+          "+5,000 BONUS"
+        ],
+        "properties": {
+          "id": "ms-reward",
+          "class": "ms-reward"
+        },
+        "dataUid": "uid-4"
+      }
+    ],
+    "properties": {
+      "class": "ms-panel"
+    },
+    "dataUid": "uid-1"
+  },
+  "classes": {
+    "ms-panel": {
+      "content": {
+        "display": "flex",
+        "flexDirection": "column",
+        "alignItems": "center",
+        "padding": "1.2",
+        "backgroundColor": "rgba(255, 200, 0, 0.9)",
+        "borderColor": "#ffffff",
+        "borderWidth": "0.15",
+        "borderRadius": 0.8
+      }
+    },
+    "ms-title": {
+      "content": {
+        "fontSize": "2.5",
+        "color": "#ffffff",
+        "fontWeight": "bold"
+      }
+    },
+    "ms-score": {
+      "content": {
+        "fontSize": "2",
+        "color": "#ffffcc",
+        "fontWeight": "bold"
+      }
+    },
+    "ms-reward": {
+      "content": {
+        "fontSize": "1.5",
+        "color": "#ffffff"
+      }
+    }
+  },
+  "ranges": {
+    "ms-panel": {
+      "start": {
+        "line": 1,
+        "column": 2
+      },
+      "end": {
+        "line": 1,
+        "column": 11
+      }
+    },
+    "ms-title": {
+      "start": {
+        "line": 11,
+        "column": 2
+      },
+      "end": {
+        "line": 11,
+        "column": 11
+      }
+    },
+    "ms-score": {
+      "start": {
+        "line": 16,
+        "column": 2
+      },
+      "end": {
+        "line": 16,
+        "column": 11
+      }
+    },
+    "ms-reward": {
+      "start": {
+        "line": 21,
+        "column": 2
+      },
+      "end": {
+        "line": 21,
+        "column": 12
+      }
+    },
+    "uid-1": {
+      "start": {
+        "line": 26,
+        "column": 0
+      },
+      "end": {
+        "line": 30,
+        "column": 6
+      }
+    },
+    "uid-2": {
+      "start": {
+        "line": 27,
+        "column": 2
+      },
+      "end": {
+        "line": 27,
+        "column": 59
+      }
+    },
+    "uid-3": {
+      "start": {
+        "line": 28,
+        "column": 2
+      },
+      "end": {
+        "line": 28,
+        "column": 53
+      }
+    },
+    "uid-4": {
+      "start": {
+        "line": 29,
+        "column": 2
+      },
+      "end": {
+        "line": 29,
+        "column": 60
+      }
+    }
+  }
+}

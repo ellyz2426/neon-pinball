@@ -1,0 +1,200 @@
+{
+  "element": {
+    "type": "container",
+    "sourceTag": "div",
+    "children": [
+      {
+        "sourceTag": "span",
+        "type": "custom",
+        "children": [
+          "*"
+        ],
+        "properties": {
+          "id": "ach-toast-icon",
+          "class": "ach-toast-icon"
+        },
+        "dataUid": "uid-2"
+      },
+      {
+        "type": "container",
+        "sourceTag": "div",
+        "children": [
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "ACHIEVEMENT UNLOCKED!"
+            ],
+            "properties": {
+              "class": "ach-toast-label"
+            },
+            "dataUid": "uid-4"
+          },
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "---"
+            ],
+            "properties": {
+              "id": "ach-toast-name",
+              "class": "ach-toast-name"
+            },
+            "dataUid": "uid-5"
+          }
+        ],
+        "properties": {
+          "class": "ach-toast-info"
+        },
+        "dataUid": "uid-3"
+      }
+    ],
+    "properties": {
+      "class": "ach-toast"
+    },
+    "dataUid": "uid-1"
+  },
+  "classes": {
+    "ach-toast": {
+      "content": {
+        "display": "flex",
+        "flexDirection": "row",
+        "alignItems": "center",
+        "padding": "1.2",
+        "backgroundColor": "rgba(40, 40, 0, 0.9)",
+        "borderColor": "#ffff00",
+        "borderWidth": "0.12",
+        "borderRadius": 0.8,
+        "gap": "1"
+      }
+    },
+    "ach-toast-icon": {
+      "content": {
+        "fontSize": "2.5",
+        "color": "#ffffff"
+      }
+    },
+    "ach-toast-info": {
+      "content": {
+        "display": "flex",
+        "flexDirection": "column",
+        "gap": "0.2"
+      }
+    },
+    "ach-toast-label": {
+      "content": {
+        "fontSize": "1.2",
+        "color": "#ffff00"
+      }
+    },
+    "ach-toast-name": {
+      "content": {
+        "fontSize": "1.8",
+        "color": "#ffffff",
+        "fontWeight": "bold"
+      }
+    }
+  },
+  "ranges": {
+    "ach-toast": {
+      "start": {
+        "line": 1,
+        "column": 2
+      },
+      "end": {
+        "line": 1,
+        "column": 12
+      }
+    },
+    "ach-toast-icon": {
+      "start": {
+        "line": 12,
+        "column": 2
+      },
+      "end": {
+        "line": 12,
+        "column": 17
+      }
+    },
+    "ach-toast-info": {
+      "start": {
+        "line": 16,
+        "column": 2
+      },
+      "end": {
+        "line": 16,
+        "column": 17
+      }
+    },
+    "ach-toast-label": {
+      "start": {
+        "line": 21,
+        "column": 2
+      },
+      "end": {
+        "line": 21,
+        "column": 18
+      }
+    },
+    "ach-toast-name": {
+      "start": {
+        "line": 25,
+        "column": 2
+      },
+      "end": {
+        "line": 25,
+        "column": 17
+      }
+    },
+    "uid-1": {
+      "start": {
+        "line": 31,
+        "column": 0
+      },
+      "end": {
+        "line": 37,
+        "column": 6
+      }
+    },
+    "uid-2": {
+      "start": {
+        "line": 32,
+        "column": 2
+      },
+      "end": {
+        "line": 32,
+        "column": 59
+      }
+    },
+    "uid-3": {
+      "start": {
+        "line": 33,
+        "column": 2
+      },
+      "end": {
+        "line": 36,
+        "column": 8
+      }
+    },
+    "uid-4": {
+      "start": {
+        "line": 34,
+        "column": 4
+      },
+      "end": {
+        "line": 34,
+        "column": 62
+      }
+    },
+    "uid-5": {
+      "start": {
+        "line": 35,
+        "column": 4
+      },
+      "end": {
+        "line": 35,
+        "column": 63
+      }
+    }
+  }
+}
