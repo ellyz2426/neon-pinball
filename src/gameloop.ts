@@ -417,6 +417,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
     game.onComboTier((tier) => {
       if (tier) {
         achievements.checkComboTier(tier);
+        achievements.checkComboCount(game.comboCount);
         // Visual escalation based on combo tier
         const tierDef = COMBO_TIERS.find(t => t.name === tier);
         if (tierDef) {

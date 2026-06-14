@@ -96,6 +96,11 @@ const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
   { id: 'no_magna', name: 'PURIST', description: 'Win a game without using Magna-Save', icon: 'P', color: '#00ff88' },
   { id: 'ramp_20', name: 'RAMP LEGEND', description: 'Hit 20 ramp shots in one game', icon: 'R', color: '#ff4400' },
   { id: 'mission_streak', name: 'MISSION STREAK', description: 'Complete 3 missions in one game', icon: 'M', color: '#ffff00' },
+  // Round 37 achievements
+  { id: 'score_50m', name: 'FIFTY MILLION', description: 'Score 50,000,000 points', icon: 'L', color: '#ff00ff' },
+  { id: 'combo_40', name: 'BEYOND GODLIKE', description: 'Reach a combo of 40 hits', icon: '!', color: '#ff0044' },
+  { id: 'ball_180s', name: 'ETERNAL', description: 'Keep one ball alive for 180 seconds', icon: 'E', color: '#ffd700' },
+  { id: 'no_tilt_50k', name: 'STEADY HANDS', description: 'Score 50,000 without any tilt warnings', icon: 'S', color: '#00ff88' },
 ];
 
 export class AchievementManager {
@@ -244,6 +249,10 @@ export class AchievementManager {
     }
   }
 
+  checkComboCount(count: number): void {
+    if (count >= 40) this.unlock('combo_40');
+  }
+
   checkBonusTotal(bonus: number): void {
     if (bonus >= 50000) this.unlock('bonus_50k');
   }
@@ -316,6 +325,9 @@ export class AchievementManager {
     if (score >= 5000000) this.unlock('score_5m');
     if (score >= 10000000) this.unlock('score_10m');
     if (score >= 25000000) this.unlock('score_25m');
+    if (score >= 50000000) this.unlock('score_50m');
+    // Steady hands: 50k+ with no tilt warnings
+    if (score >= 50000 && this.tiltWarningsThisGame === 0) this.unlock('no_tilt_50k');
   }
 
   // Round 11 achievement checks
@@ -374,6 +386,7 @@ export class AchievementManager {
     }
     if (elapsed >= 60) this.unlock('long_ball');
     if (elapsed >= 120) this.unlock('ball_120s');
+    if (elapsed >= 180) this.unlock('ball_180s');
   }
 
   checkTargetBankCompletions(count: number): void {

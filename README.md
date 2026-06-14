@@ -77,13 +77,22 @@ Complete all 5 -> **Wizard Mode**. Complete 3 -> **Extra Ball**.
 - **Procedural audio** -- 30+ synthesized SFX, no audio files
 - **Theme-reactive ambient music** -- Different bass/pad tones per theme with harmony layer
 - **Dynamic intensity music** -- Background layers that build with gameplay (pulse/harmonic/bass layers)
-- **60 achievements** -- From "First Tilt" to "Twenty Five Million"
+- **64 achievements** -- From "First Tilt" to "Fifty Million" and "Beyond Godlike"
 - **Attract mode** -- Camera orbits the table with cycling rainbow lights on the title screen
 - **Camera view cycling** -- Press V to switch between Standard/Close/Overhead/Side views
 - **Ball saver drain gate** -- Glowing barrier appears across the drain when ball saver is active
 - **New high score celebration** -- Confetti burst and haptic feedback on new records
 - **Per-ball multiball trails** -- Each multiball ball leaves colored trails matching its unique color
 - **Enhanced stats** -- Tracks avg score, spinner hits, orbits, jackpots, drains, longest ball
+- **21 playfield inserts** -- Circular neon insert lights at scoring positions (bumpers, lanes, ramps, targets, orbits, spinners, drain)
+- **Insert animations** -- Flash on hit, jackpot pulse, drain warning, wizard mode rainbow cycle, attract mode light chase
+- **Playfield neon art** -- Geometric wireframe patterns: bumper diamond, flipper V-pattern, chevrons, border art
+- **Star rollovers** -- 4-pointed star markers at lane positions with rotation animation
+- **Combo meter bar** -- Physical side bar filling with combo tier colors (cyan through magenta)
+- **Multiplier ring** -- Table surface ring that scales and shifts color with current multiplier
+- **Rail glow tubes** -- Neon light tubes along inner rails pulsing with intensity
+- **Apron art** -- Chevron patterns and accent shapes above the flippers
+- **Theme-reactive art** -- Playfield art tints toward current theme accent color
 
 ### Controls
 
@@ -132,7 +141,7 @@ src/
   effects.ts      -- Particle effects with mesh pooling, trails, pulse rings
   ui.ts           -- PanelUI spatial panel management (21 panels)
   xrinput.ts      -- VR controller input mapping
-  achievements.ts -- 60 achievements + persistent stats
+  achievements.ts -- 64 achievements + persistent stats
   themes.ts       -- 5 table color themes + daily challenge generation
   environment.ts  -- Holodeck environment (grid, decorations, intensity-reactive particles)
 ui/
