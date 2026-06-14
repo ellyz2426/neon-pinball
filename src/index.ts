@@ -47,6 +47,7 @@ import {
   createPlungerLaneLights, createTableEdgeAccents, createDrainGate,
   createPlayfieldInserts, createPlayfieldArt, createStarRollovers,
   createComboMeter, createMultiplierRing,
+  createRailGlowTubes, createApronArt,
   TABLE_Y, TABLE_TILT,
 } from './table';
 import { GameManager } from './game';
@@ -114,6 +115,8 @@ async function main() {
   const starRollovers = createStarRollovers(tableGroup);
   const comboMeter = createComboMeter(tableGroup);
   const multiplierRing = createMultiplierRing(tableGroup);
+  const railGlowTubes = createRailGlowTubes(tableGroup);
+  const apronArt = createApronArt(tableGroup);
 
   // Initialize systems
   const physics = new PinballPhysics();
@@ -205,6 +208,8 @@ async function main() {
     starRollovers,
     comboMeter,
     multiplierRing,
+    railGlowTubes,
+    apronArt,
   });
 }
 

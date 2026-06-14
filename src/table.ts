@@ -1250,3 +1250,91 @@ export function createMultiplierRing(table: Group): Mesh {
   table.add(ring);
   return ring;
 }
+
+/** Inner rail glow tubes — neon light tubes running along the inner side rails */
+export function createRailGlowTubes(table: Group): Mesh[] {
+  const tubes: Mesh[] = [];
+  const tubeMat = new MeshBasicMaterial({
+    color: new Color(0x00ffff),
+    transparent: true,
+    opacity: 0.2,
+    blending: AdditiveBlending,
+  });
+
+  // Left inner rail tube
+  const leftGeo = new BoxGeometry(0.003, 0.015, PLAYFIELD_LENGTH * 0.7);
+  const leftTube = new Mesh(leftGeo, tubeMat.clone());
+  leftTube.position.set(-HALF_W + 0.01, RAIL_HEIGHT + 0.005, -0.04);
+  table.add(leftTube);
+  tubes.push(leftTube);
+
+  // Right inner rail tube (shorter, plunger lane side)
+  const rightGeo = new BoxGeometry(0.003, 0.015, PLAYFIELD_LENGTH * 0.5);
+  const rightTube = new Mesh(rightGeo, tubeMat.clone());
+  rightTube.position.set(HALF_W - 0.01, RAIL_HEIGHT + 0.005, -0.10);
+  table.add(rightTube);
+  tubes.push(rightTube);
+
+  // Top cross tube (behind bumpers)
+  const topGeo = new BoxGeometry(PLAYFIELD_WIDTH * 0.6, 0.015, 0.003);
+  const topTube = new Mesh(topGeo, tubeMat.clone());
+  topTube.position.set(0, RAIL_HEIGHT + 0.005, -0.42);
+  table.add(topTube);
+  tubes.push(topTube);
+
+  return tubes;
+}
+
+/** Apron art area above the flippers — decorative neon pattern */
+export function createApronArt(table: Group): Mesh[] {
+  const apronMeshes: Mesh[] = [];
+  const apronMat = new MeshBasicMaterial({
+    color: new Color(0xff00ff),
+    transparent: true,
+    opacity: 0.2,
+    blending: AdditiveBlending,
+    side: DoubleSide,
+  });
+
+  // Central chevron pointing up
+  const cGeo1 = new PlaneGeometry(0.08, 0.002);
+  const chevL = new Mesh(cGeo1, apronMat.clone());
+  chevL.rotation.x = -Math.PI / 2;
+  chevL.rotation.z = -0.4;
+  chevL.position.set(-0.03, 0.002, 0.36);
+  table.add(chevL);
+  apronMeshes.push(chevL);
+
+  const cGeo2 = new PlaneGeometry(0.08, 0.002);
+  const chevR = new Mesh(cGeo2, apronMat.clone());
+  chevR.rotation.x = -Math.PI / 2;
+  chevR.rotation.z = 0.4;
+  chevR.position.set(0.03, 0.002, 0.36);
+  table.add(chevR);
+  apronMeshes.push(chevR);
+
+  // Side accent triangles
+  const triMat = new MeshBasicMaterial({
+    color: new Color(0x00ffff),
+    transparent: true,
+    opacity: 0.15,
+    blending: AdditiveBlending,
+    side: DoubleSide,
+  });
+
+  const triGeoL = new PlaneGeometry(0.025, 0.04);
+  const triL = new Mesh(triGeoL, triMat.clone());
+  triL.rotation.x = -Math.PI / 2;
+  triL.position.set(-0.16, 0.002, 0.38);
+  table.add(triL);
+  apronMeshes.push(triL);
+
+  const triGeoR = new PlaneGeometry(0.025, 0.04);
+  const triR = new Mesh(triGeoR, triMat.clone());
+  triR.rotation.x = -Math.PI / 2;
+  triR.position.set(0.16, 0.002, 0.38);
+  table.add(triR);
+  apronMeshes.push(triR);
+
+  return apronMeshes;
+}

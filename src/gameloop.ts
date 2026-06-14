@@ -74,6 +74,8 @@ export interface GameLoopRefs {
   starRollovers: Mesh[];
   comboMeter: { fill: Mesh; border: Mesh; indicator: Mesh };
   multiplierRing: Mesh;
+  railGlowTubes: Mesh[];
+  apronArt: Mesh[];
 }
 
 export class PinballGameLoopSystem extends createSystem({}) {
@@ -1305,6 +1307,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
     this.updatePlayfieldInserts(dt);
     this.updateComboMeter(dt);
     this.updateMultiplierRing(dt);
+    this.updateRailGlowTubes(dt);
   }
 
   // Camera view presets: [posX, posY, posZ, lookX, lookY, lookZ]
@@ -1852,6 +1855,29 @@ export class PinballGameLoopSystem extends createSystem({}) {
       multiplierRing.scale.set(0.5, 0.5, 0.5);
       mat.opacity = 0.1;
       mat.color.setHex(0x444444);
+    }
+  }
+
+  /** Update rail glow tubes — pulse with intensity, react to theme */
+  private updateRailGlowTubes(dt: number): void {
+    const { railGlowTubes, game } = this.refs;
+    if (!railGlowTubes) return;
+
+    const baseOpacity = game.intensity === 'frenzy' ? 0.45 :
+                        game.intensity === 'heated' ? 0.35 :
+                        game.intensity === 'normal' ? 0.25 : 0.15;
+
+    for (let i = 0; i < railGlowTubes.length; i++) {
+      const tube = railGlowTubes[i];
+      const mat = tube.material as MeshBasicMaterial;
+      mat.opacity = baseOpacity + Math.sin(this.gameTime * 2 + i * 1.5) * 0.08;
+
+      // Wizard mode: rainbow tubes
+      if (game.wizardModeActive) {
+        const hue = ((this.gameTime * 0.3 + i * 0.15) % 1);
+        mat.color.setHSL(hue, 1, 0.5);
+        mat.opacity = 0.5 + Math.sin(this.gameTime * 4 + i) * 0.15;
+      }
     }
   }
 }
