@@ -1190,3 +1190,63 @@ export function createStarRollovers(table: Group): Mesh[] {
 
   return stars;
 }
+
+/** Combo meter bar on the table side — fills and changes color with combo tier */
+export function createComboMeter(table: Group): { fill: Mesh; border: Mesh; indicator: Mesh } {
+  const meterWidth = PLAYFIELD_LENGTH * 0.6;
+
+  // Border frame
+  const borderGeo = new BoxGeometry(0.006, 0.006, meterWidth + 0.008);
+  const borderMat = new MeshBasicMaterial({
+    color: new Color(0x00ffff),
+    transparent: true,
+    opacity: 0.4,
+  });
+  const border = new Mesh(borderGeo, borderMat);
+  border.position.set(-HALF_W - 0.025, 0.005, 0);
+  table.add(border);
+
+  // Fill bar (scales with combo progress)
+  const fillGeo = new BoxGeometry(0.004, 0.005, meterWidth);
+  const fillMat = new MeshBasicMaterial({
+    color: new Color(0x00ffff),
+    transparent: true,
+    opacity: 0.6,
+    blending: AdditiveBlending,
+  });
+  const fill = new Mesh(fillGeo, fillMat);
+  fill.position.set(-HALF_W - 0.025, 0.005, 0);
+  fill.scale.z = 0;
+  table.add(fill);
+
+  // Leading edge indicator (bright dot at the top of the fill)
+  const indGeo = new SphereGeometry(0.004, 8, 8);
+  const indMat = new MeshBasicMaterial({
+    color: new Color(0xffffff),
+    transparent: true,
+    opacity: 0,
+    blending: AdditiveBlending,
+  });
+  const indicator = new Mesh(indGeo, indMat);
+  indicator.position.set(-HALF_W - 0.025, 0.008, 0);
+  table.add(indicator);
+
+  return { fill, border, indicator };
+}
+
+/** Multiplier display ring on the table surface — grows with multiplier */
+export function createMultiplierRing(table: Group): Mesh {
+  const ringGeo = new RingGeometry(0.018, 0.022, 16);
+  const ringMat = new MeshBasicMaterial({
+    color: new Color(0xffff00),
+    transparent: true,
+    opacity: 0.3,
+    side: DoubleSide,
+    blending: AdditiveBlending,
+  });
+  const ring = new Mesh(ringGeo, ringMat);
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.set(0, 0.003, 0.10);
+  table.add(ring);
+  return ring;
+}

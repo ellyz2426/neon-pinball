@@ -72,6 +72,8 @@ export interface GameLoopRefs {
   playfieldInserts: PlayfieldInsert[];
   playfieldArt: NeonArtLine[];
   starRollovers: Mesh[];
+  comboMeter: { fill: Mesh; border: Mesh; indicator: Mesh };
+  multiplierRing: Mesh;
 }
 
 export class PinballGameLoopSystem extends createSystem({}) {
@@ -1301,6 +1303,8 @@ export class PinballGameLoopSystem extends createSystem({}) {
 
     effects.update(dt);
     this.updatePlayfieldInserts(dt);
+    this.updateComboMeter(dt);
+    this.updateMultiplierRing(dt);
   }
 
   // Camera view presets: [posX, posY, posZ, lookX, lookY, lookZ]
@@ -1770,6 +1774,84 @@ export class PinballGameLoopSystem extends createSystem({}) {
       const tintColor = new Color(artTint);
       baseColor.lerp(tintColor, 0.4);
       mat.color.copy(baseColor);
+    }
+  }
+
+  /** Update combo meter bar — fills and colors based on combo tier */
+  private updateComboMeter(dt: number): void {
+    const { comboMeter, game } = this.refs;
+    if (!comboMeter) return;
+
+    const { fill, border, indicator } = comboMeter;
+    const maxComboForMeter = 30; // godlike tier
+    const fillRatio = Math.min(1, game.comboCount / maxComboForMeter);
+
+    // Scale fill bar
+    fill.scale.z = fillRatio;
+
+    // Determine combo tier color
+    let tierColor = 0x00ffff;
+    for (let i = COMBO_TIERS.length - 1; i >= 0; i--) {
+      if (game.comboCount >= COMBO_TIERS[i].minCombo) {
+        tierColor = parseInt(COMBO_TIERS[i].color.replace('#', ''), 16);
+        break;
+      }
+    }
+
+    // Apply color to fill and border
+    const fillMat = fill.material as MeshBasicMaterial;
+    fillMat.color.setHex(tierColor);
+    fillMat.opacity = fillRatio > 0 ? 0.6 + Math.sin(this.gameTime * 4) * 0.15 : 0;
+
+    const borderMat = border.material as MeshBasicMaterial;
+    borderMat.color.setHex(tierColor);
+    borderMat.opacity = game.comboCount > 0 ? 0.5 : 0.2;
+
+    // Leading edge indicator
+    const indMat = indicator.material as MeshBasicMaterial;
+    if (fillRatio > 0) {
+      indMat.opacity = 0.7 + Math.sin(this.gameTime * 6) * 0.3;
+      indMat.color.setHex(tierColor);
+      // Position indicator at top of fill
+      const halfLength = 0.535 * 0.6;
+      indicator.position.z = -halfLength + fillRatio * halfLength * 2;
+    } else {
+      indMat.opacity = 0;
+    }
+
+    // Combo timer urgency: border flashes when combo is about to expire
+    if (game.comboCount >= 3 && game.comboTimer > 0 && game.comboTimer < 0.8) {
+      const urgency = 1 - game.comboTimer / 0.8;
+      borderMat.opacity = 0.5 + Math.sin(this.gameTime * 12) * 0.3 * urgency;
+    }
+  }
+
+  /** Update multiplier ring — grows with current multiplier */
+  private updateMultiplierRing(dt: number): void {
+    const { multiplierRing, game } = this.refs;
+    if (!multiplierRing) return;
+
+    const mat = multiplierRing.material as MeshBasicMaterial;
+    const mul = game.multiplier;
+
+    if (mul > 1) {
+      // Scale ring based on multiplier (up to 5x = full size)
+      const s = 0.5 + Math.min(mul / 5, 1) * 1.5;
+      multiplierRing.scale.set(s, s, s);
+      mat.opacity = 0.3 + Math.sin(this.gameTime * 3) * 0.15;
+
+      // Color shifts with multiplier level
+      if (mul >= 5) {
+        mat.color.setHex(0xff00ff); // Purple for 5x+
+      } else if (mul >= 3) {
+        mat.color.setHex(0xff4400); // Orange for 3-4x
+      } else {
+        mat.color.setHex(0xffff00); // Yellow for 2x
+      }
+    } else {
+      multiplierRing.scale.set(0.5, 0.5, 0.5);
+      mat.opacity = 0.1;
+      mat.color.setHex(0x444444);
     }
   }
 }
