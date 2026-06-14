@@ -986,3 +986,207 @@ export function createDrainGate(table: Group): Mesh {
   table.add(gate);
   return gate;
 }
+
+// ======================================================================
+// Round 35: Playfield inserts, table neon art, star rollovers
+// ======================================================================
+
+export interface PlayfieldInsert {
+  mesh: Mesh;
+  glow: Mesh;
+  id: string;
+  baseColor: number;
+  flashTimer: number;
+}
+
+/** Circular glowing insert lights at scoring positions — like real pinball inserts */
+export function createPlayfieldInserts(table: Group): PlayfieldInsert[] {
+  const inserts: PlayfieldInsert[] = [];
+
+  const insertData: { id: string; x: number; z: number; color: number; radius: number }[] = [
+    // Bumper ring inserts
+    { id: 'insert-bumper-c', x: 0, z: -0.12, color: 0xff00ff, radius: 0.012 },
+    { id: 'insert-bumper-l', x: -0.08, z: -0.04, color: 0xff00ff, radius: 0.012 },
+    { id: 'insert-bumper-r', x: 0.08, z: -0.04, color: 0xff00ff, radius: 0.012 },
+    // Lane rollovers
+    { id: 'insert-lane-l', x: -0.125, z: 0.24, color: 0x00ffff, radius: 0.008 },
+    { id: 'insert-lane-c', x: 0, z: 0.22, color: 0xffff00, radius: 0.008 },
+    { id: 'insert-lane-r', x: 0.125, z: 0.24, color: 0x00ff88, radius: 0.008 },
+    // Ramp entry inserts
+    { id: 'insert-ramp-l', x: -0.125, z: 0.02, color: 0xff00ff, radius: 0.010 },
+    { id: 'insert-ramp-r', x: 0.125, z: 0.02, color: 0x00ff88, radius: 0.010 },
+    // Target bank inserts (one per target)
+    { id: 'insert-target-1', x: -0.16, z: -0.28, color: 0xff0044, radius: 0.007 },
+    { id: 'insert-target-2', x: -0.08, z: -0.28, color: 0xff8800, radius: 0.007 },
+    { id: 'insert-target-3', x: 0, z: -0.28, color: 0xffff00, radius: 0.007 },
+    { id: 'insert-target-4', x: 0.08, z: -0.28, color: 0x00ff88, radius: 0.007 },
+    { id: 'insert-target-5', x: 0.16, z: -0.28, color: 0x0088ff, radius: 0.007 },
+    // Outlane danger inserts
+    { id: 'insert-outlane-l', x: -0.22, z: 0.44, color: 0xff4400, radius: 0.008 },
+    { id: 'insert-outlane-r', x: 0.22, z: 0.44, color: 0xff4400, radius: 0.008 },
+    // Jackpot position
+    { id: 'insert-jackpot', x: 0, z: -0.40, color: 0xffff00, radius: 0.014 },
+    // Orbit entry inserts
+    { id: 'insert-orbit-l', x: -0.22, z: -0.30, color: 0x0088ff, radius: 0.009 },
+    { id: 'insert-orbit-r', x: 0.22, z: -0.30, color: 0x0088ff, radius: 0.009 },
+    // Spinner inserts
+    { id: 'insert-spinner-l', x: -0.18, z: -0.10, color: 0x00ffff, radius: 0.008 },
+    { id: 'insert-spinner-r', x: 0.18, z: -0.10, color: 0x00ffff, radius: 0.008 },
+    // Flipper gap inserts (center drain warning)
+    { id: 'insert-center-drain', x: 0, z: 0.44, color: 0xff0044, radius: 0.010 },
+  ];
+
+  for (const d of insertData) {
+    // Main disc (slightly raised off playfield)
+    const discGeo = new CylinderGeometry(d.radius, d.radius, 0.001, 16);
+    const discMat = new MeshBasicMaterial({
+      color: new Color(d.color),
+      transparent: true,
+      opacity: 0.25,
+      blending: AdditiveBlending,
+    });
+    const disc = new Mesh(discGeo, discMat);
+    disc.position.set(d.x, 0.002, d.z);
+    table.add(disc);
+
+    // Outer glow ring
+    const ringGeo = new RingGeometry(d.radius * 0.8, d.radius * 1.3, 16);
+    const ringMat = new MeshBasicMaterial({
+      color: new Color(d.color),
+      transparent: true,
+      opacity: 0.12,
+      side: DoubleSide,
+      blending: AdditiveBlending,
+    });
+    const ring = new Mesh(ringGeo, ringMat);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(d.x, 0.0015, d.z);
+    table.add(ring);
+
+    inserts.push({
+      mesh: disc,
+      glow: ring,
+      id: d.id,
+      baseColor: d.color,
+      flashTimer: 0,
+    });
+  }
+
+  return inserts;
+}
+
+export interface NeonArtLine {
+  mesh: Mesh;
+  baseColor: number;
+}
+
+/** Geometric neon wireframe art on the playfield surface */
+export function createPlayfieldArt(table: Group): NeonArtLine[] {
+  const lines: NeonArtLine[] = [];
+  const artMat = () => new MeshBasicMaterial({
+    color: new Color(0x0044aa),
+    transparent: true,
+    opacity: 0.15,
+    blending: AdditiveBlending,
+    side: DoubleSide,
+  });
+
+  // Helper: create a thin line between two points on the playfield
+  function addLine(x1: number, z1: number, x2: number, z2: number, color: number): void {
+    const dx = x2 - x1;
+    const dz = z2 - z1;
+    const len = Math.sqrt(dx * dx + dz * dz);
+    const angle = Math.atan2(dx, dz);
+    const geo = new PlaneGeometry(0.002, len);
+    const mat = artMat();
+    mat.color.setHex(color);
+    const line = new Mesh(geo, mat);
+    line.rotation.x = -Math.PI / 2;
+    line.rotation.z = -angle;
+    line.position.set((x1 + x2) / 2, 0.0012, (z1 + z2) / 2);
+    table.add(line);
+    lines.push({ mesh: line, baseColor: color });
+  }
+
+  // Diamond connecting bumpers
+  addLine(0, -0.12, -0.08, -0.04, 0x4400aa);  // top to left
+  addLine(-0.08, -0.04, 0, 0.04, 0x4400aa);    // left to bottom
+  addLine(0, 0.04, 0.08, -0.04, 0x4400aa);     // bottom to right
+  addLine(0.08, -0.04, 0, -0.12, 0x4400aa);    // right to top
+
+  // V-pattern above flippers
+  addLine(-0.14, 0.38, 0, 0.32, 0x002288);     // left arm
+  addLine(0, 0.32, 0.14, 0.38, 0x002288);      // right arm
+
+  // Outer frame lines (subtle playfield border art)
+  addLine(-0.20, -0.45, -0.20, 0.35, 0x001155);   // left vertical
+  addLine(0.20, -0.45, 0.20, 0.35, 0x001155);     // right vertical
+  addLine(-0.20, -0.45, 0.20, -0.45, 0x001155);   // top horizontal
+
+  // Chevrons pointing down toward flippers
+  addLine(-0.10, 0.26, -0.04, 0.30, 0x003366);
+  addLine(-0.04, 0.30, -0.10, 0.34, 0x003366);
+  addLine(0.10, 0.26, 0.04, 0.30, 0x003366);
+  addLine(0.04, 0.30, 0.10, 0.34, 0x003366);
+
+  // Cross pattern at center
+  addLine(-0.04, -0.04, 0.04, -0.04, 0x003388);
+  addLine(0, -0.08, 0, 0, 0x003388);
+
+  return lines;
+}
+
+/** Star-shaped rollover indicators at lane positions */
+export function createStarRollovers(table: Group): Mesh[] {
+  const stars: Mesh[] = [];
+  const starPositions = [
+    { x: -0.125, z: 0.28, color: 0xff00ff },
+    { x: 0, z: 0.26, color: 0xffff00 },
+    { x: 0.125, z: 0.28, color: 0x00ff88 },
+  ];
+
+  for (const sp of starPositions) {
+    // 4-pointed star using two intersecting planes
+    const starGroup = new Group();
+
+    const bladeMat = new MeshBasicMaterial({
+      color: new Color(sp.color),
+      transparent: true,
+      opacity: 0.35,
+      side: DoubleSide,
+      blending: AdditiveBlending,
+    });
+
+    // Horizontal blade
+    const hGeo = new PlaneGeometry(0.016, 0.005);
+    const hBlade = new Mesh(hGeo, bladeMat.clone());
+    hBlade.rotation.x = -Math.PI / 2;
+    starGroup.add(hBlade);
+
+    // Vertical blade
+    const vGeo = new PlaneGeometry(0.005, 0.016);
+    const vBlade = new Mesh(vGeo, bladeMat.clone());
+    vBlade.rotation.x = -Math.PI / 2;
+    starGroup.add(vBlade);
+
+    // Diagonal blade 1
+    const d1Geo = new PlaneGeometry(0.014, 0.004);
+    const d1Blade = new Mesh(d1Geo, bladeMat.clone());
+    d1Blade.rotation.x = -Math.PI / 2;
+    d1Blade.rotation.z = Math.PI / 4;
+    starGroup.add(d1Blade);
+
+    // Diagonal blade 2
+    const d2Geo = new PlaneGeometry(0.014, 0.004);
+    const d2Blade = new Mesh(d2Geo, bladeMat.clone());
+    d2Blade.rotation.x = -Math.PI / 2;
+    d2Blade.rotation.z = -Math.PI / 4;
+    starGroup.add(d2Blade);
+
+    starGroup.position.set(sp.x, 0.002, sp.z);
+    table.add(starGroup);
+    stars.push(starGroup as unknown as Mesh);
+  }
+
+  return stars;
+}

@@ -16,6 +16,7 @@ import {
 
 import { PinballPhysics, BALL_RADIUS, CollisionEvent } from './physics';
 import { TABLE_Y } from './table';
+import type { PlayfieldInsert, NeonArtLine } from './table';
 import { GameManager, GameState, IntensityLevel, COMBO_TIERS } from './game';
 import { AudioManager } from './audio';
 import { EffectsManager } from './effects';
@@ -68,6 +69,9 @@ export interface GameLoopRefs {
   plungerLaneLights: Mesh[];
   tableEdgeAccents: Mesh[];
   drainGate: Mesh;
+  playfieldInserts: PlayfieldInsert[];
+  playfieldArt: NeonArtLine[];
+  starRollovers: Mesh[];
 }
 
 export class PinballGameLoopSystem extends createSystem({}) {
@@ -1289,6 +1293,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
     }
 
     effects.update(dt);
+    this.updatePlayfieldInserts(dt);
   }
 
   // Camera view presets: [posX, posY, posZ, lookX, lookY, lookZ]
@@ -1432,7 +1437,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
   }
 
   private handleCollisionEvents(events: CollisionEvent[]): void {
-    const { game, audio, effects, bumperMeshes, physics, achievements, xrInput } = this.refs;
+    const { game, audio, effects, bumperMeshes, physics, achievements, xrInput, playfieldInserts } = this.refs;
 
     for (const event of events) {
       switch (event.type) {
@@ -1442,6 +1447,8 @@ export class PinballGameLoopSystem extends createSystem({}) {
           effects.spawnBumperHit(event.x, event.z, this.getBumperColor(event.id));
           effects.flashBumper(bumperMeshes, event.id || '');
           xrInput.hapticPulse(HAPTIC_PATTERNS.bumperHit);
+          // Flash corresponding insert
+          this.flashInsert(playfieldInserts, event.id === 'pop-center' ? 'insert-bumper-c' : event.id === 'pop-left' ? 'insert-bumper-l' : 'insert-bumper-r');
           // Micro table shake on bumper hits
           if (this.tableShakeTimer <= 0) {
             this.tableShakeTimer = 0.08;
@@ -1494,6 +1501,8 @@ export class PinballGameLoopSystem extends createSystem({}) {
             game.advanceOrbit(2, event.x, event.z);
             achievements.checkSpinnerCount(game.totalSpinnerHits);
             xrInput.hapticPulse(HAPTIC_PATTERNS.spinnerHit);
+            // Flash spinner insert
+            this.flashInsert(playfieldInserts, event.x < 0 ? 'insert-spinner-l' : 'insert-spinner-r');
           }
           break;
         }
@@ -1502,6 +1511,8 @@ export class PinballGameLoopSystem extends createSystem({}) {
           audio.playRampEnter();
           effects.spawnRampTrail(event.x, event.z);
           xrInput.hapticPulse(HAPTIC_PATTERNS.rampShot);
+          // Flash ramp insert
+          this.flashInsert(playfieldInserts, event.id === 'ramp-left' ? 'insert-ramp-l' : 'insert-ramp-r');
           break;
 
         case 'ramp_exit':
@@ -1555,6 +1566,88 @@ export class PinballGameLoopSystem extends createSystem({}) {
       case 'pop-left': return 0xff8800;
       case 'pop-right': return 0x00ff88;
       default: return 0x00ffff;
+    }
+  }
+
+  /** Flash a playfield insert by id (bright pulse then fade) */
+  private flashInsert(inserts: PlayfieldInsert[], insertId: string): void {
+    for (const insert of inserts) {
+      if (insert.id === insertId) {
+        insert.flashTimer = 0.5;
+        break;
+      }
+    }
+  }
+
+  /** Update all playfield insert animations */
+  private updatePlayfieldInserts(dt: number): void {
+    const { playfieldInserts, playfieldArt, starRollovers, game } = this.refs;
+    if (!playfieldInserts) return;
+
+    // Animate inserts
+    for (const insert of playfieldInserts) {
+      if (insert.flashTimer > 0) {
+        insert.flashTimer -= dt;
+        const t = Math.max(0, insert.flashTimer);
+        const flash = t > 0.3 ? 1.0 : t / 0.3;
+        const mat = insert.mesh.material as MeshBasicMaterial;
+        const glowMat = insert.glow.material as MeshBasicMaterial;
+        mat.opacity = 0.25 + flash * 0.75;
+        glowMat.opacity = 0.12 + flash * 0.5;
+        // Slight scale pulse
+        const s = 1 + flash * 0.3;
+        insert.mesh.scale.set(s, 1, s);
+        insert.glow.scale.set(s, 1, s);
+      } else {
+        // Subtle idle pulse
+        const pulse = 0.25 + Math.sin(this.gameTime * 2 + playfieldInserts.indexOf(insert) * 0.5) * 0.05;
+        const mat = insert.mesh.material as MeshBasicMaterial;
+        mat.opacity = pulse;
+        insert.mesh.scale.set(1, 1, 1);
+        insert.glow.scale.set(1, 1, 1);
+      }
+    }
+
+    // Jackpot insert special handling: brighter when jackpot is ready
+    const jackpotInsert = playfieldInserts.find(i => i.id === 'insert-jackpot');
+    if (jackpotInsert && game.jackpotReady) {
+      const mat = jackpotInsert.mesh.material as MeshBasicMaterial;
+      const pulse = 0.5 + Math.sin(this.gameTime * 5) * 0.3;
+      mat.opacity = pulse;
+      const glowMat = jackpotInsert.glow.material as MeshBasicMaterial;
+      glowMat.opacity = pulse * 0.6;
+    }
+
+    // Outlane inserts flash when ball is near drain
+    const drainInsertL = playfieldInserts.find(i => i.id === 'insert-outlane-l');
+    const drainInsertR = playfieldInserts.find(i => i.id === 'insert-outlane-r');
+    const centerDrain = playfieldInserts.find(i => i.id === 'insert-center-drain');
+    if (game.state === 'playing' && this.ballVisuals.length > 0) {
+      const ball = this.refs.physics.balls[0];
+      if (ball && ball.z > 0.35) {
+        const urgency = Math.min(1, (ball.z - 0.35) / 0.2);
+        const flash = Math.sin(this.gameTime * 8) > 0 ? urgency : 0;
+        if (drainInsertL) (drainInsertL.mesh.material as MeshBasicMaterial).opacity = 0.25 + flash * 0.6;
+        if (drainInsertR) (drainInsertR.mesh.material as MeshBasicMaterial).opacity = 0.25 + flash * 0.6;
+        if (centerDrain) (centerDrain.mesh.material as MeshBasicMaterial).opacity = 0.25 + flash * 0.7;
+      }
+    }
+
+    // Animate star rollovers — gentle rotation
+    if (starRollovers) {
+      for (let i = 0; i < starRollovers.length; i++) {
+        const star = starRollovers[i];
+        star.rotation.y = this.gameTime * 0.5 + i * 2.094; // Each star offset 120 degrees
+      }
+    }
+
+    // Playfield art: subtle pulse with intensity
+    if (playfieldArt) {
+      const intensityMul = game.intensity === 'frenzy' ? 0.35 : game.intensity === 'heated' ? 0.25 : 0.15;
+      for (const line of playfieldArt) {
+        const mat = line.mesh.material as MeshBasicMaterial;
+        mat.opacity = intensityMul + Math.sin(this.gameTime * 1.5 + playfieldArt.indexOf(line) * 0.3) * 0.05;
+      }
     }
   }
 }

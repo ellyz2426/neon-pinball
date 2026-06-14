@@ -45,6 +45,7 @@ import {
   createLegNeonRings, createBallSaverBar,
   createRampEntryGlows, createOrbitCheckpoints, createMissionProgressBar,
   createPlungerLaneLights, createTableEdgeAccents, createDrainGate,
+  createPlayfieldInserts, createPlayfieldArt, createStarRollovers,
   TABLE_Y, TABLE_TILT,
 } from './table';
 import { GameManager } from './game';
@@ -107,6 +108,9 @@ async function main() {
   const plungerLaneLights = createPlungerLaneLights(tableGroup);
   const tableEdgeAccents = createTableEdgeAccents(tableGroup);
   const drainGate = createDrainGate(tableGroup);
+  const playfieldInserts = createPlayfieldInserts(tableGroup);
+  const playfieldArt = createPlayfieldArt(tableGroup);
+  const starRollovers = createStarRollovers(tableGroup);
 
   // Initialize systems
   const physics = new PinballPhysics();
@@ -193,6 +197,9 @@ async function main() {
     plungerLaneLights,
     tableEdgeAccents,
     drainGate,
+    playfieldInserts,
+    playfieldArt,
+    starRollovers,
   });
 }
 
