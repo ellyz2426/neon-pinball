@@ -69,13 +69,19 @@
   <div class="stat-row"><span class="stat-label">TOTAL GAMES</span><span id="stat-games" class="stat-value">0</span></div>
   <div class="stat-row"><span class="stat-label">BEST SCORE</span><span id="stat-best" class="stat-highlight">0</span></div>
   <div class="stat-row"><span class="stat-label">TOTAL SCORE</span><span id="stat-total" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">AVG SCORE</span><span id="stat-avg" class="stat-value">0</span></div>
   <div class="stat-row"><span class="stat-label">BEST COMBO</span><span id="stat-combo" class="stat-highlight">x1.0</span></div>
   <div class="stat-row"><span class="stat-label">BUMPER HITS</span><span id="stat-bumpers" class="stat-value">0</span></div>
   <div class="stat-row"><span class="stat-label">RAMP SHOTS</span><span id="stat-ramps" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">SPINNER HITS</span><span id="stat-spinners" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">ORBITS</span><span id="stat-orbits" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">JACKPOTS</span><span id="stat-jackpots" class="stat-highlight">0</span></div>
   <div class="stat-row"><span class="stat-label">MULTIBALLS</span><span id="stat-multi" class="stat-value">0</span></div>
   <div class="stat-row"><span class="stat-label">MISSIONS DONE</span><span id="stat-missions" class="stat-value">0</span></div>
   <div class="stat-row"><span class="stat-label">WIZARD MODES</span><span id="stat-wizard" class="stat-highlight">0</span></div>
   <div class="stat-row"><span class="stat-label">EXTRA BALLS</span><span id="stat-extraballs" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">TOTAL DRAINS</span><span id="stat-drains" class="stat-value">0</span></div>
+  <div class="stat-row"><span class="stat-label">LONGEST BALL</span><span id="stat-longest" class="stat-highlight">0s</span></div>
   <div class="stat-row"><span class="stat-label">PLAY TIME</span><span id="stat-time" class="stat-value">0h 0m</span></div>
   <div id="stats-back-btn" class="stats-back-btn" cursor="pointer">
     <span class="stats-back-text">BACK</span>

@@ -131,7 +131,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "BEST COMBO"
+              "AVG SCORE"
             ],
             "properties": {
               "class": "stat-label"
@@ -142,11 +142,11 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "x1.0"
+              "0"
             ],
             "properties": {
-              "id": "stat-combo",
-              "class": "stat-highlight"
+              "id": "stat-avg",
+              "class": "stat-value"
             },
             "dataUid": "uid-15"
           }
@@ -164,7 +164,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "BUMPER HITS"
+              "BEST COMBO"
             ],
             "properties": {
               "class": "stat-label"
@@ -175,11 +175,11 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "0"
+              "x1.0"
             ],
             "properties": {
-              "id": "stat-bumpers",
-              "class": "stat-value"
+              "id": "stat-combo",
+              "class": "stat-highlight"
             },
             "dataUid": "uid-18"
           }
@@ -197,7 +197,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "RAMP SHOTS"
+              "BUMPER HITS"
             ],
             "properties": {
               "class": "stat-label"
@@ -211,7 +211,7 @@
               "0"
             ],
             "properties": {
-              "id": "stat-ramps",
+              "id": "stat-bumpers",
               "class": "stat-value"
             },
             "dataUid": "uid-21"
@@ -230,7 +230,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "MULTIBALLS"
+              "RAMP SHOTS"
             ],
             "properties": {
               "class": "stat-label"
@@ -244,7 +244,7 @@
               "0"
             ],
             "properties": {
-              "id": "stat-multi",
+              "id": "stat-ramps",
               "class": "stat-value"
             },
             "dataUid": "uid-24"
@@ -263,7 +263,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "MISSIONS DONE"
+              "SPINNER HITS"
             ],
             "properties": {
               "class": "stat-label"
@@ -277,7 +277,7 @@
               "0"
             ],
             "properties": {
-              "id": "stat-missions",
+              "id": "stat-spinners",
               "class": "stat-value"
             },
             "dataUid": "uid-27"
@@ -296,7 +296,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "WIZARD MODES"
+              "ORBITS"
             ],
             "properties": {
               "class": "stat-label"
@@ -310,8 +310,8 @@
               "0"
             ],
             "properties": {
-              "id": "stat-wizard",
-              "class": "stat-highlight"
+              "id": "stat-orbits",
+              "class": "stat-value"
             },
             "dataUid": "uid-30"
           }
@@ -329,7 +329,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "EXTRA BALLS"
+              "JACKPOTS"
             ],
             "properties": {
               "class": "stat-label"
@@ -343,8 +343,8 @@
               "0"
             ],
             "properties": {
-              "id": "stat-extraballs",
-              "class": "stat-value"
+              "id": "stat-jackpots",
+              "class": "stat-highlight"
             },
             "dataUid": "uid-33"
           }
@@ -362,7 +362,7 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "PLAY TIME"
+              "MULTIBALLS"
             ],
             "properties": {
               "class": "stat-label"
@@ -373,10 +373,10 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
-              "0h 0m"
+              "0"
             ],
             "properties": {
-              "id": "stat-time",
+              "id": "stat-multi",
               "class": "stat-value"
             },
             "dataUid": "uid-36"
@@ -395,12 +395,210 @@
             "sourceTag": "span",
             "type": "custom",
             "children": [
+              "MISSIONS DONE"
+            ],
+            "properties": {
+              "class": "stat-label"
+            },
+            "dataUid": "uid-38"
+          },
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "0"
+            ],
+            "properties": {
+              "id": "stat-missions",
+              "class": "stat-value"
+            },
+            "dataUid": "uid-39"
+          }
+        ],
+        "properties": {
+          "class": "stat-row"
+        },
+        "dataUid": "uid-37"
+      },
+      {
+        "type": "container",
+        "sourceTag": "div",
+        "children": [
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "WIZARD MODES"
+            ],
+            "properties": {
+              "class": "stat-label"
+            },
+            "dataUid": "uid-41"
+          },
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "0"
+            ],
+            "properties": {
+              "id": "stat-wizard",
+              "class": "stat-highlight"
+            },
+            "dataUid": "uid-42"
+          }
+        ],
+        "properties": {
+          "class": "stat-row"
+        },
+        "dataUid": "uid-40"
+      },
+      {
+        "type": "container",
+        "sourceTag": "div",
+        "children": [
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "EXTRA BALLS"
+            ],
+            "properties": {
+              "class": "stat-label"
+            },
+            "dataUid": "uid-44"
+          },
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "0"
+            ],
+            "properties": {
+              "id": "stat-extraballs",
+              "class": "stat-value"
+            },
+            "dataUid": "uid-45"
+          }
+        ],
+        "properties": {
+          "class": "stat-row"
+        },
+        "dataUid": "uid-43"
+      },
+      {
+        "type": "container",
+        "sourceTag": "div",
+        "children": [
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "TOTAL DRAINS"
+            ],
+            "properties": {
+              "class": "stat-label"
+            },
+            "dataUid": "uid-47"
+          },
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "0"
+            ],
+            "properties": {
+              "id": "stat-drains",
+              "class": "stat-value"
+            },
+            "dataUid": "uid-48"
+          }
+        ],
+        "properties": {
+          "class": "stat-row"
+        },
+        "dataUid": "uid-46"
+      },
+      {
+        "type": "container",
+        "sourceTag": "div",
+        "children": [
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "LONGEST BALL"
+            ],
+            "properties": {
+              "class": "stat-label"
+            },
+            "dataUid": "uid-50"
+          },
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "0s"
+            ],
+            "properties": {
+              "id": "stat-longest",
+              "class": "stat-highlight"
+            },
+            "dataUid": "uid-51"
+          }
+        ],
+        "properties": {
+          "class": "stat-row"
+        },
+        "dataUid": "uid-49"
+      },
+      {
+        "type": "container",
+        "sourceTag": "div",
+        "children": [
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "PLAY TIME"
+            ],
+            "properties": {
+              "class": "stat-label"
+            },
+            "dataUid": "uid-53"
+          },
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
+              "0h 0m"
+            ],
+            "properties": {
+              "id": "stat-time",
+              "class": "stat-value"
+            },
+            "dataUid": "uid-54"
+          }
+        ],
+        "properties": {
+          "class": "stat-row"
+        },
+        "dataUid": "uid-52"
+      },
+      {
+        "type": "container",
+        "sourceTag": "div",
+        "children": [
+          {
+            "sourceTag": "span",
+            "type": "custom",
+            "children": [
               "BACK"
             ],
             "properties": {
               "class": "stats-back-text"
             },
-            "dataUid": "uid-38"
+            "dataUid": "uid-56"
           }
         ],
         "properties": {
@@ -408,7 +606,7 @@
           "class": "stats-back-btn",
           "cursor": "pointer"
         },
-        "dataUid": "uid-37"
+        "dataUid": "uid-55"
       }
     ],
     "properties": {
@@ -595,7 +793,7 @@
         "column": 0
       },
       "end": {
-        "line": 82,
+        "line": 88,
         "column": 6
       }
     },
@@ -716,7 +914,7 @@
       },
       "end": {
         "line": 71,
-        "column": 128
+        "column": 118
       }
     },
     "uid-14": {
@@ -726,17 +924,17 @@
       },
       "end": {
         "line": 71,
-        "column": 66
+        "column": 65
       }
     },
     "uid-15": {
       "start": {
         "line": 71,
-        "column": 66
+        "column": 65
       },
       "end": {
         "line": 71,
-        "column": 122
+        "column": 112
       }
     },
     "uid-16": {
@@ -746,7 +944,7 @@
       },
       "end": {
         "line": 72,
-        "column": 124
+        "column": 128
       }
     },
     "uid-17": {
@@ -756,17 +954,17 @@
       },
       "end": {
         "line": 72,
-        "column": 67
+        "column": 66
       }
     },
     "uid-18": {
       "start": {
         "line": 72,
-        "column": 67
+        "column": 66
       },
       "end": {
         "line": 72,
-        "column": 118
+        "column": 122
       }
     },
     "uid-19": {
@@ -776,7 +974,7 @@
       },
       "end": {
         "line": 73,
-        "column": 121
+        "column": 124
       }
     },
     "uid-20": {
@@ -786,17 +984,17 @@
       },
       "end": {
         "line": 73,
-        "column": 66
+        "column": 67
       }
     },
     "uid-21": {
       "start": {
         "line": 73,
-        "column": 66
+        "column": 67
       },
       "end": {
         "line": 73,
-        "column": 115
+        "column": 118
       }
     },
     "uid-22": {
@@ -836,7 +1034,7 @@
       },
       "end": {
         "line": 75,
-        "column": 127
+        "column": 126
       }
     },
     "uid-26": {
@@ -846,17 +1044,17 @@
       },
       "end": {
         "line": 75,
-        "column": 69
+        "column": 68
       }
     },
     "uid-27": {
       "start": {
         "line": 75,
-        "column": 69
+        "column": 68
       },
       "end": {
         "line": 75,
-        "column": 121
+        "column": 120
       }
     },
     "uid-28": {
@@ -866,7 +1064,7 @@
       },
       "end": {
         "line": 76,
-        "column": 128
+        "column": 118
       }
     },
     "uid-29": {
@@ -876,17 +1074,17 @@
       },
       "end": {
         "line": 76,
-        "column": 68
+        "column": 62
       }
     },
     "uid-30": {
       "start": {
         "line": 76,
-        "column": 68
+        "column": 62
       },
       "end": {
         "line": 76,
-        "column": 122
+        "column": 112
       }
     },
     "uid-31": {
@@ -896,7 +1094,7 @@
       },
       "end": {
         "line": 77,
-        "column": 127
+        "column": 126
       }
     },
     "uid-32": {
@@ -906,17 +1104,17 @@
       },
       "end": {
         "line": 77,
-        "column": 67
+        "column": 64
       }
     },
     "uid-33": {
       "start": {
         "line": 77,
-        "column": 67
+        "column": 64
       },
       "end": {
         "line": 77,
-        "column": 121
+        "column": 120
       }
     },
     "uid-34": {
@@ -926,7 +1124,7 @@
       },
       "end": {
         "line": 78,
-        "column": 123
+        "column": 121
       }
     },
     "uid-35": {
@@ -936,17 +1134,17 @@
       },
       "end": {
         "line": 78,
-        "column": 65
+        "column": 66
       }
     },
     "uid-36": {
       "start": {
         "line": 78,
-        "column": 65
+        "column": 66
       },
       "end": {
         "line": 78,
-        "column": 117
+        "column": 115
       }
     },
     "uid-37": {
@@ -955,17 +1153,197 @@
         "column": 2
       },
       "end": {
-        "line": 81,
-        "column": 8
+        "line": 79,
+        "column": 127
       }
     },
     "uid-38": {
       "start": {
+        "line": 79,
+        "column": 24
+      },
+      "end": {
+        "line": 79,
+        "column": 69
+      }
+    },
+    "uid-39": {
+      "start": {
+        "line": 79,
+        "column": 69
+      },
+      "end": {
+        "line": 79,
+        "column": 121
+      }
+    },
+    "uid-40": {
+      "start": {
         "line": 80,
-        "column": 4
+        "column": 2
       },
       "end": {
         "line": 80,
+        "column": 128
+      }
+    },
+    "uid-41": {
+      "start": {
+        "line": 80,
+        "column": 24
+      },
+      "end": {
+        "line": 80,
+        "column": 68
+      }
+    },
+    "uid-42": {
+      "start": {
+        "line": 80,
+        "column": 68
+      },
+      "end": {
+        "line": 80,
+        "column": 122
+      }
+    },
+    "uid-43": {
+      "start": {
+        "line": 81,
+        "column": 2
+      },
+      "end": {
+        "line": 81,
+        "column": 127
+      }
+    },
+    "uid-44": {
+      "start": {
+        "line": 81,
+        "column": 24
+      },
+      "end": {
+        "line": 81,
+        "column": 67
+      }
+    },
+    "uid-45": {
+      "start": {
+        "line": 81,
+        "column": 67
+      },
+      "end": {
+        "line": 81,
+        "column": 121
+      }
+    },
+    "uid-46": {
+      "start": {
+        "line": 82,
+        "column": 2
+      },
+      "end": {
+        "line": 82,
+        "column": 124
+      }
+    },
+    "uid-47": {
+      "start": {
+        "line": 82,
+        "column": 24
+      },
+      "end": {
+        "line": 82,
+        "column": 68
+      }
+    },
+    "uid-48": {
+      "start": {
+        "line": 82,
+        "column": 68
+      },
+      "end": {
+        "line": 82,
+        "column": 118
+      }
+    },
+    "uid-49": {
+      "start": {
+        "line": 83,
+        "column": 2
+      },
+      "end": {
+        "line": 83,
+        "column": 130
+      }
+    },
+    "uid-50": {
+      "start": {
+        "line": 83,
+        "column": 24
+      },
+      "end": {
+        "line": 83,
+        "column": 68
+      }
+    },
+    "uid-51": {
+      "start": {
+        "line": 83,
+        "column": 68
+      },
+      "end": {
+        "line": 83,
+        "column": 124
+      }
+    },
+    "uid-52": {
+      "start": {
+        "line": 84,
+        "column": 2
+      },
+      "end": {
+        "line": 84,
+        "column": 123
+      }
+    },
+    "uid-53": {
+      "start": {
+        "line": 84,
+        "column": 24
+      },
+      "end": {
+        "line": 84,
+        "column": 65
+      }
+    },
+    "uid-54": {
+      "start": {
+        "line": 84,
+        "column": 65
+      },
+      "end": {
+        "line": 84,
+        "column": 117
+      }
+    },
+    "uid-55": {
+      "start": {
+        "line": 85,
+        "column": 2
+      },
+      "end": {
+        "line": 87,
+        "column": 8
+      }
+    },
+    "uid-56": {
+      "start": {
+        "line": 86,
+        "column": 4
+      },
+      "end": {
+        "line": 86,
         "column": 45
       }
     }

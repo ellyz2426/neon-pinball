@@ -436,12 +436,44 @@
                     "sourceTag": "text",
                     "type": "custom",
                     "children": [
+                      "V"
+                    ],
+                    "properties": {
+                      "class": "key"
+                    },
+                    "dataUid": "uid-44"
+                  },
+                  {
+                    "sourceTag": "text",
+                    "type": "custom",
+                    "children": [
+                      "Cycle Camera View"
+                    ],
+                    "properties": {
+                      "class": "action"
+                    },
+                    "dataUid": "uid-45"
+                  }
+                ],
+                "properties": {
+                  "class": "row"
+                },
+                "dataUid": "uid-43"
+              },
+              {
+                "sourceTag": "view",
+                "type": "custom",
+                "children": [
+                  {
+                    "sourceTag": "text",
+                    "type": "custom",
+                    "children": [
                       "+ MAGNA-SAVE"
                     ],
                     "properties": {
                       "class": "section-title"
                     },
-                    "dataUid": "uid-44"
+                    "dataUid": "uid-47"
                   },
                   {
                     "sourceTag": "text",
@@ -452,7 +484,7 @@
                     "properties": {
                       "class": "tip"
                     },
-                    "dataUid": "uid-45"
+                    "dataUid": "uid-48"
                   },
                   {
                     "sourceTag": "view",
@@ -467,7 +499,7 @@
                         "properties": {
                           "class": "section-title"
                         },
-                        "dataUid": "uid-47"
+                        "dataUid": "uid-50"
                       },
                       {
                         "sourceTag": "text",
@@ -478,7 +510,7 @@
                         "properties": {
                           "class": "tip"
                         },
-                        "dataUid": "uid-48"
+                        "dataUid": "uid-51"
                       },
                       {
                         "sourceTag": "view",
@@ -493,7 +525,7 @@
                             "properties": {
                               "class": "section-title"
                             },
-                            "dataUid": "uid-50"
+                            "dataUid": "uid-53"
                           },
                           {
                             "sourceTag": "view",
@@ -508,45 +540,13 @@
                                 "properties": {
                                   "class": "score-item"
                                 },
-                                "dataUid": "uid-52"
-                              },
-                              {
-                                "sourceTag": "text",
-                                "type": "custom",
-                                "children": [
-                                  "100"
-                                ],
-                                "properties": {
-                                  "class": "score-val"
-                                },
-                                "dataUid": "uid-53"
-                              }
-                            ],
-                            "properties": {
-                              "class": "score-row"
-                            },
-                            "dataUid": "uid-51"
-                          },
-                          {
-                            "sourceTag": "view",
-                            "type": "custom",
-                            "children": [
-                              {
-                                "sourceTag": "text",
-                                "type": "custom",
-                                "children": [
-                                  "Slingshots"
-                                ],
-                                "properties": {
-                                  "class": "score-item"
-                                },
                                 "dataUid": "uid-55"
                               },
                               {
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
-                                  "50"
+                                  "100"
                                 ],
                                 "properties": {
                                   "class": "score-val"
@@ -567,7 +567,7 @@
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
-                                  "Drop Targets"
+                                  "Slingshots"
                                 ],
                                 "properties": {
                                   "class": "score-item"
@@ -578,7 +578,7 @@
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
-                                  "500"
+                                  "50"
                                 ],
                                 "properties": {
                                   "class": "score-val"
@@ -599,7 +599,7 @@
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
-                                  "Spinners"
+                                  "Drop Targets"
                                 ],
                                 "properties": {
                                   "class": "score-item"
@@ -610,7 +610,7 @@
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
-                                  "75"
+                                  "500"
                                 ],
                                 "properties": {
                                   "class": "score-val"
@@ -631,7 +631,7 @@
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
-                                  "Ramp Shots"
+                                  "Spinners"
                                 ],
                                 "properties": {
                                   "class": "score-item"
@@ -642,7 +642,7 @@
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
-                                  "1,000"
+                                  "75"
                                 ],
                                 "properties": {
                                   "class": "score-val"
@@ -663,7 +663,7 @@
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
-                                  "All Targets Bonus"
+                                  "Ramp Shots"
                                 ],
                                 "properties": {
                                   "class": "score-item"
@@ -674,7 +674,7 @@
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
-                                  "5,000"
+                                  "1,000"
                                 ],
                                 "properties": {
                                   "class": "score-val"
@@ -695,7 +695,7 @@
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
-                                  "Skill Shot"
+                                  "All Targets Bonus"
                                 ],
                                 "properties": {
                                   "class": "score-item"
@@ -706,7 +706,7 @@
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
-                                  "5,000 - 25,000"
+                                  "5,000"
                                 ],
                                 "properties": {
                                   "class": "score-val"
@@ -727,12 +727,44 @@
                                 "sourceTag": "text",
                                 "type": "custom",
                                 "children": [
+                                  "Skill Shot"
+                                ],
+                                "properties": {
+                                  "class": "score-item"
+                                },
+                                "dataUid": "uid-73"
+                              },
+                              {
+                                "sourceTag": "text",
+                                "type": "custom",
+                                "children": [
+                                  "5,000 - 25,000"
+                                ],
+                                "properties": {
+                                  "class": "score-val"
+                                },
+                                "dataUid": "uid-74"
+                              }
+                            ],
+                            "properties": {
+                              "class": "score-row"
+                            },
+                            "dataUid": "uid-72"
+                          },
+                          {
+                            "sourceTag": "view",
+                            "type": "custom",
+                            "children": [
+                              {
+                                "sourceTag": "text",
+                                "type": "custom",
+                                "children": [
                                   "* TIPS"
                                 ],
                                 "properties": {
                                   "class": "section-title"
                                 },
-                                "dataUid": "uid-73"
+                                "dataUid": "uid-76"
                               },
                               {
                                 "sourceTag": "text",
@@ -743,7 +775,7 @@
                                 "properties": {
                                   "class": "tip"
                                 },
-                                "dataUid": "uid-74"
+                                "dataUid": "uid-77"
                               },
                               {
                                 "sourceTag": "text",
@@ -754,7 +786,7 @@
                                 "properties": {
                                   "class": "tip"
                                 },
-                                "dataUid": "uid-75"
+                                "dataUid": "uid-78"
                               },
                               {
                                 "sourceTag": "text",
@@ -765,7 +797,7 @@
                                 "properties": {
                                   "class": "tip"
                                 },
-                                "dataUid": "uid-76"
+                                "dataUid": "uid-79"
                               },
                               {
                                 "sourceTag": "text",
@@ -776,7 +808,7 @@
                                 "properties": {
                                   "class": "tip"
                                 },
-                                "dataUid": "uid-77"
+                                "dataUid": "uid-80"
                               },
                               {
                                 "sourceTag": "text",
@@ -787,7 +819,7 @@
                                 "properties": {
                                   "class": "tip"
                                 },
-                                "dataUid": "uid-78"
+                                "dataUid": "uid-81"
                               },
                               {
                                 "sourceTag": "text",
@@ -798,7 +830,7 @@
                                 "properties": {
                                   "class": "tip"
                                 },
-                                "dataUid": "uid-79"
+                                "dataUid": "uid-82"
                               },
                               {
                                 "sourceTag": "text",
@@ -809,7 +841,7 @@
                                 "properties": {
                                   "class": "tip"
                                 },
-                                "dataUid": "uid-80"
+                                "dataUid": "uid-83"
                               },
                               {
                                 "sourceTag": "text",
@@ -820,7 +852,7 @@
                                 "properties": {
                                   "class": "tip"
                                 },
-                                "dataUid": "uid-81"
+                                "dataUid": "uid-84"
                               },
                               {
                                 "sourceTag": "text",
@@ -831,7 +863,7 @@
                                 "properties": {
                                   "class": "tip"
                                 },
-                                "dataUid": "uid-82"
+                                "dataUid": "uid-85"
                               },
                               {
                                 "sourceTag": "text",
@@ -842,7 +874,7 @@
                                 "properties": {
                                   "class": "tip"
                                 },
-                                "dataUid": "uid-83"
+                                "dataUid": "uid-86"
                               },
                               {
                                 "sourceTag": "view",
@@ -857,38 +889,38 @@
                                     "properties": {
                                       "class": "btn-text"
                                     },
-                                    "dataUid": "uid-85"
+                                    "dataUid": "uid-88"
                                   }
                                 ],
                                 "properties": {
                                   "id": "controls-back-btn",
                                   "class": "btn"
                                 },
-                                "dataUid": "uid-84"
+                                "dataUid": "uid-87"
                               }
                             ],
                             "properties": {
                               "class": "divider"
                             },
-                            "dataUid": "uid-72"
+                            "dataUid": "uid-75"
                           }
                         ],
                         "properties": {
                           "class": "divider"
                         },
-                        "dataUid": "uid-49"
+                        "dataUid": "uid-52"
                       }
                     ],
                     "properties": {
                       "class": "divider"
                     },
-                    "dataUid": "uid-46"
+                    "dataUid": "uid-49"
                   }
                 ],
                 "properties": {
                   "class": "divider"
                 },
-                "dataUid": "uid-43"
+                "dataUid": "uid-46"
               }
             ],
             "properties": {
@@ -1018,7 +1050,7 @@
         "column": 0
       },
       "end": {
-        "line": 75,
+        "line": 76,
         "column": 10
       }
     },
@@ -1158,7 +1190,7 @@
         "column": 2
       },
       "end": {
-        "line": 75,
+        "line": 76,
         "column": 0
       }
     },
@@ -1368,7 +1400,7 @@
         "column": 4
       },
       "end": {
-        "line": 75,
+        "line": 76,
         "column": 0
       }
     },
@@ -1564,112 +1596,112 @@
     },
     "uid-43": {
       "start": {
-        "line": 38,
+        "line": 37,
         "column": 4
       },
       "end": {
-        "line": 75,
-        "column": 0
+        "line": 37,
+        "column": 100
       }
     },
     "uid-44": {
       "start": {
-        "line": 40,
-        "column": 4
+        "line": 37,
+        "column": 22
       },
       "end": {
-        "line": 40,
-        "column": 51
+        "line": 37,
+        "column": 48
       }
     },
     "uid-45": {
       "start": {
-        "line": 41,
-        "column": 4
+        "line": 37,
+        "column": 48
       },
       "end": {
-        "line": 41,
-        "column": 184
+        "line": 37,
+        "column": 93
       }
     },
     "uid-46": {
       "start": {
-        "line": 43,
+        "line": 39,
         "column": 4
       },
       "end": {
-        "line": 75,
+        "line": 76,
         "column": 0
       }
     },
     "uid-47": {
       "start": {
-        "line": 45,
+        "line": 41,
         "column": 4
       },
       "end": {
-        "line": 45,
+        "line": 41,
         "column": 51
       }
     },
     "uid-48": {
       "start": {
-        "line": 46,
+        "line": 42,
         "column": 4
       },
       "end": {
-        "line": 46,
-        "column": 224
+        "line": 42,
+        "column": 184
       }
     },
     "uid-49": {
       "start": {
-        "line": 48,
+        "line": 44,
         "column": 4
       },
       "end": {
-        "line": 75,
+        "line": 76,
         "column": 0
       }
     },
     "uid-50": {
       "start": {
-        "line": 50,
+        "line": 46,
         "column": 4
       },
       "end": {
-        "line": 50,
-        "column": 48
+        "line": 46,
+        "column": 51
       }
     },
     "uid-51": {
       "start": {
-        "line": 51,
+        "line": 47,
         "column": 4
       },
       "end": {
-        "line": 51,
-        "column": 112
+        "line": 47,
+        "column": 224
       }
     },
     "uid-52": {
       "start": {
-        "line": 51,
-        "column": 28
+        "line": 49,
+        "column": 4
       },
       "end": {
-        "line": 51,
-        "column": 71
+        "line": 76,
+        "column": 0
       }
     },
     "uid-53": {
       "start": {
         "line": 51,
-        "column": 71
+        "column": 4
       },
       "end": {
         "line": 51,
-        "column": 105
+        "column": 48
       }
     },
     "uid-54": {
@@ -1679,7 +1711,7 @@
       },
       "end": {
         "line": 52,
-        "column": 110
+        "column": 112
       }
     },
     "uid-55": {
@@ -1689,17 +1721,17 @@
       },
       "end": {
         "line": 52,
-        "column": 70
+        "column": 71
       }
     },
     "uid-56": {
       "start": {
         "line": 52,
-        "column": 70
+        "column": 71
       },
       "end": {
         "line": 52,
-        "column": 103
+        "column": 105
       }
     },
     "uid-57": {
@@ -1709,7 +1741,7 @@
       },
       "end": {
         "line": 53,
-        "column": 113
+        "column": 110
       }
     },
     "uid-58": {
@@ -1719,17 +1751,17 @@
       },
       "end": {
         "line": 53,
-        "column": 72
+        "column": 70
       }
     },
     "uid-59": {
       "start": {
         "line": 53,
-        "column": 72
+        "column": 70
       },
       "end": {
         "line": 53,
-        "column": 106
+        "column": 103
       }
     },
     "uid-60": {
@@ -1739,7 +1771,7 @@
       },
       "end": {
         "line": 54,
-        "column": 108
+        "column": 113
       }
     },
     "uid-61": {
@@ -1749,17 +1781,17 @@
       },
       "end": {
         "line": 54,
-        "column": 68
+        "column": 72
       }
     },
     "uid-62": {
       "start": {
         "line": 54,
-        "column": 68
+        "column": 72
       },
       "end": {
         "line": 54,
-        "column": 101
+        "column": 106
       }
     },
     "uid-63": {
@@ -1769,7 +1801,7 @@
       },
       "end": {
         "line": 55,
-        "column": 113
+        "column": 108
       }
     },
     "uid-64": {
@@ -1779,17 +1811,17 @@
       },
       "end": {
         "line": 55,
-        "column": 70
+        "column": 68
       }
     },
     "uid-65": {
       "start": {
         "line": 55,
-        "column": 70
+        "column": 68
       },
       "end": {
         "line": 55,
-        "column": 106
+        "column": 101
       }
     },
     "uid-66": {
@@ -1799,7 +1831,7 @@
       },
       "end": {
         "line": 56,
-        "column": 120
+        "column": 113
       }
     },
     "uid-67": {
@@ -1809,17 +1841,17 @@
       },
       "end": {
         "line": 56,
-        "column": 77
+        "column": 70
       }
     },
     "uid-68": {
       "start": {
         "line": 56,
-        "column": 77
+        "column": 70
       },
       "end": {
         "line": 56,
-        "column": 113
+        "column": 106
       }
     },
     "uid-69": {
@@ -1829,7 +1861,7 @@
       },
       "end": {
         "line": 57,
-        "column": 122
+        "column": 120
       }
     },
     "uid-70": {
@@ -1839,156 +1871,186 @@
       },
       "end": {
         "line": 57,
-        "column": 70
+        "column": 77
       }
     },
     "uid-71": {
       "start": {
         "line": 57,
-        "column": 70
+        "column": 77
       },
       "end": {
         "line": 57,
-        "column": 115
+        "column": 113
       }
     },
     "uid-72": {
       "start": {
-        "line": 59,
+        "line": 58,
         "column": 4
       },
       "end": {
-        "line": 74,
-        "column": 9
+        "line": 58,
+        "column": 122
       }
     },
     "uid-73": {
       "start": {
-        "line": 61,
-        "column": 4
+        "line": 58,
+        "column": 28
       },
       "end": {
-        "line": 61,
-        "column": 45
+        "line": 58,
+        "column": 70
       }
     },
     "uid-74": {
       "start": {
-        "line": 62,
-        "column": 4
+        "line": 58,
+        "column": 70
       },
       "end": {
-        "line": 62,
-        "column": 90
+        "line": 58,
+        "column": 115
       }
     },
     "uid-75": {
       "start": {
-        "line": 63,
+        "line": 60,
         "column": 4
       },
       "end": {
-        "line": 63,
-        "column": 85
+        "line": 75,
+        "column": 9
       }
     },
     "uid-76": {
       "start": {
-        "line": 64,
+        "line": 62,
         "column": 4
       },
       "end": {
-        "line": 64,
-        "column": 83
+        "line": 62,
+        "column": 45
       }
     },
     "uid-77": {
       "start": {
-        "line": 65,
+        "line": 63,
         "column": 4
       },
       "end": {
-        "line": 65,
-        "column": 85
+        "line": 63,
+        "column": 90
       }
     },
     "uid-78": {
       "start": {
-        "line": 66,
+        "line": 64,
         "column": 4
       },
       "end": {
-        "line": 66,
-        "column": 67
+        "line": 64,
+        "column": 85
       }
     },
     "uid-79": {
       "start": {
-        "line": 67,
+        "line": 65,
         "column": 4
       },
       "end": {
-        "line": 67,
-        "column": 87
+        "line": 65,
+        "column": 83
       }
     },
     "uid-80": {
       "start": {
-        "line": 68,
+        "line": 66,
         "column": 4
       },
       "end": {
-        "line": 68,
-        "column": 105
+        "line": 66,
+        "column": 85
       }
     },
     "uid-81": {
       "start": {
-        "line": 69,
+        "line": 67,
         "column": 4
       },
       "end": {
-        "line": 69,
-        "column": 90
+        "line": 67,
+        "column": 67
       }
     },
     "uid-82": {
       "start": {
-        "line": 70,
+        "line": 68,
         "column": 4
       },
       "end": {
-        "line": 70,
-        "column": 85
+        "line": 68,
+        "column": 87
       }
     },
     "uid-83": {
       "start": {
-        "line": 71,
+        "line": 69,
         "column": 4
       },
       "end": {
-        "line": 71,
-        "column": 93
+        "line": 69,
+        "column": 105
       }
     },
     "uid-84": {
       "start": {
-        "line": 73,
+        "line": 70,
         "column": 4
       },
       "end": {
-        "line": 73,
-        "column": 86
+        "line": 70,
+        "column": 90
       }
     },
     "uid-85": {
       "start": {
-        "line": 73,
+        "line": 71,
+        "column": 4
+      },
+      "end": {
+        "line": 71,
+        "column": 85
+      }
+    },
+    "uid-86": {
+      "start": {
+        "line": 72,
+        "column": 4
+      },
+      "end": {
+        "line": 72,
+        "column": 93
+      }
+    },
+    "uid-87": {
+      "start": {
+        "line": 74,
+        "column": 4
+      },
+      "end": {
+        "line": 74,
+        "column": 86
+      }
+    },
+    "uid-88": {
+      "start": {
+        "line": 74,
         "column": 45
       },
       "end": {
-        "line": 73,
+        "line": 74,
         "column": 79
       }
     }

@@ -747,13 +747,19 @@ export class UIManager {
     setEl('stat-games', String(s.totalGames));
     setEl('stat-best', s.bestScore.toLocaleString());
     setEl('stat-total', s.totalScore.toLocaleString());
+    setEl('stat-avg', s.totalGames > 0 ? Math.round(s.totalScore / s.totalGames).toLocaleString() : '0');
     setEl('stat-combo', `x${s.bestCombo.toFixed(1)}`);
     setEl('stat-bumpers', s.totalBumperHits.toLocaleString());
     setEl('stat-ramps', s.totalRampShots.toLocaleString());
+    setEl('stat-spinners', s.totalSpinnerHits.toLocaleString());
+    setEl('stat-orbits', String(s.totalOrbits));
+    setEl('stat-jackpots', String(s.totalJackpots));
     setEl('stat-multi', String(s.totalMultiballs));
     setEl('stat-missions', String(s.totalMissionsCompleted));
     setEl('stat-wizard', String(s.totalWizardModes));
     setEl('stat-extraballs', String(s.totalExtraBalls));
+    setEl('stat-drains', String(s.totalDrains));
+    setEl('stat-longest', `${Math.floor(s.longestBallSeconds)}s`);
 
     const hrs = Math.floor(s.totalPlayTimeSeconds / 3600);
     const mins = Math.floor((s.totalPlayTimeSeconds % 3600) / 60);

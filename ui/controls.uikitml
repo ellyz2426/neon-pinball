@@ -35,6 +35,7 @@
     <view class="row"><text class="key">Escape</text><text class="action">Pause</text></view>
     <view class="row"><text class="key">Q / E</text><text class="action">Nudge Left / Right</text></view>
     <view class="row"><text class="key">Z / C</text><text class="action">Magna-Save L / R</text></view>
+    <view class="row"><text class="key">V</text><text class="action">Cycle Camera View</text></view>
 
     <view class="divider" />
 

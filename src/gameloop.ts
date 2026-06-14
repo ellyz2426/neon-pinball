@@ -11,6 +11,7 @@ import {
   SphereGeometry,
   AdditiveBlending,
   Group,
+  Vector3,
 } from '@iwsdk/core';
 
 import { PinballPhysics, BALL_RADIUS, CollisionEvent } from './physics';
@@ -66,6 +67,7 @@ export interface GameLoopRefs {
   missionProgressBar: Mesh;
   plungerLaneLights: Mesh[];
   tableEdgeAccents: Mesh[];
+  drainGate: Mesh;
 }
 
 export class PinballGameLoopSystem extends createSystem({}) {
@@ -86,6 +88,19 @@ export class PinballGameLoopSystem extends createSystem({}) {
   private cameraBaseZ = 0;
   private cameraSmoothX = 0;
   private cameraSmoothZ = 0;
+
+  // Camera view system
+  private cameraViewIndex = 0;
+  private cameraTransitionTimer = 0;
+  private cameraTransitionFrom = { x: 0, y: 0, z: 0, lx: 0, ly: 0, lz: 0 };
+  private cameraTransitionTo = { x: 0, y: 0, z: 0, lx: 0, ly: 0, lz: 0 };
+
+  // Attract mode (title screen camera orbit)
+  private attractTime = 0;
+
+  // New high score celebration
+  private newHighScoreTimer = 0;
+  private reportedHighScore = false;
 
   // Lane indicator animation
   private laneFlashTimers = [0, 0, 0];
@@ -153,12 +168,24 @@ export class PinballGameLoopSystem extends createSystem({}) {
         audio.startAmbient(game.currentThemeId);
         game.startGame();
         achievements.startGame();
+        // Reset camera to standard view on game start
+        this.cameraViewIndex = 0;
+        const view = PinballGameLoopSystem.CAMERA_VIEWS[0];
+        const cam = this.refs.world.camera;
+        cam.position.set(view.x, view.y, view.z);
+        cam.lookAt(new Vector3(view.lx, view.ly, view.lz));
+        this.cameraBaseY = view.y;
+        this.cameraBaseZ = view.z;
       }
       if (e.code === 'KeyZ' && game.state === 'playing') {
         game.activateMagnaSave('left');
       }
       if (e.code === 'KeyC' && game.state === 'playing') {
         game.activateMagnaSave('right');
+      }
+      // Camera view cycling
+      if (e.code === 'KeyV' && (game.state === 'playing' || game.state === 'plunger')) {
+        this.cycleCameraView();
       }
     });
 
@@ -255,6 +282,15 @@ export class PinballGameLoopSystem extends createSystem({}) {
         this.hideAllBalls();
         achievements.checkNoTilt();
         achievements.resetRoundStats();
+        // New high score celebration
+        if (game.score > game.highScore && !this.reportedHighScore) {
+          this.reportedHighScore = true;
+          this.newHighScoreTimer = 2.0;
+          effects.spawnWizardBurst(0, -0.15);
+          effects.spawnWizardBurst(0, 0.15);
+          effects.spawnPulseRing(0, 0, 0xffd700);
+          xrInput.hapticPulse({ intensity: 1.0, duration: 400 });
+        }
       } else if (state === 'title') {
         this.hideAllBalls();
         audio.stopAmbient();
@@ -500,6 +536,22 @@ export class PinballGameLoopSystem extends createSystem({}) {
     game.update(dt);
     ui.update(dt);
     this.updateIntensityVisuals(dt);
+
+    // Camera transition (view cycling)
+    this.updateCameraTransition(dt);
+
+    // Attract mode: orbit camera on title screen
+    if (game.state === 'title') {
+      this.updateAttractMode(dt);
+      this.reportedHighScore = false;
+    } else {
+      this.attractTime = 0; // Reset for next title visit
+    }
+
+    // New high score celebration
+    if (this.newHighScoreTimer > 0) {
+      this.newHighScoreTimer -= dt;
+    }
 
     // Update spinner cooldowns
     for (const key of Object.keys(this.spinnerCooldowns)) {
@@ -940,6 +992,29 @@ export class PinballGameLoopSystem extends createSystem({}) {
         }
       }
 
+      // === Drain gate visual (glowing barrier when ball saver active) ===
+      if (this.refs.drainGate) {
+        const gateMat = this.refs.drainGate.material as MeshBasicMaterial;
+        if (game.ballSaverActive && game.ballSaverTimer > 0) {
+          this.refs.drainGate.visible = true;
+          const pct = game.ballSaverTimer / game.ballSaverDuration;
+          gateMat.opacity = 0.3 + Math.sin(this.gameTime * 4) * 0.15;
+          if (pct > 0.5) {
+            gateMat.color.setHex(0x00ff88);
+          } else if (pct > 0.25) {
+            gateMat.color.setHex(0xffff00);
+          } else {
+            gateMat.color.setHex(0xff4400);
+            gateMat.opacity = Math.sin(this.gameTime * 12) > 0 ? 0.5 : 0.1;
+          }
+          // Subtle height pulse
+          this.refs.drainGate.scale.y = 1.0 + Math.sin(this.gameTime * 3) * 0.2;
+        } else {
+          this.refs.drainGate.visible = false;
+          gateMat.opacity = 0;
+        }
+      }
+
       // === Table leg neon ring animation ===
       const { legRings } = this.refs;
       if (legRings && legRings.length > 0) {
@@ -1204,6 +1279,73 @@ export class PinballGameLoopSystem extends createSystem({}) {
     effects.update(dt);
   }
 
+  // Camera view presets: [posX, posY, posZ, lookX, lookY, lookZ]
+  private static CAMERA_VIEWS = [
+    { name: 'Standard', x: 0, y: TABLE_Y + 0.7, z: 0.75, lx: 0, ly: TABLE_Y, lz: -0.1 },
+    { name: 'Close',    x: 0, y: TABLE_Y + 0.4, z: 0.55, lx: 0, ly: TABLE_Y, lz: -0.05 },
+    { name: 'Overhead', x: 0, y: TABLE_Y + 1.2, z: 0.15, lx: 0, ly: TABLE_Y, lz: -0.1 },
+    { name: 'Side',     x: -0.5, y: TABLE_Y + 0.6, z: 0.3, lx: 0, ly: TABLE_Y, lz: -0.1 },
+  ];
+
+  private cycleCameraView(): void {
+    this.cameraViewIndex = (this.cameraViewIndex + 1) % PinballGameLoopSystem.CAMERA_VIEWS.length;
+    const view = PinballGameLoopSystem.CAMERA_VIEWS[this.cameraViewIndex];
+    const cam = this.refs.world.camera;
+
+    // Set up smooth transition
+    this.cameraTransitionFrom = {
+      x: cam.position.x, y: cam.position.y, z: cam.position.z,
+      lx: 0, ly: TABLE_Y, lz: -0.1,
+    };
+    this.cameraTransitionTo = {
+      x: view.x, y: view.y, z: view.z,
+      lx: view.lx, ly: view.ly, lz: view.lz,
+    };
+    this.cameraTransitionTimer = 0.5; // 0.5s smooth transition
+
+    // Update base values for tracking
+    this.cameraBaseY = view.y;
+    this.cameraBaseZ = view.z;
+
+    // Show view name briefly
+    this.refs.ui.showMessage(`Camera: ${view.name}`);
+  }
+
+  private updateAttractMode(dt: number): void {
+    const cam = this.refs.world.camera;
+    this.attractTime += dt * 0.3; // Slow orbit
+
+    const radius = 0.9;
+    const orbitX = Math.sin(this.attractTime) * radius;
+    const orbitZ = Math.cos(this.attractTime) * radius * 0.5 + 0.3;
+    const orbitY = TABLE_Y + 0.65 + Math.sin(this.attractTime * 0.7) * 0.08;
+
+    cam.position.set(orbitX, orbitY, orbitZ);
+    cam.lookAt(new Vector3(0, TABLE_Y + 0.02, -0.1));
+  }
+
+  private updateCameraTransition(dt: number): void {
+    if (this.cameraTransitionTimer <= 0) return;
+    this.cameraTransitionTimer -= dt;
+    const t = Math.max(0, 1 - this.cameraTransitionTimer / 0.5);
+    const ease = t * t * (3 - 2 * t); // smoothstep
+
+    const cam = this.refs.world.camera;
+    const from = this.cameraTransitionFrom;
+    const to = this.cameraTransitionTo;
+
+    cam.position.set(
+      from.x + (to.x - from.x) * ease,
+      from.y + (to.y - from.y) * ease,
+      from.z + (to.z - from.z) * ease,
+    );
+    cam.lookAt(new Vector3(
+      from.lx + (to.lx - from.lx) * ease,
+      from.ly + (to.ly - from.ly) * ease,
+      from.lz + (to.lz - from.lz) * ease,
+    ));
+  }
+
   private updateIntensityVisuals(dt: number): void {
     const { game, tableLights } = this.refs;
     const intensity = game.intensity;
@@ -1286,6 +1428,7 @@ export class PinballGameLoopSystem extends createSystem({}) {
           audio.playDrain();
           effects.spawnDrain(event.x, event.z);
           xrInput.hapticPulse(HAPTIC_PATTERNS.ballDrain);
+          achievements.recordDrain();
           const result = game.handleDrain();
           if (result.saved) {
             physics.resetBall();

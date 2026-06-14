@@ -23,6 +23,11 @@ export interface GameStats {
   totalWizardModes: number;
   totalExtraBalls: number;
   totalPlayTimeSeconds: number;
+  totalSpinnerHits: number;
+  totalOrbits: number;
+  totalJackpots: number;
+  totalDrains: number;
+  longestBallSeconds: number;
 }
 
 const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
@@ -176,6 +181,7 @@ export class AchievementManager {
 
   checkJackpot(): void {
     this.jackpotsThisGame++;
+    this.stats.totalJackpots++;
     if (this.jackpotsThisGame >= 3) this.unlock('jackpot_3');
   }
 
@@ -269,6 +275,7 @@ export class AchievementManager {
 
   checkOrbitComplete(combo: number): void {
     this.unlock('orbit_complete');
+    this.stats.totalOrbits++;
     if (combo >= 3) this.unlock('orbit_3x');
     if (combo >= 5) this.unlock('orbit_combo_5');
   }
@@ -317,11 +324,6 @@ export class AchievementManager {
     if (this.ballSavesThisGame >= 3) this.unlock('ball_saved_3');
   }
 
-  checkBallAliveTime(elapsed: number): void {
-    this.ballAliveTime = elapsed;
-    if (elapsed >= 60) this.unlock('long_ball');
-  }
-
   resetRoundStats(): void {
     this.laneCompletions = 0;
     this.ballSavesThisGame = 0;
@@ -333,7 +335,20 @@ export class AchievementManager {
   }
 
   checkSpinnerCount(count: number): void {
+    this.stats.totalSpinnerHits++;
     if (count >= 50) this.unlock('spinner_50');
+  }
+
+  recordDrain(): void {
+    this.stats.totalDrains++;
+  }
+
+  checkBallAliveTime(elapsed: number): void {
+    this.ballAliveTime = elapsed;
+    if (elapsed > this.stats.longestBallSeconds) {
+      this.stats.longestBallSeconds = elapsed;
+    }
+    if (elapsed >= 60) this.unlock('long_ball');
   }
 
   checkTargetBankCompletions(count: number): void {
@@ -388,7 +403,8 @@ export class AchievementManager {
       totalGames: 0, totalScore: 0, bestScore: 0, bestCombo: 0,
       totalBumperHits: 0, totalRampShots: 0, totalMultiballs: 0,
       totalMissionsCompleted: 0, totalWizardModes: 0, totalExtraBalls: 0,
-      totalPlayTimeSeconds: 0,
+      totalPlayTimeSeconds: 0, totalSpinnerHits: 0, totalOrbits: 0,
+      totalJackpots: 0, totalDrains: 0, longestBallSeconds: 0,
     };
   }
 

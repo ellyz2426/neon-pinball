@@ -44,7 +44,7 @@ import {
   createLaneIndicators, createBallLockIndicators, createBackglassScore,
   createLegNeonRings, createBallSaverBar,
   createRampEntryGlows, createOrbitCheckpoints, createMissionProgressBar,
-  createPlungerLaneLights, createTableEdgeAccents,
+  createPlungerLaneLights, createTableEdgeAccents, createDrainGate,
   TABLE_Y, TABLE_TILT,
 } from './table';
 import { GameManager } from './game';
@@ -106,6 +106,7 @@ async function main() {
   const missionProgressBar = createMissionProgressBar(tableGroup);
   const plungerLaneLights = createPlungerLaneLights(tableGroup);
   const tableEdgeAccents = createTableEdgeAccents(tableGroup);
+  const drainGate = createDrainGate(tableGroup);
 
   // Initialize systems
   const physics = new PinballPhysics();
@@ -191,6 +192,7 @@ async function main() {
     missionProgressBar,
     plungerLaneLights,
     tableEdgeAccents,
+    drainGate,
   });
 }
 

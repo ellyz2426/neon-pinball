@@ -970,3 +970,19 @@ export function createTableEdgeAccents(table: Group): Mesh[] {
 
   return accents;
 }
+
+// Ball saver drain gate: a glowing barrier across the drain area
+export function createDrainGate(table: Group): Mesh {
+  const gateGeo = new BoxGeometry(PLAYFIELD_WIDTH * 0.6, 0.015, 0.004);
+  const gateMat = new MeshBasicMaterial({
+    color: new Color(0x00ff88),
+    transparent: true,
+    opacity: 0,
+    blending: AdditiveBlending,
+  });
+  const gate = new Mesh(gateGeo, gateMat);
+  gate.position.set(0, 0.008, HALF_L - 0.015);
+  gate.visible = false;
+  table.add(gate);
+  return gate;
+}
