@@ -534,6 +534,8 @@ export class PinballGameLoopSystem extends createSystem({}) {
       this.lastEnvThemeId = game.currentThemeId;
       applyEnvironmentTheme(this.refs.envState, this.refs.world.scene, game.currentThemeId);
       audio.setTheme(game.currentThemeId);
+      // Apply theme to playfield art
+      this.applyThemeToPlayfieldArt(game.currentThemeId);
     }
 
     xrInput.update(dt);
@@ -647,6 +649,8 @@ export class PinballGameLoopSystem extends createSystem({}) {
               audio.playTargetHit();
               effects.spawnTargetHit(tx, targetZ, [0xff0044, 0xff8800, 0xffff00, 0x00ff88, 0x0088ff][i]);
               xrInput.hapticPulse(HAPTIC_PATTERNS.targetHit);
+              // Flash target insert
+              this.flashInsert(this.refs.playfieldInserts, `insert-target-${i + 1}`);
               b.vz = Math.abs(b.vz) * 0.8;
 
               // Check target bank completion achievement
@@ -678,12 +682,15 @@ export class PinballGameLoopSystem extends createSystem({}) {
           // Lane detection
           if (b.x < -0.10 && b.x > -0.15 && b.z > 0.04 && b.z < 0.20 && b.vz < -0.3) {
             game.handleLaneHit(0, b.x, b.z);
+            this.flashInsert(this.refs.playfieldInserts, 'insert-lane-l');
           }
           if (b.x > -0.02 && b.x < 0.02 && b.z > 0.06 && b.z < 0.17 && b.vz < -0.3) {
             game.handleLaneHit(1, b.x, b.z);
+            this.flashInsert(this.refs.playfieldInserts, 'insert-lane-c');
           }
           if (b.x > 0.10 && b.x < 0.15 && b.z > 0.04 && b.z < 0.20 && b.vz < -0.3) {
             game.handleLaneHit(2, b.x, b.z);
+            this.flashInsert(this.refs.playfieldInserts, 'insert-lane-r');
           }
         }
       }
@@ -1584,8 +1591,79 @@ export class PinballGameLoopSystem extends createSystem({}) {
     const { playfieldInserts, playfieldArt, starRollovers, game } = this.refs;
     if (!playfieldInserts) return;
 
-    // Animate inserts
+    // === Wizard mode: all inserts rainbow cycle ===
+    if (game.wizardModeActive) {
+      for (let i = 0; i < playfieldInserts.length; i++) {
+        const insert = playfieldInserts[i];
+        const mat = insert.mesh.material as MeshBasicMaterial;
+        const glowMat = insert.glow.material as MeshBasicMaterial;
+        // Rainbow hue cycling offset per insert
+        const hue = ((this.gameTime * 0.5 + i * 0.05) % 1);
+        const c = new Color().setHSL(hue, 1, 0.5);
+        mat.color.copy(c);
+        glowMat.color.copy(c);
+        mat.opacity = 0.6 + Math.sin(this.gameTime * 6 + i * 0.3) * 0.3;
+        glowMat.opacity = 0.4 + Math.sin(this.gameTime * 6 + i * 0.3) * 0.2;
+        // Pulse scale during wizard
+        const s = 1 + Math.sin(this.gameTime * 4 + i * 0.5) * 0.15;
+        insert.mesh.scale.set(s, 1, s);
+        insert.glow.scale.set(s, 1, s);
+      }
+      // Stars spin fast in wizard mode
+      if (starRollovers) {
+        for (let i = 0; i < starRollovers.length; i++) {
+          starRollovers[i].rotation.y = this.gameTime * 3 + i * 2.094;
+        }
+      }
+      // Art brighter in wizard mode
+      if (playfieldArt) {
+        for (const line of playfieldArt) {
+          const mat = line.mesh.material as MeshBasicMaterial;
+          mat.opacity = 0.4 + Math.sin(this.gameTime * 2 + playfieldArt.indexOf(line) * 0.3) * 0.1;
+        }
+      }
+      return;
+    }
+
+    // === Attract mode (title screen): sequential light chase ===
+    if (game.state === 'title') {
+      const chaseSpeed = 3; // inserts per second
+      const activeIdx = Math.floor(this.gameTime * chaseSpeed) % playfieldInserts.length;
+      for (let i = 0; i < playfieldInserts.length; i++) {
+        const insert = playfieldInserts[i];
+        const mat = insert.mesh.material as MeshBasicMaterial;
+        const glowMat = insert.glow.material as MeshBasicMaterial;
+        // Restore base color
+        mat.color.setHex(insert.baseColor);
+        glowMat.color.setHex(insert.baseColor);
+        const dist = Math.abs(i - activeIdx);
+        const brightness = dist <= 2 ? (1 - dist / 3) : 0.1;
+        mat.opacity = brightness * 0.7;
+        glowMat.opacity = brightness * 0.4;
+        insert.mesh.scale.set(1, 1, 1);
+        insert.glow.scale.set(1, 1, 1);
+      }
+      // Stars pulse gently in attract
+      if (starRollovers) {
+        for (let i = 0; i < starRollovers.length; i++) {
+          starRollovers[i].rotation.y = this.gameTime * 0.8 + i * 2.094;
+        }
+      }
+      // Art dim in attract
+      if (playfieldArt) {
+        for (const line of playfieldArt) {
+          (line.mesh.material as MeshBasicMaterial).opacity = 0.08;
+        }
+      }
+      return;
+    }
+
+    // === Normal gameplay insert animation ===
     for (const insert of playfieldInserts) {
+      // Restore base color (in case wizard mode changed it)
+      (insert.mesh.material as MeshBasicMaterial).color.setHex(insert.baseColor);
+      (insert.glow.material as MeshBasicMaterial).color.setHex(insert.baseColor);
+
       if (insert.flashTimer > 0) {
         insert.flashTimer -= dt;
         const t = Math.max(0, insert.flashTimer);
@@ -1618,6 +1696,15 @@ export class PinballGameLoopSystem extends createSystem({}) {
       glowMat.opacity = pulse * 0.6;
     }
 
+    // Orbit inserts: brighter based on orbit progress
+    const orbitInsertL = playfieldInserts.find(i => i.id === 'insert-orbit-l');
+    const orbitInsertR = playfieldInserts.find(i => i.id === 'insert-orbit-r');
+    if (orbitInsertL && orbitInsertR && game.orbitProgress > 0) {
+      const orbitPulse = 0.35 + Math.sin(this.gameTime * 4) * 0.15;
+      (orbitInsertL.mesh.material as MeshBasicMaterial).opacity = orbitPulse;
+      (orbitInsertR.mesh.material as MeshBasicMaterial).opacity = orbitPulse;
+    }
+
     // Outlane inserts flash when ball is near drain
     const drainInsertL = playfieldInserts.find(i => i.id === 'insert-outlane-l');
     const drainInsertR = playfieldInserts.find(i => i.id === 'insert-outlane-r');
@@ -1630,6 +1717,16 @@ export class PinballGameLoopSystem extends createSystem({}) {
         if (drainInsertL) (drainInsertL.mesh.material as MeshBasicMaterial).opacity = 0.25 + flash * 0.6;
         if (drainInsertR) (drainInsertR.mesh.material as MeshBasicMaterial).opacity = 0.25 + flash * 0.6;
         if (centerDrain) (centerDrain.mesh.material as MeshBasicMaterial).opacity = 0.25 + flash * 0.7;
+      }
+    }
+
+    // Frenzy mode: all inserts glow brighter and pulse faster
+    if (game.frenzyActive) {
+      for (const insert of playfieldInserts) {
+        if (insert.flashTimer <= 0) {
+          const mat = insert.mesh.material as MeshBasicMaterial;
+          mat.opacity = 0.4 + Math.sin(this.gameTime * 5 + playfieldInserts.indexOf(insert) * 0.4) * 0.15;
+        }
       }
     }
 
@@ -1648,6 +1745,31 @@ export class PinballGameLoopSystem extends createSystem({}) {
         const mat = line.mesh.material as MeshBasicMaterial;
         mat.opacity = intensityMul + Math.sin(this.gameTime * 1.5 + playfieldArt.indexOf(line) * 0.3) * 0.05;
       }
+    }
+  }
+
+  /** Apply theme accent color to playfield art lines */
+  private applyThemeToPlayfieldArt(themeId: string): void {
+    const { playfieldArt } = this.refs;
+    if (!playfieldArt) return;
+
+    // Map theme id to an art tint color
+    let artTint: number;
+    switch (themeId) {
+      case 'cyber-red':    artTint = 0x440022; break;
+      case 'ocean-blue':   artTint = 0x002244; break;
+      case 'solar-flare':  artTint = 0x442200; break;
+      case 'toxic-green':  artTint = 0x004422; break;
+      default:             artTint = 0x001144; break; // neon-classic
+    }
+
+    for (const line of playfieldArt) {
+      const mat = line.mesh.material as MeshBasicMaterial;
+      // Blend base color with theme tint
+      const baseColor = new Color(line.baseColor);
+      const tintColor = new Color(artTint);
+      baseColor.lerp(tintColor, 0.4);
+      mat.color.copy(baseColor);
     }
   }
 }
