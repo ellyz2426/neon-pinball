@@ -707,6 +707,18 @@ export class PinballGameLoopSystem extends createSystem({}) {
                 effects.addTrailPoint(b.x, physics.getBallY(b, 0) - TABLE_Y, b.z, this.trailColor, speed);
               }
             }
+          } else if (b.active && game.multiballActive) {
+            // Extra balls also get trails — colored to match their ball color
+            this.trailCounter += dt;
+            if (this.trailCounter > 0.03) {
+              const speed = Math.sqrt(b.vx ** 2 + b.vz ** 2);
+              if (speed > 0.3) {
+                const multiballColors = [0xff00ff, 0xff8800, 0x44ff00, 0x4488ff];
+                const colorIdx = (bv.ballId - 1) % multiballColors.length;
+                const mbTrailColor = multiballColors[Math.max(0, colorIdx)];
+                effects.addTrailPoint(b.x, physics.getBallY(b, 0) - TABLE_Y, b.z, mbTrailColor, speed * 0.7);
+              }
+            }
           }
 
           const speed = Math.sqrt(b.vx ** 2 + b.vz ** 2);
@@ -1322,6 +1334,37 @@ export class PinballGameLoopSystem extends createSystem({}) {
 
     cam.position.set(orbitX, orbitY, orbitZ);
     cam.lookAt(new Vector3(0, TABLE_Y + 0.02, -0.1));
+
+    // Attract mode lighting: cycle table lights through rainbow
+    const { tableLights } = this.refs;
+    const hue1 = (this.attractTime * 0.15) % 1;
+    const hue2 = (hue1 + 0.33) % 1;
+    const hue3 = (hue1 + 0.66) % 1;
+    if (tableLights.main) {
+      tableLights.main.color.setHSL(hue1, 0.8, 0.5);
+      tableLights.main.intensity = 1.0 + Math.sin(this.attractTime * 1.5) * 0.3;
+    }
+    if (tableLights.left) {
+      tableLights.left.color.setHSL(hue2, 0.9, 0.5);
+      tableLights.left.intensity = 0.5 + Math.sin(this.attractTime * 1.2 + 1) * 0.2;
+    }
+    if (tableLights.right) {
+      tableLights.right.color.setHSL(hue3, 0.9, 0.5);
+      tableLights.right.intensity = 0.5 + Math.sin(this.attractTime * 1.2 + 2) * 0.2;
+    }
+
+    // Pulse bumpers during attract mode
+    const { bumperMeshes } = this.refs;
+    const bumperIds = ['pop-center', 'pop-left', 'pop-right'];
+    for (let i = 0; i < bumperIds.length; i++) {
+      const entry = bumperMeshes.get(bumperIds[i]);
+      if (entry) {
+        const phase = this.attractTime * 2 + i * 2.1;
+        (entry.glow.material as MeshBasicMaterial).opacity = 0.2 + Math.sin(phase) * 0.15;
+        const h = (hue1 + i * 0.2) % 1;
+        (entry.mesh.material as MeshStandardMaterial).emissive.setHSL(h, 1, 0.4);
+      }
+    }
   }
 
   private updateCameraTransition(dt: number): void {

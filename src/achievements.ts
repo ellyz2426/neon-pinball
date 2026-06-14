@@ -88,6 +88,14 @@ const ACHIEVEMENT_DEFS: Omit<Achievement, 'unlocked' | 'unlockedDate'>[] = [
   { id: 'difficulty_5', name: 'IRONMAN', description: 'Reach difficulty level 5', icon: '!', color: '#ff0044' },
   { id: 'combo_godlike_2', name: 'DOUBLE GODLIKE', description: 'Reach GODLIKE combo twice in one game', icon: '!', color: '#ff00ff' },
   { id: 'target_master', name: 'TARGET MASTER', description: 'Clear all targets 5 times in one game', icon: 'T', color: '#00ff88' },
+  // Round 32 achievements
+  { id: 'score_25m', name: 'TWENTY FIVE MILLION', description: 'Score 25,000,000 points', icon: 'K', color: '#ffd700' },
+  { id: 'drain_survivor', name: 'SURVIVOR', description: 'Get saved by ball saver 5 times in one game', icon: 'G', color: '#00ff88' },
+  { id: 'ball_120s', name: 'ENDURANCE', description: 'Keep one ball alive for 120 seconds', icon: 'H', color: '#ff8800' },
+  { id: 'bumper_200', name: 'BUMPER LEGEND', description: 'Hit bumpers 200 times in one game', icon: 'B', color: '#ff00ff' },
+  { id: 'no_magna', name: 'PURIST', description: 'Win a game without using Magna-Save', icon: 'P', color: '#00ff88' },
+  { id: 'ramp_20', name: 'RAMP LEGEND', description: 'Hit 20 ramp shots in one game', icon: 'R', color: '#ff4400' },
+  { id: 'mission_streak', name: 'MISSION STREAK', description: 'Complete 3 missions in one game', icon: 'M', color: '#ffff00' },
 ];
 
 export class AchievementManager {
@@ -99,6 +107,8 @@ export class AchievementManager {
   jackpotsThisGame = 0;
   missionsCompletedTypes = new Set<string>();
   gameStartTime = 0;
+  magnaSaveUsedThisGame = false;
+  missionsCompletedCount = 0;
 
   constructor() {
     this.stats = this.loadStats();
@@ -115,6 +125,8 @@ export class AchievementManager {
     this.skillShotsThisGame = 0;
     this.captiveBallHitsThisGame = 0;
     this.gameStartTime = Date.now();
+    this.magnaSaveUsedThisGame = false;
+    this.missionsCompletedCount = 0;
     this.stats.totalGames++;
     this.unlock('first_game');
     this.checkGamesPlayed();
@@ -133,8 +145,12 @@ export class AchievementManager {
     if (score >= 1000000) this.unlock('score_1m');
     if (score >= 2000000) this.unlock('score_2m');
 
-    // Bumper achievement
+    // Bumper achievements
     if (bumperHits >= 100) this.unlock('bumper_100');
+    if (bumperHits >= 200) this.unlock('bumper_200');
+
+    // No magna-save achievement (purist)
+    if (!this.magnaSaveUsedThisGame) this.unlock('no_magna');
 
     this.saveStats();
     this.saveAchievements();
@@ -155,6 +171,7 @@ export class AchievementManager {
 
   checkMissionComplete(missionType: string): void {
     this.stats.totalMissionsCompleted++;
+    this.missionsCompletedCount++;
     this.unlock('first_mission');
     this.missionsCompletedTypes.add(missionType);
     if (this.missionsCompletedTypes.size >= 5) {
@@ -162,6 +179,9 @@ export class AchievementManager {
     }
     if (this.missionsCompletedTypes.size >= 8) {
       this.unlock('all_missions_8');
+    }
+    if (this.missionsCompletedCount >= 3) {
+      this.unlock('mission_streak');
     }
   }
 
@@ -239,6 +259,7 @@ export class AchievementManager {
 
   checkRampCount(ramps: number): void {
     if (ramps >= 10) this.unlock('ramp_10');
+    if (ramps >= 20) this.unlock('ramp_20');
   }
 
   checkGamesPlayed(): void {
@@ -249,6 +270,7 @@ export class AchievementManager {
 
   checkMagnaSave(): void {
     this.unlock('magna_save');
+    this.magnaSaveUsedThisGame = true;
   }
 
   private usedThemes = new Set<string>();
@@ -293,6 +315,7 @@ export class AchievementManager {
   checkScoreMilestones(score: number): void {
     if (score >= 5000000) this.unlock('score_5m');
     if (score >= 10000000) this.unlock('score_10m');
+    if (score >= 25000000) this.unlock('score_25m');
   }
 
   // Round 11 achievement checks
@@ -322,6 +345,7 @@ export class AchievementManager {
   checkBallSaved(): void {
     this.ballSavesThisGame++;
     if (this.ballSavesThisGame >= 3) this.unlock('ball_saved_3');
+    if (this.ballSavesThisGame >= 5) this.unlock('drain_survivor');
   }
 
   resetRoundStats(): void {
@@ -349,6 +373,7 @@ export class AchievementManager {
       this.stats.longestBallSeconds = elapsed;
     }
     if (elapsed >= 60) this.unlock('long_ball');
+    if (elapsed >= 120) this.unlock('ball_120s');
   }
 
   checkTargetBankCompletions(count: number): void {
