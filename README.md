@@ -77,7 +77,13 @@ Complete all 5 -> **Wizard Mode**. Complete 3 -> **Extra Ball**.
 - **Procedural audio** -- 30+ synthesized SFX, no audio files
 - **Theme-reactive ambient music** -- Different bass/pad tones per theme with harmony layer
 - **Dynamic intensity music** -- Background layers that build with gameplay (pulse/harmonic/bass layers)
-- **42 achievements** -- From "First Tilt" to "Orbital Master"
+- **60 achievements** -- From "First Tilt" to "Twenty Five Million"
+- **Attract mode** -- Camera orbits the table with cycling rainbow lights on the title screen
+- **Camera view cycling** -- Press V to switch between Standard/Close/Overhead/Side views
+- **Ball saver drain gate** -- Glowing barrier appears across the drain when ball saver is active
+- **New high score celebration** -- Confetti burst and haptic feedback on new records
+- **Per-ball multiball trails** -- Each multiball ball leaves colored trails matching its unique color
+- **Enhanced stats** -- Tracks avg score, spinner hits, orbits, jackpots, drains, longest ball
 
 ### Controls
 
@@ -91,6 +97,7 @@ Complete all 5 -> **Wizard Mode**. Complete 3 -> **Extra Ball**.
 | Nudge Right | E | Right Squeeze |
 | Magna-Save Left | Z | Left Thumbstick Left |
 | Magna-Save Right | C | Right Thumbstick Right |
+| Camera View | V | -- |
 
 ## Tech Stack
 
@@ -125,7 +132,7 @@ src/
   effects.ts      -- Particle effects with mesh pooling, trails, pulse rings
   ui.ts           -- PanelUI spatial panel management (21 panels)
   xrinput.ts      -- VR controller input mapping
-  achievements.ts -- 42 achievements + persistent stats
+  achievements.ts -- 60 achievements + persistent stats
   themes.ts       -- 5 table color themes + daily challenge generation
   environment.ts  -- Holodeck environment (grid, decorations, intensity-reactive particles)
 ui/

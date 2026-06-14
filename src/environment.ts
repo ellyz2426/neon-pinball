@@ -157,6 +157,18 @@ export function createEnvironment(scene: any): EnvState {
     });
   }
 
+  // Reflective floor strip under the table for visual polish
+  const reflectGeo = new PlaneGeometry(0.8, 1.2);
+  const reflectMat = new MeshStandardMaterial({
+    color: new Color(0x111133),
+    roughness: 0.2,
+    metalness: 0.8,
+  });
+  const reflectFloor = new Mesh(reflectGeo, reflectMat);
+  reflectFloor.rotation.x = -Math.PI / 2;
+  reflectFloor.position.set(0, 0.002, 0);
+  scene.add(reflectFloor);
+
   return state;
 }
 
